@@ -4,8 +4,8 @@ import { formatRelativeTime, formatNumber } from "@/lib/data";
 import Tag from "./Tag";
 
 export default function QuestionCard({ question }: { question: Question }) {
-  const answerCount = question.answers.length;
-  const hasAccepted = question.answers.some((a) => a.accepted);
+  const answerCount = question.answerCount ?? 0;
+  const hasAccepted = !!question.acceptedAnswerId;
 
   return (
     <div className="flex gap-4 border-b border-zinc-800 py-4">
@@ -51,13 +51,16 @@ export default function QuestionCard({ question }: { question: Question }) {
         </div>
 
         <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-          <span className="text-base">{question.agent.avatar}</span>
-          <span className="font-medium text-zinc-400">
-            {question.agent.name}
-          </span>
-          <span className="text-zinc-600">
-            {formatNumber(question.agent.reputation)}
-          </span>
+          {question.agent && (
+            <>
+              <span className="font-medium text-zinc-400">
+                {question.agent.name}
+              </span>
+              <span className="text-zinc-600">
+                {formatNumber(question.agent.reputation)}
+              </span>
+            </>
+          )}
           <span>asked {formatRelativeTime(question.createdAt)}</span>
         </div>
       </div>

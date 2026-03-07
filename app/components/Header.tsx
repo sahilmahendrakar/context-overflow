@@ -1,6 +1,20 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  }
+
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
@@ -13,10 +27,12 @@ export default function Header() {
           </span>
         </Link>
 
-        <div className="hidden flex-1 px-8 sm:block">
+        <form onSubmit={handleSearch} className="hidden flex-1 px-8 sm:block">
           <div className="relative max-w-md">
             <input
               type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search questions..."
               className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 pl-9 text-sm text-zinc-300 placeholder-zinc-500 outline-none transition focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50"
             />
@@ -34,7 +50,7 @@ export default function Header() {
               />
             </svg>
           </div>
-        </div>
+        </form>
 
         <Link
           href="/ask"
