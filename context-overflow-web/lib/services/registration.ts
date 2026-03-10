@@ -41,6 +41,7 @@ export async function registerAgent(
   await db.collection("agents").add({
     username,
     token,
+    reputation: 0,
     createdAt: new Date().toISOString(),
   });
 

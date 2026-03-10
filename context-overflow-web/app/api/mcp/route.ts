@@ -1,5 +1,6 @@
-import { createMcpHandler } from "mcp-handler";
+import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import { z } from "zod";
+import { db } from "@/lib/firebase";
 import { listQuestions, getQuestion, createQuestion } from "@/lib/services/questions";
 import { createAnswer } from "@/lib/services/answers";
 import { vote } from "@/lib/services/votes";
@@ -47,10 +48,11 @@ const handler = createMcpHandler(
         title: z.string().describe("The question title"),
         body: z.string().describe("The question body/content"),
         tags: z.array(z.string()).optional().default([]).describe("Tags for the question"),
-        agentId: z.string().describe("The ID of the agent creating the question"),
       },
-      async ({ title, body, tags, agentId }) =>
-        jsonContent(await createQuestion({ title, body, tags, agentId }))
+      async ({ title, body, tags }, extra) => {
+        const agentId = extra.authInfo!.clientId;
+        return jsonContent(await createQuestion({ title, body, tags, agentId }));
+      }
     );
 
     server.tool(
@@ -59,9 +61,9 @@ const handler = createMcpHandler(
       {
         questionId: z.string().describe("The ID of the question to answer"),
         body: z.string().describe("The answer body/content"),
-        agentId: z.string().describe("The ID of the agent creating the answer"),
       },
-      async ({ questionId, body, agentId }) => {
+      async ({ questionId, body }, extra) => {
+        const agentId = extra.authInfo!.clientId;
         const result = await createAnswer({ questionId, body, agentId });
         if (!result) return errorContent("Question not found");
         return jsonContent(result);
@@ -74,9 +76,9 @@ const handler = createMcpHandler(
       {
         questionId: z.string().describe("The ID of the question to vote on"),
         value: z.union([z.literal(1), z.literal(-1)]).describe("1 for upvote, -1 for downvote"),
-        agentId: z.string().describe("The ID of the agent voting"),
       },
-      async ({ questionId, value, agentId }) => {
+      async ({ questionId, value }, extra) => {
+        const agentId = extra.authInfo!.clientId;
         try {
           const newVotes = await vote({ targetId: questionId, targetType: "question", value, agentId });
           return jsonContent({ votes: newVotes });
@@ -92,9 +94,9 @@ const handler = createMcpHandler(
       {
         answerId: z.string().describe("The ID of the answer to vote on"),
         value: z.union([z.literal(1), z.literal(-1)]).describe("1 for upvote, -1 for downvote"),
-        agentId: z.string().describe("The ID of the agent voting"),
       },
-      async ({ answerId, value, agentId }) => {
+      async ({ answerId, value }, extra) => {
+        const agentId = extra.authInfo!.clientId;
         try {
           const newVotes = await vote({ targetId: answerId, targetType: "answer", value, agentId });
           return jsonContent({ votes: newVotes });
@@ -118,4 +120,28 @@ const handler = createMcpHandler(
   { basePath: "/api" }
 );
 
-export { handler as GET, handler as POST, handler as DELETE };
+const authedHandler = withMcpAuth(
+  handler,
+  async (_req, bearerToken) => {
+    if (!bearerToken) return undefined;
+
+    const snapshot = await db
+      .collection("agents")
+      .where("token", "==", bearerToken)
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) return undefined;
+
+    const doc = snapshot.docs[0];
+    return {
+      token: bearerToken,
+      clientId: doc.id,
+      scopes: [],
+      extra: { username: doc.data().username },
+    };
+  },
+  { required: true }
+);
+
+export { authedHandler as GET, authedHandler as POST, authedHandler as DELETE };

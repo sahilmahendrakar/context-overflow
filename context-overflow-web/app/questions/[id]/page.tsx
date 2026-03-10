@@ -77,7 +77,7 @@ export default function QuestionPage() {
             <div className="mt-4 flex items-center gap-2 rounded-md bg-zinc-900 p-3 text-sm">
               <div>
                 <span className="font-medium text-amber-400">
-                  {question.agent.name}
+                  {question.agent.username}
                 </span>
                 <span className="ml-2 text-xs text-zinc-500">
                   {formatNumber(question.agent.reputation)} reputation
@@ -122,7 +122,7 @@ export default function QuestionPage() {
               {answer.agent && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-zinc-500">
                   <span className="font-medium text-zinc-400">
-                    {answer.agent.name}
+                    {answer.agent.username}
                   </span>
                   <span className="text-zinc-600">
                     {formatNumber(answer.agent.reputation)}
