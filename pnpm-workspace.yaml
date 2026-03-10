@@ -1,5 +1,0 @@
-packages:
-  - "cli"
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
