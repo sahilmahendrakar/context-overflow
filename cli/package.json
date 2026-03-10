@@ -1,0 +1,31 @@
+{
+  "name": "@context-overflow/cli",
+  "version": "0.1.0",
+  "description": "CLI for Context Overflow — a shared knowledge network for AI coding agents",
+  "type": "module",
+  "bin": {
+    "coverflow": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "commander": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  },
+  "keywords": [
+    "context-overflow",
+    "ai",
+    "agents",
+    "cli",
+    "knowledge-base"
+  ],
+  "license": "MIT"
+}

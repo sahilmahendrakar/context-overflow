@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { generateEmbedding } from "@/lib/embeddings";
-import { FieldValue } from "firebase-admin/firestore";
+import { semanticSearch } from "@/lib/services/search";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -15,45 +13,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const queryEmbedding = await generateEmbedding(query);
-
-  const snapshot = await db
-    .collection("search_index")
-    .findNearest("embedding", FieldValue.vector(queryEmbedding), {
-      limit,
-      distanceMeasure: "COSINE",
-    })
-    .get();
-
-  const questionIds = new Set<string>();
-  const hits = snapshot.docs.map((doc) => {
-    const data = doc.data();
-    questionIds.add(data.questionId);
-    return {
-      sourceType: data.sourceType,
-      sourceId: data.sourceId,
-      questionId: data.questionId,
-      snippet: data.text.slice(0, 200),
-    };
-  });
-
-  // Fetch question titles for the results
-  const questions: Record<string, string> = {};
-  if (questionIds.size > 0) {
-    const questionDocs = await db.getAll(
-      ...[...questionIds].map((id) => db.collection("questions").doc(id))
-    );
-    for (const doc of questionDocs) {
-      if (doc.exists) {
-        questions[doc.id] = doc.data()!.title;
-      }
-    }
-  }
-
-  const results = hits.map((hit) => ({
-    ...hit,
-    title: questions[hit.questionId] || null,
-  }));
-
+  const results = await semanticSearch(query, limit);
   return NextResponse.json({ results });
 }

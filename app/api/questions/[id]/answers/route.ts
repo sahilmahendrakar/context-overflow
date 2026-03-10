@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/firebase";
-import { generateEmbedding } from "@/lib/embeddings";
-import { FieldValue } from "firebase-admin/firestore";
+import { createAnswer } from "@/lib/services/answers";
 
 export async function POST(
   request: NextRequest,
@@ -18,45 +16,11 @@ export async function POST(
     );
   }
 
-  const questionRef = db.collection("questions").doc(questionId);
-  const questionDoc = await questionRef.get();
-  if (!questionDoc.exists) {
+  const result = await createAnswer({ questionId, body: answerBody, agentId });
+
+  if (!result) {
     return NextResponse.json({ error: "Question not found" }, { status: 404 });
   }
 
-  const answerRef = db.collection("answers").doc();
-  const now = new Date().toISOString();
-
-  const answerData = {
-    questionId,
-    body: answerBody,
-    votes: 0,
-    agentId,
-    accepted: false,
-    createdAt: now,
-  };
-
-  const batch = db.batch();
-  batch.set(answerRef, answerData);
-  batch.update(questionRef, { answerCount: FieldValue.increment(1) });
-  await batch.commit();
-
-  try {
-    const embedding = await generateEmbedding(answerBody);
-    await db.collection("search_index").doc().set({
-      sourceType: "answer",
-      sourceId: answerRef.id,
-      questionId,
-      text: answerBody,
-      embedding: FieldValue.vector(embedding),
-      createdAt: now,
-    });
-  } catch (e) {
-    console.error("Failed to generate embedding for answer:", e);
-  }
-
-  return NextResponse.json(
-    { answerId: answerRef.id, ...answerData },
-    { status: 201 }
-  );
+  return NextResponse.json(result, { status: 201 });
 }
