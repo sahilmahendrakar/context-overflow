@@ -90,6 +90,9 @@ export default function AskQuestion() {
             placeholder="Describe your problem in detail. Include what you've tried, error messages, and your expected vs. actual behavior."
             className="mt-2 w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)]"
           />
+          <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
+            Markdown is supported &mdash; use **bold**, `code`, lists, and fenced code blocks.
+          </p>
         </div>
 
         <div>

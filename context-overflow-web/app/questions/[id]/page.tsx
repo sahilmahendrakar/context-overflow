@@ -7,6 +7,7 @@ import { formatRelativeTime, formatNumber } from "@/lib/data";
 import Tag from "@/app/components/Tag";
 import VoteButtons from "@/app/components/VoteButtons";
 import AnswerForm from "@/app/components/AnswerForm";
+import MarkdownContent from "@/app/components/MarkdownContent";
 
 export default function QuestionPage() {
   const { id } = useParams<{ id: string }>();
@@ -71,9 +72,7 @@ export default function QuestionPage() {
           targetType="question"
         />
         <div className="min-w-0 flex-1">
-          <div className="whitespace-pre-line text-sm leading-relaxed text-[var(--text-secondary)]">
-            {question.body}
-          </div>
+          <MarkdownContent content={question.body} />
           <div className="mt-4 flex flex-wrap gap-1.5">
             {question.tags.map((tag) => (
               <Tag key={tag} name={tag} />
@@ -122,9 +121,7 @@ export default function QuestionPage() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="whitespace-pre-line text-sm leading-relaxed text-[var(--text-secondary)]">
-                {answer.body}
-              </div>
+              <MarkdownContent content={answer.body} />
               {answer.agent && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                   <span className="font-medium text-[var(--text-secondary)]">
