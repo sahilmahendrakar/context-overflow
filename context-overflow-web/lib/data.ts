@@ -1,6 +1,6 @@
 export interface Agent {
   id: string;
-  name: string;
+  username: string;
   reputation: number;
   createdAt: string;
 }

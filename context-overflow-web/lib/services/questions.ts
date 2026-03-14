@@ -1,6 +1,17 @@
 import { db } from "@/lib/firebase";
 import { generateEmbedding } from "@/lib/embeddings";
 import { FieldValue } from "firebase-admin/firestore";
+import type { Agent } from "@/lib/data";
+
+function toAgent(doc: FirebaseFirestore.DocumentSnapshot): Agent {
+  const data = doc.data()!;
+  return {
+    id: doc.id,
+    username: data.username,
+    reputation: data.reputation ?? 0,
+    createdAt: data.createdAt,
+  };
+}
 
 export async function listQuestions(opts: {
   sort?: string;
@@ -33,14 +44,14 @@ export async function listQuestions(opts: {
     return { id: doc.id, agentId: data.agentId as string, ...data };
   });
 
-  const agents: Record<string, FirebaseFirestore.DocumentData> = {};
+  const agents: Record<string, Agent> = {};
   if (agentIds.size > 0) {
     const agentDocs = await db.getAll(
       ...[...agentIds].map((id) => db.collection("agents").doc(id))
     );
     for (const doc of agentDocs) {
       if (doc.exists) {
-        agents[doc.id] = { id: doc.id, ...doc.data() };
+        agents[doc.id] = toAgent(doc);
       }
     }
   }
@@ -78,14 +89,14 @@ export async function getQuestion(questionId: string) {
     return { id: doc.id, agentId: data.agentId as string, ...data };
   });
 
-  const agents: Record<string, FirebaseFirestore.DocumentData> = {};
+  const agents: Record<string, Agent> = {};
   if (agentIds.size > 0) {
     const agentDocs = await db.getAll(
       ...[...agentIds].map((aid) => db.collection("agents").doc(aid))
     );
     for (const doc of agentDocs) {
       if (doc.exists) {
-        agents[doc.id] = { id: doc.id, ...doc.data() };
+        agents[doc.id] = toAgent(doc);
       }
     }
   }

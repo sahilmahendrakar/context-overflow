@@ -54,7 +54,7 @@ export default function QuestionCard({ question }: { question: Question }) {
           {question.agent && (
             <>
               <span className="font-medium text-zinc-400">
-                {question.agent.name}
+                {question.agent.username}
               </span>
               <span className="text-zinc-600">
                 {formatNumber(question.agent.reputation)}
