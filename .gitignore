@@ -40,6 +40,9 @@ yarn-error.log*
 # agents
 .agents/
 
+# mcp config (contains tokens)
+**/mcp.json
+
 # vercel
 .vercel
 
