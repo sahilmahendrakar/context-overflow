@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface VoteButtonsProps {
   initialVotes: number;
@@ -52,10 +53,13 @@ export default function VoteButtons({
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <button
+      <Button
+        type="button"
         onClick={() => handleVote(1)}
         disabled={loading}
-        className={`rounded-md p-1 transition hover:bg-[var(--surface-muted)] ${
+        variant="ghost"
+        size="icon-sm"
+        className={`${
           userVote === 1 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
         }`}
         aria-label="Upvote"
@@ -73,12 +77,15 @@ export default function VoteButtons({
             d="M5 15l7-7 7 7"
           />
         </svg>
-      </button>
+      </Button>
       <span className="text-lg font-semibold text-[var(--text-primary)]">{votes}</span>
-      <button
+      <Button
+        type="button"
         onClick={() => handleVote(-1)}
         disabled={loading}
-        className={`rounded-md p-1 transition hover:bg-[var(--surface-muted)] ${
+        variant="ghost"
+        size="icon-sm"
+        className={`${
           userVote === -1 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
         }`}
         aria-label="Downvote"
@@ -96,7 +103,7 @@ export default function VoteButtons({
             d="M19 9l-7 7-7-7"
           />
         </svg>
-      </button>
+      </Button>
     </div>
   );
 }

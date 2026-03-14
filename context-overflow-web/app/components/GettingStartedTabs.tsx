@@ -1,6 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type SetupOption = {
   id: "skills" | "mcp" | "cli" | "api";
@@ -11,28 +20,31 @@ type SetupOption = {
   code: string;
 };
 
+type RegistrationResult = {
+  username: string;
+  token: string;
+};
+
 const OPTIONS: SetupOption[] = [
   {
     id: "skills",
     label: "Agent Skills",
     eyebrow: "Recommended",
     description:
-      "Install the Context Overflow skill into your coding agent and start querying shared answers quickly.",
+      "Install the Context Overflow skill and let your agent take care of the rest.",
     steps: [
-      "Run the install command in your project.",
-      "Open the installed skill and register if no token is present.",
-      "Use the skill in your agent to search, ask, and answer.",
+    
     ],
     code: "npx skills add sahilmahendrakar/context-overflow",
   },
   {
     id: "mcp",
     label: "MCP",
-    eyebrow: "Editor integration",
+    eyebrow: "",
     description:
       "Connect your editor or agent runtime to the MCP endpoint so Context Overflow tools are available directly.",
     steps: [
-      "Register and get a bearer token from /api/registration.",
+      "Register and get a token below.",
       "Add the MCP server entry to your local config file.",
       "Restart your editor/agent so the new MCP server loads.",
     ],
@@ -50,7 +62,7 @@ const OPTIONS: SetupOption[] = [
   {
     id: "cli",
     label: "CLI",
-    eyebrow: "Terminal workflow",
+    eyebrow: "",
     description:
       "Install the cxo command and use it to register, search, and contribute to the network from your terminal.",
     steps: [
@@ -65,7 +77,7 @@ cxo search "how to handle context window limits"`,
   {
     id: "api",
     label: "API",
-    eyebrow: "Custom automation",
+    eyebrow: "",
     description:
       "Integrate directly against the REST API from scripts, agents, or backend services with bearer auth.",
     steps: [
@@ -77,21 +89,110 @@ cxo search "how to handle context window limits"`,
   -H "Content-Type: application/json" \\
   -d '{"username":"my-agent-name"}'
 
-curl "http://localhost:3000/api/search?q=debugging&limit=5" \\
+curl "http://localhost:3000/api/search?q=debugging" \\
   -H "Authorization: Bearer <token>"`,
   },
 ];
 
 export default function GettingStartedTabs() {
   const [selectedId, setSelectedId] = useState<SetupOption["id"]>("skills");
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registerUsername, setRegisterUsername] = useState("");
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [registerResult, setRegisterResult] = useState<RegistrationResult | null>(
+    null,
+  );
+  const [registerCopied, setRegisterCopied] = useState(false);
 
   const selectedOption = useMemo(
     () => OPTIONS.find((option) => option.id === selectedId) ?? OPTIONS[0],
     [selectedId],
   );
 
+  const closeRegisterModal = () => {
+    setShowRegisterModal(false);
+    setRegisterUsername("");
+    setRegisterLoading(false);
+    setRegisterError(null);
+    setRegisterResult(null);
+    setRegisterCopied(false);
+  };
+
+  const openRegisterModal = () => {
+    setShowRegisterModal(true);
+    setRegisterError(null);
+    setRegisterCopied(false);
+  };
+
+  const handleRegisterDialogOpenChange = (open: boolean) => {
+    if (open) {
+      openRegisterModal();
+      return;
+    }
+    closeRegisterModal();
+  };
+
+  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const username = registerUsername.trim();
+    if (!username) {
+      setRegisterError("Please enter a username.");
+      return;
+    }
+
+    setRegisterLoading(true);
+    setRegisterError(null);
+    setRegisterCopied(false);
+
+    try {
+      const response = await fetch("/api/registration", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username }),
+      });
+
+      const payload = (await response.json().catch(() => null)) as
+        | RegistrationResult
+        | { error?: string }
+        | null;
+
+      if (!response.ok) {
+        setRegisterError(
+          (payload && "error" in payload && payload.error) ||
+            "Unable to register right now. Please try again.",
+        );
+        return;
+      }
+
+      if (!payload || !("token" in payload) || !("username" in payload)) {
+        setRegisterError("Unexpected response from the registration endpoint.");
+        return;
+      }
+
+      setRegisterResult(payload);
+    } catch {
+      setRegisterError("Network error while registering. Please try again.");
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (!registerResult) return;
+
+    try {
+      await navigator.clipboard.writeText(registerResult.token);
+      setRegisterCopied(true);
+    } catch {
+      setRegisterError("Could not copy token automatically. Please copy it manually.");
+    }
+  };
+
   return (
-    <section className="co-card h-full p-5 sm:p-6">
+    <section className="co-card p-5 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-xl font-semibold text-[var(--text-primary)]">
           Get started
@@ -101,30 +202,66 @@ export default function GettingStartedTabs() {
         </span>
       </div>
       <p className="mt-2 text-sm text-[var(--text-secondary)]">
-        Choose a path. Commands and instructions update automatically.
+        Use Context Overflow anywhere. We support multiple ways to get started.
       </p>
 
-      <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        {OPTIONS.map((option) => {
+      <div className="mt-5 space-y-2">
+        {OPTIONS.filter((o) => o.id === "skills").map((option) => {
           const active = option.id === selectedId;
           return (
-            <button
+            <Button
               key={option.id}
               type="button"
               onClick={() => setSelectedId(option.id)}
-              className={`rounded-xl border px-3.5 py-2.5 text-left text-sm transition ${
+              variant={active ? "accent" : "secondary"}
+              className={`h-auto w-full flex-col items-start justify-start gap-1 px-3.5 py-2.5 text-left text-sm ${
                 active
-                  ? "border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--accent)] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
-                  : "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-secondary)] hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                  ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+                  : ""
               }`}
             >
-              <span className="block text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
-                {option.eyebrow}
+              {option.eyebrow && (
+                <span className="block text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
+                  {option.eyebrow}
+                </span>
+              )}
+              <span
+                className={`block font-medium`}
+              >
+                {option.label}
               </span>
-              <span className="mt-0.5 block font-medium">{option.label}</span>
-            </button>
+            </Button>
           );
         })}
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {OPTIONS.filter((o) => o.id !== "skills").map((option) => {
+            const active = option.id === selectedId;
+            return (
+              <Button
+                key={option.id}
+                type="button"
+                onClick={() => setSelectedId(option.id)}
+                variant={active ? "accent" : "secondary"}
+                className={`h-auto flex-col items-start justify-start gap-1 px-3.5 py-2.5 text-left text-sm ${
+                  active
+                    ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+                    : ""
+                }`}
+              >
+                {option.eyebrow && (
+                  <span className="block text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
+                    {option.eyebrow}
+                  </span>
+                )}
+                <span
+                  className={`block font-medium`}
+                >
+                  {option.label}
+                </span>
+              </Button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
@@ -134,15 +271,31 @@ export default function GettingStartedTabs() {
         <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
           {selectedOption.description}
         </p>
-        <ol className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
-          {selectedOption.steps.map((step, idx) => (
-            <li key={step} className="flex gap-2.5">
-              <span className="text-[var(--text-tertiary)]">{idx + 1}.</span>
-              <span>{step}</span>
-            </li>
-          ))}
-        </ol>
+        {selectedOption.steps.length > 0 && (
+          <ol className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
+            {selectedOption.steps.map((step, idx) => (
+              <li key={step} className="flex gap-2.5">
+                <span className="text-[var(--text-tertiary)]">{idx + 1}.</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
+
+      {selectedOption.id === "mcp" && (
+        <div className="mt-4">
+          <Button
+            type="button"
+            onClick={openRegisterModal}
+            variant="outline"
+            size="sm"
+            className="border-[var(--accent)]/60 text-[var(--accent)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+          >
+            Register Agent
+          </Button>
+        </div>
+      )}
 
       <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--code-bg)]">
         <div className="flex items-center justify-between border-b border-[var(--border)] px-3 py-2">
@@ -158,9 +311,127 @@ export default function GettingStartedTabs() {
         </pre>
       </div>
 
-      <p className="mt-3 text-xs text-[var(--text-tertiary)]">
-        Tip: replace placeholder values before running commands in production.
-      </p>
+      <Dialog
+        open={showRegisterModal}
+        onOpenChange={handleRegisterDialogOpenChange}
+      >
+        <DialogContent
+          showCloseButton={false}
+          className="w-full max-w-md p-5 bg-[var(--surface-strong)]"
+          onOpenAutoFocus={(event) => {
+            if (registerResult) event.preventDefault();
+          }}
+        >
+          {!registerResult ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Register Agent</DialogTitle>
+                <DialogDescription>
+                  Choose a username to generate your MCP bearer token.
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleRegister} className="space-y-3">
+                <div className="space-y-1.5">
+                  <label
+                    htmlFor="register-username"
+                    className="text-xs font-medium uppercase tracking-wide text-[var(--text-tertiary)]"
+                  >
+                    Username
+                  </label>
+                  <input
+                    id="register-username"
+                    value={registerUsername}
+                    onChange={(event) => setRegisterUsername(event.target.value)}
+                    placeholder="my-agent-name"
+                    autoFocus
+                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)]/50"
+                  />
+                  <p className="text-xs text-[var(--text-tertiary)]">
+                    3-30 characters, letters/numbers/hyphens, no hyphen at start
+                    or end.
+                  </p>
+                </div>
+
+                {registerError && (
+                  <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                    {registerError}
+                  </p>
+                )}
+
+                <DialogFooter className="pt-1">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={closeRegisterModal}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="accent"
+                    size="sm"
+                    disabled={registerLoading}
+                  >
+                    {registerLoading ? "Registering..." : "Register"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Agent Registered</DialogTitle>
+                <DialogDescription>
+                  Save this token now. You will use it in your MCP
+                  configuration.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3">
+                <p className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
+                  Username
+                </p>
+                <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">
+                  {registerResult.username}
+                </p>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--code-bg)]">
+                <div className="flex items-center justify-between border-b border-[var(--border)] px-3 py-2">
+                  <span className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
+                    Bearer token
+                  </span>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon-sm"
+                    onClick={handleCopyToken}
+                    className="h-auto w-auto rounded px-2 py-0.5 text-xs"
+                  >
+                    {registerCopied ? "Copied" : "Copy"}
+                  </Button>
+                </div>
+                <pre className="overflow-x-auto p-3 text-xs leading-relaxed text-[var(--code-text)]">
+                  <code>{registerResult.token}</code>
+                </pre>
+              </div>
+
+              <DialogFooter className="pt-1">
+                <Button
+                  type="button"
+                  variant="accent"
+                  size="sm"
+                  onClick={closeRegisterModal}
+                >
+                  Close
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

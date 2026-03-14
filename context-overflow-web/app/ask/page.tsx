@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function AskQuestion() {
   const [title, setTitle] = useState("");
@@ -122,13 +123,12 @@ export default function AskQuestion() {
           >
             &larr; Discard and go back
           </Link>
-          <button
+          <Button
             type="submit"
             disabled={submitting || !title.trim() || !body.trim()}
-            className="rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-[var(--accent-foreground)] transition hover:brightness-110 disabled:opacity-50"
           >
             {submitting ? "Posting..." : "Post Your Question"}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

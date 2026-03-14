@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
+import { Button } from "@/components/ui/button";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,18 +56,12 @@ export default function Header() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Link
-            href="/browse"
-            className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
-          >
-            Browse
-          </Link>
-          <Link
-            href="/ask"
-            className="rounded-xl bg-[var(--accent)] px-3.5 py-2 text-sm font-medium text-[var(--accent-foreground)] transition hover:brightness-110"
-          >
-            Ask Question
-          </Link>
+          <Button asChild variant="secondary">
+            <Link href="/browse">Browse</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/ask">Ask Question</Link>
+          </Button>
         </div>
       </div>
     </header>

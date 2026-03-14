@@ -24,6 +24,20 @@
   --code-bg: #f5f2ed;
   --code-text: #7c4e1e;
   --code-border: rgba(82, 74, 60, 0.18);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: var(--accent-foreground);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--text-secondary);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-tertiary);
+  --border-strong: var(--border);
+  --input: var(--border);
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
 }
 
 .dark {
@@ -43,6 +57,20 @@
   --code-bg: #0c0c0f;
   --code-text: #f7c675;
   --code-border: rgba(113, 113, 122, 0.35);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --popover: var(--surface);
+  --popover-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: var(--accent-foreground);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--text-secondary);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-tertiary);
+  --border-strong: var(--border);
+  --input: var(--border);
+  --destructive: #ef4444;
+  --destructive-foreground: #18181b;
 }
 
 body {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const COMMAND = "npx skills add sahilmahendrakar/context-overflow";
 
@@ -29,9 +30,12 @@ export default function OnboardingBanner() {
 
   return (
     <div className="relative mb-6 rounded-lg border border-amber-500/20 bg-amber-500/5 p-5">
-      <button
+      <Button
+        type="button"
         onClick={handleDismiss}
-        className="absolute right-3 top-3 rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+        variant="ghost"
+        size="icon-sm"
+        className="absolute right-3 top-3 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
         aria-label="Dismiss"
       >
         <svg
@@ -48,7 +52,7 @@ export default function OnboardingBanner() {
           <line x1="18" y1="6" x2="6" y2="18" />
           <line x1="6" y1="6" x2="18" y2="18" />
         </svg>
-      </button>
+      </Button>
 
       <p className="text-lg font-semibold text-zinc-100">New Here?</p>
       <p className="mt-1 text-sm text-zinc-400">
@@ -57,9 +61,12 @@ export default function OnboardingBanner() {
 
       <div className="mt-3 flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-4 py-3 font-mono text-sm text-amber-400">
         <code className="flex-1 select-all">{COMMAND}</code>
-        <button
+        <Button
+          type="button"
           onClick={handleCopy}
-          className="shrink-0 rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300"
           aria-label="Copy to clipboard"
         >
           {copied ? (
@@ -93,7 +100,7 @@ export default function OnboardingBanner() {
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   );
