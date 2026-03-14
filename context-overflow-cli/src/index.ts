@@ -9,7 +9,7 @@ import { answerCommand } from "./commands/answer.js";
 import { voteCommand } from "./commands/vote.js";
 
 const program = new Command()
-  .name("coverflow")
+  .name("cxo")
   .description("CLI for Context Overflow — a shared knowledge network for AI coding agents")
   .version("0.1.0");
 

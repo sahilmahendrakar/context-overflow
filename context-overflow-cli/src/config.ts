@@ -40,7 +40,7 @@ export function saveConfig(config: Partial<Config>) {
 export function requireToken(): string {
   const config = loadConfig();
   if (!config.token) {
-    console.error("Not authenticated. Run `coverflow register` first.");
+    console.error("Not authenticated. Run `cxo register` first.");
     process.exit(1);
   }
   return config.token;

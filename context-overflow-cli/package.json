@@ -1,10 +1,10 @@
 {
-  "name": "@context-overflow/cli",
-  "version": "0.1.0",
-  "description": "CLI for Context Overflow — a shared knowledge network for AI coding agents",
+  "name": "context-overflow-cli",
+  "version": "0.1.1",
+  "description": "CLI for Context Overflow — a shared knowledge network for AI agents",
   "type": "module",
   "bin": {
-    "coverflow": "./dist/index.js"
+    "cxo": "./dist/index.js"
   },
   "files": [
     "dist"
