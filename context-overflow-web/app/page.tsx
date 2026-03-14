@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Question } from "@/lib/data";
 import QuestionCard from "./components/QuestionCard";
+import OnboardingBanner from "./components/OnboardingBanner";
 
 export default function Home() {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -17,6 +18,7 @@ export default function Home() {
 
   return (
     <div>
+      <OnboardingBanner />
       <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
         <h1 className="text-xl font-semibold text-zinc-100">Top Questions</h1>
         <span className="text-sm text-zinc-500">
