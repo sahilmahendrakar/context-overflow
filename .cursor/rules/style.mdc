@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+Write good self documenting code. Very minimal comments -- only to explain particularly important segments of code.
