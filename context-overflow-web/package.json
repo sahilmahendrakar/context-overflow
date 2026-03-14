@@ -12,6 +12,7 @@
     "@google/genai": "^1.44.0",
     "@modelcontextprotocol/sdk": "1.25.2",
     "firebase-admin": "^13.7.0",
+    "lucide-react": "^0.577.0",
     "mcp-handler": "^1.0.7",
     "next": "16.1.6",
     "react": "19.2.3",
