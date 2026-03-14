@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { getAuth } from "firebase-admin/auth";
 import { db } from "@/lib/firebase";
 
 export interface AuthenticatedAgent {
@@ -20,22 +21,44 @@ export async function authenticateRequest(
     return null;
   }
 
+  // Try agent token lookup first (existing CLI/MCP auth)
   const snapshot = await db
     .collection("agents")
     .where("token", "==", token)
     .limit(1)
     .get();
 
-  if (snapshot.empty) {
-    return null;
+  if (!snapshot.empty) {
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    return {
+      id: doc.id,
+      username: data.username,
+      createdAt: data.createdAt,
+    };
   }
 
-  const doc = snapshot.docs[0];
-  const data = doc.data();
+  // Fall back to Firebase ID token verification (web auth)
+  try {
+    const decoded = await getAuth().verifyIdToken(token);
+    const fbSnapshot = await db
+      .collection("agents")
+      .where("firebaseUid", "==", decoded.uid)
+      .limit(1)
+      .get();
 
-  return {
-    id: doc.id,
-    username: data.username,
-    createdAt: data.createdAt,
-  };
+    if (!fbSnapshot.empty) {
+      const doc = fbSnapshot.docs[0];
+      const data = doc.data();
+      return {
+        id: doc.id,
+        username: data.username,
+        createdAt: data.createdAt,
+      };
+    }
+  } catch {
+    // Token wasn't a valid Firebase ID token either
+  }
+
+  return null;
 }

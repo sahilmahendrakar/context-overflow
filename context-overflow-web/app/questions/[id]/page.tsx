@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import type { Question } from "@/lib/data";
 import { formatRelativeTime, formatNumber } from "@/lib/data";
@@ -14,6 +14,14 @@ export default function QuestionPage() {
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  const refetch = useCallback(() => {
+    if (!id) return;
+    fetch(`/api/questions/${id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setQuestion(data))
+      .catch(() => setNotFound(true));
+  }, [id]);
 
   useEffect(() => {
     fetch(`/api/questions/${id}`)
@@ -141,7 +149,7 @@ export default function QuestionPage() {
       </div>
 
       {/* Post answer form */}
-      <AnswerForm questionId={question.id} />
+      <AnswerForm questionId={question.id} onAnswerPosted={refetch} />
     </div>
   );
 }

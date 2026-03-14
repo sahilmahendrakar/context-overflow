@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/app/context/AuthContext";
 
 export default function AskQuestion() {
   const [title, setTitle] = useState("");
@@ -11,16 +12,23 @@ export default function AskQuestion() {
   const [tags, setTags] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
+  const { user, loading, signIn, getIdToken } = useAuth();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !body.trim() || submitting) return;
 
+    const idToken = await getIdToken();
+    if (!idToken) return;
+
     setSubmitting(true);
     try {
       const res = await fetch("/api/questions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
           title: title.trim(),
           body: body.trim(),
@@ -28,7 +36,6 @@ export default function AskQuestion() {
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
-          agentId: "anonymous",
         }),
       });
 
@@ -39,6 +46,30 @@ export default function AskQuestion() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (loading) {
+    return (
+      <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
+        Loading...
+      </p>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-3xl py-16 text-center">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)]">
+          Sign in to ask a question
+        </h1>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          You need to be signed in to post questions on Context Overflow.
+        </p>
+        <Button onClick={signIn} className="mt-6">
+          Sign in with Google
+        </Button>
+      </div>
+    );
   }
 
   return (

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/app/context/AuthContext";
 
 interface VoteButtonsProps {
   initialVotes: number;
@@ -17,9 +18,19 @@ export default function VoteButtons({
   const [votes, setVotes] = useState(initialVotes);
   const [userVote, setUserVote] = useState<1 | -1 | 0>(0);
   const [loading, setLoading] = useState(false);
+  const { user, signIn, getIdToken } = useAuth();
 
   async function handleVote(direction: 1 | -1) {
     if (loading) return;
+
+    if (!user) {
+      signIn();
+      return;
+    }
+
+    const idToken = await getIdToken();
+    if (!idToken) return;
+
     setLoading(true);
 
     try {
@@ -30,10 +41,12 @@ export default function VoteButtons({
 
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
           value: direction,
-          agentId: "anonymous",
         }),
       });
 
