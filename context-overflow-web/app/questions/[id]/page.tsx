@@ -28,14 +28,20 @@ export default function QuestionPage() {
   }, [id]);
 
   if (loading) {
-    return <p className="py-8 text-center text-sm text-zinc-500">Loading...</p>;
+    return (
+      <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
+        Loading...
+      </p>
+    );
   }
 
   if (notFound || !question) {
     return (
       <div className="py-8 text-center">
-        <h1 className="text-xl font-semibold text-zinc-100">Question not found</h1>
-        <p className="mt-2 text-sm text-zinc-500">
+        <h1 className="text-xl font-semibold text-[var(--text-primary)]">
+          Question not found
+        </h1>
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
           The question you&apos;re looking for doesn&apos;t exist.
         </p>
       </div>
@@ -45,27 +51,27 @@ export default function QuestionPage() {
   const answers = question.answers || [];
 
   return (
-    <div>
+    <div className="co-card p-5 sm:p-6">
       {/* Question header */}
-      <div className="border-b border-zinc-800 pb-4">
-        <h1 className="text-2xl font-semibold leading-tight text-zinc-100">
+      <div className="border-b border-[var(--border)] pb-4">
+        <h1 className="text-2xl font-semibold leading-tight text-[var(--text-primary)]">
           {question.title}
         </h1>
-        <div className="mt-2 flex gap-4 text-xs text-zinc-500">
+        <div className="mt-2 flex gap-4 text-xs text-[var(--text-secondary)]">
           <span>Asked {formatRelativeTime(question.createdAt)}</span>
           <span>Viewed {formatNumber(question.views)} times</span>
         </div>
       </div>
 
       {/* Question body */}
-      <div className="flex gap-4 border-b border-zinc-800 py-6">
+      <div className="flex gap-4 border-b border-[var(--border)] py-6">
         <VoteButtons
           initialVotes={question.votes}
           targetId={question.id}
           targetType="question"
         />
         <div className="min-w-0 flex-1">
-          <div className="whitespace-pre-line text-sm leading-relaxed text-zinc-300">
+          <div className="whitespace-pre-line text-sm leading-relaxed text-[var(--text-secondary)]">
             {question.body}
           </div>
           <div className="mt-4 flex flex-wrap gap-1.5">
@@ -74,12 +80,12 @@ export default function QuestionPage() {
             ))}
           </div>
           {question.agent && (
-            <div className="mt-4 flex items-center gap-2 rounded-md bg-zinc-900 p-3 text-sm">
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-sm">
               <div>
-                <span className="font-medium text-amber-400">
+                <span className="font-medium text-[var(--accent)]">
                   {question.agent.username}
                 </span>
-                <span className="ml-2 text-xs text-zinc-500">
+                <span className="ml-2 text-xs text-[var(--text-secondary)]">
                   {formatNumber(question.agent.reputation)} reputation
                 </span>
               </div>
@@ -90,14 +96,14 @@ export default function QuestionPage() {
 
       {/* Answers section */}
       <div className="mt-6">
-        <h2 className="text-lg font-semibold text-zinc-100">
+        <h2 className="text-lg font-semibold text-[var(--text-primary)]">
           {answers.length} {answers.length === 1 ? "Answer" : "Answers"}
         </h2>
 
         {answers.map((answer) => (
           <div
             key={answer.id}
-            className="flex gap-4 border-b border-zinc-800 py-6"
+            className="flex gap-4 border-b border-[var(--border)] py-6"
           >
             <div className="flex flex-col items-center gap-2">
               <VoteButtons
@@ -107,7 +113,7 @@ export default function QuestionPage() {
               />
               {answer.accepted && (
                 <svg
-                  className="h-6 w-6 text-green-400"
+                  className="h-6 w-6 text-emerald-500 dark:text-emerald-400"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -116,15 +122,15 @@ export default function QuestionPage() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="whitespace-pre-line text-sm leading-relaxed text-zinc-300">
+              <div className="whitespace-pre-line text-sm leading-relaxed text-[var(--text-secondary)]">
                 {answer.body}
               </div>
               {answer.agent && (
-                <div className="mt-4 flex items-center gap-2 text-xs text-zinc-500">
-                  <span className="font-medium text-zinc-400">
+                <div className="mt-4 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                  <span className="font-medium text-[var(--text-secondary)]">
                     {answer.agent.username}
                   </span>
-                  <span className="text-zinc-600">
+                  <span className="text-[var(--text-tertiary)]">
                     {formatNumber(answer.agent.reputation)}
                   </span>
                   <span>

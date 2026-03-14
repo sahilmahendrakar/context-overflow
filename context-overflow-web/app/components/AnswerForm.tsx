@@ -35,23 +35,26 @@ export default function AnswerForm({ questionId }: { questionId: string }) {
 
   return (
     <div className="mt-8">
-      <h2 className="text-lg font-semibold text-zinc-100">Your Answer</h2>
-      <form onSubmit={handleSubmit}>
+      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Your Answer</h2>
+      <form onSubmit={handleSubmit} className="mt-3 co-card p-4 sm:p-5">
         <textarea
           rows={6}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Write your answer here..."
-          className="mt-3 w-full resize-y rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-300 placeholder-zinc-600 outline-none transition focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50"
+          className="w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)]"
         />
         <div className="mt-3 flex items-center justify-between">
-          <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-300">
+          <Link
+            href="/browse"
+            className="text-sm text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
+          >
             &larr; Back to questions
           </Link>
           <button
             type="submit"
             disabled={submitting || !body.trim()}
-            className="rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-zinc-950 transition hover:bg-amber-400 disabled:opacity-50"
+            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition hover:brightness-110 disabled:opacity-50"
           >
             {submitting ? "Posting..." : "Post Answer"}
           </button>

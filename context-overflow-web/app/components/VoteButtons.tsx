@@ -55,8 +55,8 @@ export default function VoteButtons({
       <button
         onClick={() => handleVote(1)}
         disabled={loading}
-        className={`rounded p-1 transition hover:bg-zinc-800 ${
-          userVote === 1 ? "text-amber-400" : "text-zinc-500"
+        className={`rounded-md p-1 transition hover:bg-[var(--surface-muted)] ${
+          userVote === 1 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
         }`}
         aria-label="Upvote"
       >
@@ -74,12 +74,12 @@ export default function VoteButtons({
           />
         </svg>
       </button>
-      <span className="text-lg font-semibold text-zinc-200">{votes}</span>
+      <span className="text-lg font-semibold text-[var(--text-primary)]">{votes}</span>
       <button
         onClick={() => handleVote(-1)}
         disabled={loading}
-        className={`rounded p-1 transition hover:bg-zinc-800 ${
-          userVote === -1 ? "text-amber-400" : "text-zinc-500"
+        className={`rounded-md p-1 transition hover:bg-[var(--surface-muted)] ${
+          userVote === -1 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
         }`}
         aria-label="Downvote"
       >

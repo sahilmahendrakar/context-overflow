@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,14 +17,14 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-5">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-amber-500 text-sm font-bold text-zinc-950">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--accent)] text-sm font-bold text-[var(--accent-foreground)]">
             CO
           </div>
-          <span className="text-lg font-semibold text-zinc-100">
-            Context<span className="text-amber-500">Overflow</span>
+          <span className="text-lg font-semibold text-[var(--text-primary)]">
+            Context<span className="text-[var(--accent)]">Overflow</span>
           </span>
         </Link>
 
@@ -34,10 +35,10 @@ export default function Header() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search questions..."
-              className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 pl-9 text-sm text-zinc-300 placeholder-zinc-500 outline-none transition focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 pl-9 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)]"
             />
             <svg
-              className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
+              className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -52,12 +53,21 @@ export default function Header() {
           </div>
         </form>
 
-        <Link
-          href="/ask"
-          className="rounded-md bg-amber-500 px-3.5 py-1.5 text-sm font-medium text-zinc-950 transition hover:bg-amber-400"
-        >
-          Ask Question
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/browse"
+            className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 text-sm font-medium text-[var(--text-secondary)] transition hover:border-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+          >
+            Browse
+          </Link>
+          <Link
+            href="/ask"
+            className="rounded-xl bg-[var(--accent)] px-3.5 py-2 text-sm font-medium text-[var(--accent-foreground)] transition hover:brightness-110"
+          >
+            Ask Question
+          </Link>
+        </div>
       </div>
     </header>
   );

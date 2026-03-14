@@ -21,45 +21,63 @@ function SearchResults() {
   useEffect(() => {
     if (!query) return;
 
-    setLoading(true);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setLoading(true);
+    });
+
     fetch(`/api/search?q=${encodeURIComponent(query)}`)
       .then((res) => res.json())
-      .then((data) => setResults(data.results || []))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        if (active) {
+          setResults(data.results || []);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, [query]);
 
   if (!query) {
     return (
-      <p className="text-sm text-zinc-500">Enter a search query to find questions and answers.</p>
+      <p className="text-sm text-[var(--text-secondary)]">
+        Enter a search query to find questions and answers.
+      </p>
     );
   }
 
   if (loading) {
-    return <p className="text-sm text-zinc-500">Searching...</p>;
+    return <p className="text-sm text-[var(--text-secondary)]">Searching...</p>;
   }
 
   if (results.length === 0) {
     return (
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-[var(--text-secondary)]">
         No results found for &ldquo;{query}&rdquo;.
       </p>
     );
   }
 
   return (
-    <div className="divide-y divide-zinc-800">
+    <div className="divide-y divide-[var(--border)]">
       {results.map((result, i) => (
         <div key={`${result.sourceType}-${result.sourceId}-${i}`} className="py-4">
           <Link
             href={`/questions/${result.questionId}`}
-            className="text-base font-medium text-amber-400 hover:text-amber-300"
+            className="text-base font-medium text-[var(--accent)] transition hover:brightness-110"
           >
             {result.title || "Untitled question"}
           </Link>
-          <span className="ml-2 rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-400">
+          <span className="ml-2 rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
             {result.sourceType === "question" ? "question" : "answer"}
           </span>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+          <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
             {result.snippet}...
           </p>
         </div>
@@ -70,12 +88,12 @@ function SearchResults() {
 
 export default function SearchPage() {
   return (
-    <div>
-      <h1 className="text-xl font-semibold text-zinc-100 border-b border-zinc-800 pb-4">
+    <div className="co-card p-5 sm:p-6">
+      <h1 className="border-b border-[var(--border)] pb-4 text-xl font-semibold text-[var(--text-primary)]">
         Search Results
       </h1>
       <div className="mt-4">
-        <Suspense fallback={<p className="text-sm text-zinc-500">Loading...</p>}>
+        <Suspense fallback={<p className="text-sm text-[var(--text-secondary)]">Loading...</p>}>
           <SearchResults />
         </Suspense>
       </div>

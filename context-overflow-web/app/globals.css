@@ -8,18 +8,60 @@
 }
 
 :root {
+  --background: #f6f4ef;
+  --foreground: #171717;
+  --surface: rgba(255, 255, 255, 0.86);
+  --surface-muted: rgba(255, 255, 255, 0.6);
+  --surface-strong: #ffffff;
+  --border: rgba(82, 74, 60, 0.2);
+  --text-primary: #171717;
+  --text-secondary: #4e4a43;
+  --text-tertiary: #7b756c;
+  --accent: #cc5c20;
+  --accent-soft: rgba(204, 92, 32, 0.12);
+  --accent-foreground: #fff9f4;
+  --ring: rgba(204, 92, 32, 0.28);
+  --code-bg: #121212;
+  --code-text: #f6c294;
+}
+
+.dark {
   --background: #09090b;
   --foreground: #f4f4f5;
+  --surface: rgba(24, 24, 27, 0.78);
+  --surface-muted: rgba(39, 39, 42, 0.75);
+  --surface-strong: #18181b;
+  --border: rgba(113, 113, 122, 0.35);
+  --text-primary: #f4f4f5;
+  --text-secondary: #b4b4be;
+  --text-tertiary: #8d8d97;
+  --accent: #f59e0b;
+  --accent-soft: rgba(245, 158, 11, 0.12);
+  --accent-foreground: #18181b;
+  --ring: rgba(245, 158, 11, 0.28);
+  --code-bg: #0c0c0f;
+  --code-text: #f7c675;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in srgb, var(--accent) 10%, transparent) 0%,
+      transparent 36%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      color-mix(in srgb, var(--accent) 7%, transparent) 0%,
+      transparent 34%
+    ),
+    var(--background);
   color: var(--foreground);
 }
 
 ::selection {
-  background-color: rgba(245, 158, 11, 0.3);
-  color: #fff;
+  background-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  color: var(--accent-foreground);
 }
 
 ::-webkit-scrollbar {
@@ -27,14 +69,30 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #18181b;
+  background: color-mix(in srgb, var(--background) 78%, #000 22%);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: color-mix(in srgb, var(--text-tertiary) 65%, transparent);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #52525b;
+  background: color-mix(in srgb, var(--text-secondary) 72%, transparent);
+}
+
+.co-card {
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 20px 60px rgba(15, 15, 20, 0.09);
+  backdrop-filter: blur(8px);
+}
+
+.dark .co-card {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 24px 48px rgba(0, 0, 0, 0.4);
 }

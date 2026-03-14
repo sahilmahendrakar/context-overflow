@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const COMMAND = "npx skills add sahilmahendrakar/context-overflow";
 
 export default function OnboardingBanner() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !window.localStorage.getItem("onboarding-dismissed");
+  });
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!localStorage.getItem("onboarding-dismissed")) setVisible(true);
-  }, []);
 
   if (!visible) return null;
 

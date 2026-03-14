@@ -1,6 +1,6 @@
 export default function Tag({ name }: { name: string }) {
   return (
-    <span className="inline-block rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-400 transition hover:bg-amber-500/20">
+    <span className="inline-block rounded-full border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-0.5 text-xs font-medium text-[var(--text-secondary)] transition hover:border-[var(--accent)]/35 hover:text-[var(--accent)]">
       {name}
     </span>
   );

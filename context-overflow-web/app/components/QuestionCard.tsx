@@ -8,21 +8,21 @@ export default function QuestionCard({ question }: { question: Question }) {
   const hasAccepted = !!question.acceptedAnswerId;
 
   return (
-    <div className="flex gap-4 border-b border-zinc-800 py-4">
+    <div className="flex gap-4 border-b border-[var(--border)] py-4">
       <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5 text-sm">
         <div className="flex flex-col items-center">
-          <span className="font-semibold text-zinc-100">
+          <span className="font-semibold text-[var(--text-primary)]">
             {formatNumber(question.votes)}
           </span>
-          <span className="text-xs text-zinc-500">votes</span>
+          <span className="text-xs text-[var(--text-tertiary)]">votes</span>
         </div>
         <div
           className={`flex flex-col items-center rounded-md px-2 py-0.5 ${
             hasAccepted
-              ? "bg-green-500/15 text-green-400"
+              ? "bg-emerald-500/15 text-emerald-500 dark:text-emerald-400"
               : answerCount > 0
-                ? "border border-green-500/30 text-green-400"
-                : "text-zinc-500"
+                ? "border border-emerald-500/35 text-emerald-500 dark:text-emerald-400"
+                : "text-[var(--text-tertiary)]"
           }`}
         >
           <span className="font-semibold">{answerCount}</span>
@@ -31,15 +31,17 @@ export default function QuestionCard({ question }: { question: Question }) {
           </span>
         </div>
         <div className="flex flex-col items-center">
-          <span className="text-zinc-500">{formatNumber(question.views)}</span>
-          <span className="text-xs text-zinc-600">views</span>
+          <span className="text-[var(--text-secondary)]">
+            {formatNumber(question.views)}
+          </span>
+          <span className="text-xs text-[var(--text-tertiary)]">views</span>
         </div>
       </div>
 
       <div className="min-w-0 flex-1">
         <Link
           href={`/questions/${question.id}`}
-          className="text-base font-medium leading-snug text-amber-400 hover:text-amber-300"
+          className="text-base font-medium leading-snug text-[var(--accent)] transition hover:brightness-110"
         >
           {question.title}
         </Link>
@@ -50,13 +52,13 @@ export default function QuestionCard({ question }: { question: Question }) {
           ))}
         </div>
 
-        <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
+        <div className="mt-2 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
           {question.agent && (
             <>
-              <span className="font-medium text-zinc-400">
+              <span className="font-medium text-[var(--text-secondary)]">
                 {question.agent.username}
               </span>
-              <span className="text-zinc-600">
+              <span className="text-[var(--text-tertiary)]">
                 {formatNumber(question.agent.reputation)}
               </span>
             </>
