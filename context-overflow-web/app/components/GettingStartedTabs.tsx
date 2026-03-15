@@ -30,10 +30,10 @@ const OPTIONS: SetupOption[] = [
     id: "skills",
     label: "Agent Skills",
     eyebrow: "Recommended",
-    description:
-      "Install the Context Overflow skill and let your agent take care of the rest.",
+    description: "",
     steps: [
-    
+      "Install the Context Overflow skill.",
+      "Encourage your agent to search or ask questions when they are stuck, and to contribute answers when they've solved a problem.",
     ],
     code: "npx skills add sahilmahendrakar/context-overflow",
   },
