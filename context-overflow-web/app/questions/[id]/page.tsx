@@ -1,82 +1,28 @@
-"use client";
-
-import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import type { Question } from "@/lib/data";
 import { formatRelativeTime, formatNumber } from "@/lib/data";
+import { getQuestion } from "@/lib/services/questions";
 import Tag from "@/app/components/Tag";
 import VoteButtons from "@/app/components/VoteButtons";
 import AnswerForm from "@/app/components/AnswerForm";
-import { useAuth } from "@/app/context/AuthContext";
 import MarkdownContent from "@/app/components/MarkdownContent";
 
-export default function QuestionPage() {
-  const { id } = useParams<{ id: string }>();
-  const [question, setQuestion] = useState<Question | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [userVotes, setUserVotes] = useState<Record<string, 1 | -1>>({});
-  const { user, getIdToken } = useAuth();
+export default async function QuestionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const question = (await getQuestion(id)) as Question | null;
 
-  const refetch = useCallback(() => {
-    if (!id) return;
-    fetch(`/api/questions/${id}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => data && setQuestion(data))
-      .catch(() => setNotFound(true));
-  }, [id]);
-
-  useEffect(() => {
-    fetch(`/api/questions/${id}`)
-      .then((res) => {
-        if (!res.ok) {
-          setNotFound(true);
-          return null;
-        }
-        return res.json();
-      })
-      .then(setQuestion)
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  useEffect(() => {
-    if (!user || !id) return;
-    getIdToken().then((token) => {
-      if (!token) return;
-      fetch(`/api/questions/${id}/user-votes`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((res) => (res.ok ? res.json() : {}))
-        .then(setUserVotes);
-    });
-  }, [user, id, getIdToken]);
-
-  if (loading) {
-    return (
-      <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
-        Loading...
-      </p>
-    );
-  }
-
-  if (notFound || !question) {
-    return (
-      <div className="py-8 text-center">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-          Question not found
-        </h1>
-        <p className="mt-2 text-sm text-[var(--text-secondary)]">
-          The question you&apos;re looking for doesn&apos;t exist.
-        </p>
-      </div>
-    );
+  if (!question) {
+    notFound();
   }
 
   const answers = question.answers || [];
 
   return (
     <div className="co-card p-5 sm:p-6">
-      {/* Question header */}
       <div className="border-b border-[var(--border)] pb-4">
         <h1 className="text-2xl font-semibold leading-tight text-[var(--text-primary)]">
           {question.title}
@@ -87,11 +33,9 @@ export default function QuestionPage() {
         </div>
       </div>
 
-      {/* Question body */}
       <div className="flex gap-4 border-b border-[var(--border)] py-6">
         <VoteButtons
           initialVotes={question.votes}
-          initialUserVote={userVotes[question.id] ?? 0}
           targetId={question.id}
           targetType="question"
         />
@@ -117,7 +61,6 @@ export default function QuestionPage() {
         </div>
       </div>
 
-      {/* Answers section */}
       <div className="mt-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">
           {answers.length} {answers.length === 1 ? "Answer" : "Answers"}
@@ -131,7 +74,6 @@ export default function QuestionPage() {
             <div className="flex flex-col items-center gap-2">
               <VoteButtons
                 initialVotes={answer.votes}
-                initialUserVote={userVotes[answer.id] ?? 0}
                 targetId={answer.id}
                 targetType="answer"
               />
@@ -165,8 +107,7 @@ export default function QuestionPage() {
         ))}
       </div>
 
-      {/* Post answer form */}
-      <AnswerForm questionId={question.id} onAnswerPosted={refetch} />
+      <AnswerForm questionId={question.id} />
     </div>
   );
 }

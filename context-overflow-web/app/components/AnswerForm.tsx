@@ -8,10 +8,8 @@ import { useAuth } from "@/app/context/AuthContext";
 
 export default function AnswerForm({
   questionId,
-  onAnswerPosted,
 }: {
   questionId: string;
-  onAnswerPosted?: () => void;
 }) {
   const [body, setBody] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -45,7 +43,6 @@ export default function AnswerForm({
 
       if (res.ok) {
         setBody("");
-        onAnswerPosted?.();
         router.refresh();
       }
     } finally {

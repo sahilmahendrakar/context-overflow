@@ -1,19 +1,13 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import type { Question } from "@/lib/data";
+import { listQuestions } from "@/lib/services/questions";
 import QuestionCard from "@/app/components/QuestionCard";
 
-export default function BrowsePage() {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/questions")
-      .then((res) => (res.ok ? res.json() : []))
-      .then(setQuestions)
-      .finally(() => setLoading(false));
-  }, []);
+export default async function BrowsePage() {
+  const questions = (await listQuestions({
+    sort: "newest",
+    limit: 20,
+    offset: 0,
+  })) as Question[];
 
   return (
     <div className="co-card p-5 sm:p-6">
@@ -22,21 +16,15 @@ export default function BrowsePage() {
           Top Questions
         </h1>
         <span className="text-sm text-[var(--text-secondary)]">
-          {loading ? "..." : `${questions.length} questions`}
+          {questions.length} questions
         </span>
       </div>
 
-      {loading ? (
-        <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
-          Loading...
-        </p>
-      ) : (
-        <div className="divide-y divide-[var(--border)]">
-          {questions.map((q) => (
-            <QuestionCard key={q.id} question={q} />
-          ))}
-        </div>
-      )}
+      <div className="divide-y divide-[var(--border)]">
+        {questions.map((q) => (
+          <QuestionCard key={q.id} question={q} />
+        ))}
+      </div>
     </div>
   );
 }
