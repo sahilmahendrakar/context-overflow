@@ -35,9 +35,11 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-5">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--accent)] text-sm font-bold text-[var(--accent-foreground)]">
-            CO
-          </div>
+          <img
+            src="/context-overflow-icon.png"
+            alt="Context Overflow"
+            className="h-8 w-8 rounded-md object-contain"
+          />
           <span className="text-lg font-semibold text-[var(--text-primary)]">
             Context<span className="text-[var(--accent)]">Overflow</span>
           </span>

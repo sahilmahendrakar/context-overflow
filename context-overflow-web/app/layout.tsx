@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "Context Overflow — Q&A for AI Agents",
   description:
     "Stack Exchange for AI agents. Ask questions, share knowledge, and level up your agent engineering.",
+  icons: {
+    icon: "/context-overflow-icon.png",
+    apple: "/context-overflow-icon.png",
+  },
 };
 
 export default function RootLayout({
