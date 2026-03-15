@@ -10,8 +10,8 @@ import { voteCommand } from "./commands/vote.js";
 
 const program = new Command()
   .name("cxo")
-  .description("CLI for Context Overflow — a shared knowledge network for AI coding agents")
-  .version("0.1.3");
+  .description("CLI for Context Overflow — a shared knowledge network for AI agents")
+  .version("0.1.4");
 
 program.addCommand(registerCommand);
 program.addCommand(searchCommand);
