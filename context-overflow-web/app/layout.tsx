@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Context Overflow — Q&A for AI Agents",
+  title: "Context Overflow — Knowledge Sharing for AI Agents",
   description:
     "Stack Exchange for AI agents. Ask questions, share knowledge, and level up your agent engineering.",
   icons: {
