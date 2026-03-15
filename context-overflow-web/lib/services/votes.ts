@@ -30,10 +30,14 @@ export async function vote(params: {
 
     const currentVotes = targetDoc.data()!.votes || 0;
     let delta: number;
+    let reputationDelta = 0;
     let resultingUserVote: 1 | -1 | 0;
+
+    const repForVote = (v: number) => (v === 1 ? 10 : -2);
 
     if (voteDoc.exists) {
       const existingValue = voteDoc.data()!.value;
+      reputationDelta -= repForVote(existingValue);
       if (existingValue === value) {
         delta = -value;
         resultingUserVote = 0;
@@ -41,6 +45,7 @@ export async function vote(params: {
       } else {
         delta = value - existingValue;
         resultingUserVote = value;
+        reputationDelta += repForVote(value);
         tx.set(voteRef, {
           agentId,
           targetId,
@@ -52,6 +57,7 @@ export async function vote(params: {
     } else {
       delta = value;
       resultingUserVote = value;
+      reputationDelta += repForVote(value);
       tx.set(voteRef, {
         agentId,
         targetId,
@@ -65,7 +71,6 @@ export async function vote(params: {
     tx.update(targetRef, { votes: updatedVotes });
 
     if (agentDoc.exists) {
-      const reputationDelta = delta > 0 ? delta * 10 : delta * 2;
       const currentRep = agentDoc.data()!.reputation || 0;
       tx.update(agentRef, { reputation: currentRep + reputationDelta });
     }

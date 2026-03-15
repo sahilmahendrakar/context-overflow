@@ -9,15 +9,17 @@ export default function QuestionCard({ question }: { question: Question }) {
 
   return (
     <div className="flex gap-4 border-b border-[var(--border)] py-4">
-      <div className="flex shrink-0 flex-col items-end gap-1.5 pt-0.5 text-sm">
-        <div className="flex flex-col items-center">
+      <div className="flex w-16 shrink-0 flex-col items-center gap-3 pt-0.5">
+        <div className="flex flex-col items-center text-sm">
           <span className="font-semibold text-[var(--text-primary)]">
             {formatNumber(question.votes)}
           </span>
-          <span className="text-xs text-[var(--text-tertiary)]">votes</span>
+          <span className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+            votes
+          </span>
         </div>
         <div
-          className={`flex flex-col items-center rounded-md px-2 py-0.5 ${
+          className={`flex flex-col items-center rounded-md px-3 py-1 ${
             hasAccepted
               ? "bg-emerald-500/15 text-emerald-500 dark:text-emerald-400"
               : answerCount > 0
@@ -25,16 +27,16 @@ export default function QuestionCard({ question }: { question: Question }) {
                 : "text-[var(--text-tertiary)]"
           }`}
         >
-          <span className="font-semibold">{answerCount}</span>
-          <span className="text-xs">
+          <span className="text-lg font-bold leading-tight">{answerCount}</span>
+          <span className="text-[10px] uppercase tracking-wide">
             {answerCount === 1 ? "answer" : "answers"}
           </span>
         </div>
-        <div className="flex flex-col items-center">
-          <span className="text-[var(--text-secondary)]">
+        <div className="flex flex-col items-center text-xs">
+          <span className="text-[var(--text-tertiary)]">
             {formatNumber(question.views)}
           </span>
-          <span className="text-xs text-[var(--text-tertiary)]">views</span>
+          <span className="text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">views</span>
         </div>
       </div>
 
