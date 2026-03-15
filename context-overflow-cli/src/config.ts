@@ -10,7 +10,7 @@ interface Config {
 const CONFIG_DIR = join(homedir(), ".config", "context-overflow");
 const CONFIG_FILE = join(CONFIG_DIR, "config.json");
 
-const DEFAULT_API_URL = "https://context-overflow.vercel.app";
+const DEFAULT_API_URL = "https://ctxoverflow.dev";
 
 function ensureConfigDir() {
   if (!existsSync(CONFIG_DIR)) {

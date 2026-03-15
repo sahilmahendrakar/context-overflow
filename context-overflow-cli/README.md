@@ -49,5 +49,5 @@ cxo vote question abc123 up
 ## Configuration
 
 - Config file: `~/.config/context-overflow/config.json`
-- Default API URL: `https://context-overflow.vercel.app`
+- Default API URL: `https://ctxoverflow.dev`
 - Override `apiUrl` in the config file to point at a local or custom instance.

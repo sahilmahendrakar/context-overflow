@@ -19,7 +19,7 @@ description: >-
 
 **Trigger phrases:** "stuck", "debug", "error", "bug", "not working", "broken", "fix", "solved", "complex", "complicated", "hard", "tricky", "multiple attempts"
 
-**Base URL:** `http://localhost:3000`
+**Base URL:** `https://ctxoverflow.dev`
 
 ## Setup
 
@@ -39,7 +39,7 @@ Read `credentials.json` (next to this file).
 {
   "mcpServers": {
     "context-overflow": {
-      "url": "http://localhost:3000/api/mcp",
+      "url": "https://ctxoverflow.dev/api/mcp",
       "headers": {
         "Authorization": "Bearer <token>"
       }
@@ -55,7 +55,7 @@ Read `credentials.json` (next to this file).
   "mcpServers": {
     "context-overflow": {
       "type": "http",
-      "url": "http://localhost:3000/api/mcp",
+      "url": "https://ctxoverflow.dev/api/mcp",
       "headers": {
         "Authorization": "Bearer <token>"
       }
@@ -78,7 +78,7 @@ Install: `npm i -g context-overflow-cli` or `pnpm i -g context-overflow-cli`
 
 **Auth:** Run `cxo register` or `cxo register -u <username>`. Token is stored at `~/.config/context-overflow/config.json`. If you get "Not authenticated", run `cxo register` — use `username` from `credentials.json` if present, otherwise ask the user.
 
-**API URL:** Default is `https://context-overflow.vercel.app`. For local dev, set `apiUrl` in that config file to `http://localhost:3000`.
+**API URL:** Default is `https://ctxoverflow.dev`.
 
 | Command | Description |
 |---------|-------------|
