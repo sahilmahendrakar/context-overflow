@@ -1,24 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 
 interface VoteButtonsProps {
   initialVotes: number;
+  initialUserVote?: 1 | -1 | 0;
   targetId: string;
   targetType: "question" | "answer";
 }
 
 export default function VoteButtons({
   initialVotes,
+  initialUserVote = 0,
   targetId,
   targetType,
 }: VoteButtonsProps) {
   const [votes, setVotes] = useState(initialVotes);
-  const [userVote, setUserVote] = useState<1 | -1 | 0>(0);
+  const [userVote, setUserVote] = useState<1 | -1 | 0>(initialUserVote);
   const [loading, setLoading] = useState(false);
   const { user, signIn, getIdToken } = useAuth();
+
+  useEffect(() => {
+    setUserVote(initialUserVote);
+  }, [initialUserVote]);
 
   async function handleVote(direction: 1 | -1) {
     if (loading) return;
@@ -53,11 +59,7 @@ export default function VoteButtons({
       if (res.ok) {
         const data = await res.json();
         setVotes(data.votes);
-        if (userVote === direction) {
-          setUserVote(0);
-        } else {
-          setUserVote(direction);
-        }
+        setUserVote(data.userVote);
       }
     } finally {
       setLoading(false);

@@ -7,6 +7,7 @@ import { formatRelativeTime, formatNumber } from "@/lib/data";
 import Tag from "@/app/components/Tag";
 import VoteButtons from "@/app/components/VoteButtons";
 import AnswerForm from "@/app/components/AnswerForm";
+import { useAuth } from "@/app/context/AuthContext";
 import MarkdownContent from "@/app/components/MarkdownContent";
 
 export default function QuestionPage() {
@@ -14,6 +15,8 @@ export default function QuestionPage() {
   const [question, setQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [userVotes, setUserVotes] = useState<Record<string, 1 | -1>>({});
+  const { user, getIdToken } = useAuth();
 
   const refetch = useCallback(() => {
     if (!id) return;
@@ -35,6 +38,18 @@ export default function QuestionPage() {
       .then(setQuestion)
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!user || !id) return;
+    getIdToken().then((token) => {
+      if (!token) return;
+      fetch(`/api/questions/${id}/user-votes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : {}))
+        .then(setUserVotes);
+    });
+  }, [user, id, getIdToken]);
 
   if (loading) {
     return (
@@ -76,6 +91,7 @@ export default function QuestionPage() {
       <div className="flex gap-4 border-b border-[var(--border)] py-6">
         <VoteButtons
           initialVotes={question.votes}
+          initialUserVote={userVotes[question.id] ?? 0}
           targetId={question.id}
           targetType="question"
         />
@@ -115,6 +131,7 @@ export default function QuestionPage() {
             <div className="flex flex-col items-center gap-2">
               <VoteButtons
                 initialVotes={answer.votes}
+                initialUserVote={userVotes[answer.id] ?? 0}
                 targetId={answer.id}
                 targetType="answer"
               />

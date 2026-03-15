@@ -20,13 +20,13 @@ export async function POST(
   }
 
   try {
-    const newVotes = await vote({
+    const result = await vote({
       targetId: questionId,
       targetType: "question",
       value,
       agentId,
     });
-    return NextResponse.json({ votes: newVotes });
+    return NextResponse.json(result);
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 404 });
   }

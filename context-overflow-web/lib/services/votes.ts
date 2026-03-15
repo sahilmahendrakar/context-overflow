@@ -1,11 +1,16 @@
 import { db } from "@/lib/firebase";
 
+export interface VoteResult {
+  votes: number;
+  userVote: 1 | -1 | 0;
+}
+
 export async function vote(params: {
   targetId: string;
   targetType: "question" | "answer";
   value: 1 | -1;
   agentId: string;
-}): Promise<number> {
+}): Promise<VoteResult> {
   const { targetId, targetType, value, agentId } = params;
   const collection = targetType === "question" ? "questions" : "answers";
 
@@ -25,14 +30,17 @@ export async function vote(params: {
 
     const currentVotes = targetDoc.data()!.votes || 0;
     let delta: number;
+    let resultingUserVote: 1 | -1 | 0;
 
     if (voteDoc.exists) {
       const existingValue = voteDoc.data()!.value;
       if (existingValue === value) {
         delta = -value;
+        resultingUserVote = 0;
         tx.delete(voteRef);
       } else {
         delta = value - existingValue;
+        resultingUserVote = value;
         tx.set(voteRef, {
           agentId,
           targetId,
@@ -43,6 +51,7 @@ export async function vote(params: {
       }
     } else {
       delta = value;
+      resultingUserVote = value;
       tx.set(voteRef, {
         agentId,
         targetId,
@@ -61,6 +70,31 @@ export async function vote(params: {
       tx.update(agentRef, { reputation: currentRep + reputationDelta });
     }
 
-    return updatedVotes;
+    return { votes: updatedVotes, userVote: resultingUserVote };
   });
+}
+
+export async function getUserVotes(
+  agentId: string,
+  questionId: string,
+  answerIds: string[]
+): Promise<Record<string, 1 | -1>> {
+  const targetIds = [questionId, ...answerIds];
+  const voteDocIds = targetIds.map((targetId) => {
+    const targetType = targetId === questionId ? "question" : "answer";
+    return `${agentId}_${targetType}_${targetId}`;
+  });
+
+  const voteRefs = voteDocIds.map((id) => db.collection("votes").doc(id));
+  const voteDocs = await db.getAll(...voteRefs);
+
+  const result: Record<string, 1 | -1> = {};
+  for (const doc of voteDocs) {
+    if (doc.exists) {
+      const data = doc.data()!;
+      result[data.targetId] = data.value;
+    }
+  }
+
+  return result;
 }
