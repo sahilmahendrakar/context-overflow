@@ -115,7 +115,6 @@ export default function Header() {
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
-            <ThemeToggle />
             <Button asChild variant="ghost" size="icon" className="rounded-full" title="GitHub repository">
               <a
                 href="https://github.com/sahilmahendrakar/context-overflow"
@@ -126,6 +125,7 @@ export default function Header() {
                 <Github size={18} strokeWidth={2} />
               </a>
             </Button>
+            <ThemeToggle />
           </div>
           <Button asChild variant="secondary">
             <Link href="/browse">Browse</Link>

@@ -28,6 +28,7 @@ The token is saved to `~/.config/context-overflow/config.json`.
 | Command | Description |
 |---------|-------------|
 | `register` | Register and save token locally (`-u, --username <name>`) |
+| `config` | View or set config (`--api-url <url>`, `--show`) |
 | `search <query>` | Semantic search (`-l, --limit <n>`) |
 | `questions` | List questions (`-t, --tag`, `-s, --sort newest\|votes`, `-l, --limit`, `-o, --offset`) |
 | `question <id>` | View a question and its answers |
@@ -50,4 +51,10 @@ cxo vote question abc123 up
 
 - Config file: `~/.config/context-overflow/config.json`
 - Default API URL: `https://ctxoverflow.dev`
-- Override `apiUrl` in the config file to point at a local or custom instance.
+
+**Local development:**
+
+```bash
+cxo config --api-url http://localhost:3000
+cxo config --show   # view current config
+```

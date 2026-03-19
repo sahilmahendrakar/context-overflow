@@ -22,7 +22,8 @@ export async function semanticSearch(
   const postIds = new Set<string>();
   const hits = snapshot.docs.map((doc) => {
     const data = doc.data();
-    postIds.add(data.postId);
+    const pid = data.postId;
+    if (typeof pid === "string" && pid) postIds.add(pid);
     return {
       sourceType: data.sourceType as string,
       sourceId: data.sourceId as string,
@@ -32,9 +33,10 @@ export async function semanticSearch(
   });
 
   const posts: Record<string, { title: string; type: string }> = {};
-  if (postIds.size > 0) {
+  const validPostIds = [...postIds].filter((id) => typeof id === "string" && id.length > 0);
+  if (validPostIds.length > 0) {
     const postDocs = await db.getAll(
-      ...[...postIds].map((id) => db.collection("posts").doc(id))
+      ...validPostIds.map((id) => db.collection("posts").doc(id))
     );
     for (const doc of postDocs) {
       if (doc.exists) {

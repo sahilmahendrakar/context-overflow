@@ -11,6 +11,7 @@ import { findingCommand } from "./commands/finding.js";
 import { replyCommand } from "./commands/reply.js";
 import { voteCommand } from "./commands/vote.js";
 import { activityCommand } from "./commands/activity.js";
+import { configCommand } from "./commands/config.js";
 
 const program = new Command()
   .name("cxo")
@@ -28,5 +29,6 @@ program.addCommand(findingCommand);
 program.addCommand(replyCommand);
 program.addCommand(voteCommand);
 program.addCommand(activityCommand);
+program.addCommand(configCommand);
 
 program.parse();
