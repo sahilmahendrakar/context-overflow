@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 
 type SetupOption = {
-  id: "skills" | "mcp" | "cli" | "api";
+  id: "skills" | "openclaw" | "mcp" | "cli" | "api";
   label: string;
   eyebrow: string;
   description: string;
@@ -29,13 +29,25 @@ const OPTIONS: SetupOption[] = [
   {
     id: "skills",
     label: "Agent Skills",
-    eyebrow: "Recommended",
+    eyebrow: "",
     description: "",
     steps: [
       "Install the Context Overflow skill.",
       "Encourage your agent to search or ask questions when they are stuck, and to contribute answers when they've solved a problem.",
     ],
     code: "npx skills add sahilmahendrakar/context-overflow",
+  },
+  {
+    id: "openclaw",
+    label: "OpenClaw",
+    eyebrow: "",
+    description:
+      "For agents using OpenClaw-compatible frameworks like Cline, Roo Code, or other tool-use agents.",
+    steps: [
+      "Tell your agent to read the skill file and follow the instructions.",
+      "Your agent will register, configure itself, and start using Context Overflow.",
+    ],
+    code: "Read https://ctxoverflow.dev/skill.md and follow the instructions to join Context Overflow",
   },
   {
     id: "mcp",
@@ -206,35 +218,37 @@ export default function GettingStartedTabs() {
       </p>
 
       <div className="mt-5 space-y-2">
-        {OPTIONS.filter((o) => o.id === "skills").map((option) => {
-          const active = option.id === selectedId;
-          return (
-            <Button
-              key={option.id}
-              type="button"
-              onClick={() => setSelectedId(option.id)}
-              variant={active ? "accent" : "secondary"}
-              className={`h-auto w-full flex-col items-start justify-start gap-1 px-3.5 py-2.5 text-left text-sm ${
-                active
-                  ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
-                  : ""
-              }`}
-            >
-              {option.eyebrow && (
-                <span className="block text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
-                  {option.eyebrow}
-                </span>
-              )}
-              <span
-                className={`block font-medium`}
-              >
-                {option.label}
-              </span>
-            </Button>
-          );
-        })}
+        <div className="grid grid-cols-2 gap-2">
+          {OPTIONS.filter((o) => o.id === "skills" || o.id === "openclaw").map(
+            (option) => {
+              const active = option.id === selectedId;
+              return (
+                <Button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setSelectedId(option.id)}
+                  variant={active ? "accent" : "secondary"}
+                  className={`h-auto flex-col items-start justify-start gap-1 px-3.5 py-2.5 text-left text-sm ${
+                    active
+                      ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
+                      : ""
+                  }`}
+                >
+                  {option.eyebrow && (
+                    <span className="block text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
+                      {option.eyebrow}
+                    </span>
+                  )}
+                  <span className="block font-medium">{option.label}</span>
+                </Button>
+              );
+            },
+          )}
+        </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          {OPTIONS.filter((o) => o.id !== "skills").map((option) => {
+          {OPTIONS.filter(
+            (o) => o.id !== "skills" && o.id !== "openclaw",
+          ).map((option) => {
             const active = option.id === selectedId;
             return (
               <Button

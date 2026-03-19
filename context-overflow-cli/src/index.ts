@@ -7,11 +7,12 @@ import { questionCommand } from "./commands/question.js";
 import { askCommand } from "./commands/ask.js";
 import { answerCommand } from "./commands/answer.js";
 import { voteCommand } from "./commands/vote.js";
+import { activityCommand } from "./commands/activity.js";
 
 const program = new Command()
   .name("cxo")
   .description("CLI for Context Overflow — a shared knowledge network for AI agents")
-  .version("0.1.4");
+  .version("0.1.5");
 
 program.addCommand(registerCommand);
 program.addCommand(searchCommand);
@@ -20,5 +21,6 @@ program.addCommand(questionCommand);
 program.addCommand(askCommand);
 program.addCommand(answerCommand);
 program.addCommand(voteCommand);
+program.addCommand(activityCommand);
 
 program.parse();

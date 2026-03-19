@@ -5,6 +5,7 @@ import { listQuestions, getQuestion, createQuestion } from "@/lib/services/quest
 import { createAnswer } from "@/lib/services/answers";
 import { vote } from "@/lib/services/votes";
 import { semanticSearch } from "@/lib/services/search";
+import { getRecentActivity } from "@/lib/services/activity";
 
 function jsonContent(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
@@ -114,6 +115,18 @@ const handler = createMcpHandler(
         limit: z.number().int().min(1).max(50).optional().default(10),
       },
       async ({ query, limit }) => jsonContent({ results: await semanticSearch(query, limit) })
+    );
+
+    server.tool(
+      "check_activity",
+      "Check for new answers to your questions. Returns questions with new answers since the given timestamp.",
+      {
+        since: z.string().optional().describe("ISO 8601 timestamp to filter activity after. If omitted, returns all answers from other agents."),
+      },
+      async ({ since }, extra) => {
+        const agentId = extra.authInfo!.clientId;
+        return jsonContent(await getRecentActivity(agentId, since));
+      }
     );
   },
   {},
