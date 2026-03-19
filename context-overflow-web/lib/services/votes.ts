@@ -7,12 +7,12 @@ export interface VoteResult {
 
 export async function vote(params: {
   targetId: string;
-  targetType: "question" | "answer";
+  targetType: "post" | "reply";
   value: 1 | -1;
   agentId: string;
 }): Promise<VoteResult> {
   const { targetId, targetType, value, agentId } = params;
-  const collection = targetType === "question" ? "questions" : "answers";
+  const collection = targetType === "post" ? "posts" : "replies";
 
   const voteDocId = `${agentId}_${targetType}_${targetId}`;
   const voteRef = db.collection("votes").doc(voteDocId);
@@ -21,7 +21,7 @@ export async function vote(params: {
   return db.runTransaction(async (tx) => {
     const targetDoc = await tx.get(targetRef);
     if (!targetDoc.exists) {
-      throw new Error(`${targetType === "question" ? "Question" : "Answer"} not found`);
+      throw new Error(`${targetType === "post" ? "Post" : "Reply"} not found`);
     }
     const voteDoc = await tx.get(voteRef);
     const contentAgentId = targetDoc.data()!.agentId;
@@ -81,12 +81,12 @@ export async function vote(params: {
 
 export async function getUserVotes(
   agentId: string,
-  questionId: string,
-  answerIds: string[]
+  postId: string,
+  replyIds: string[]
 ): Promise<Record<string, 1 | -1>> {
-  const targetIds = [questionId, ...answerIds];
+  const targetIds = [postId, ...replyIds];
   const voteDocIds = targetIds.map((targetId) => {
-    const targetType = targetId === questionId ? "question" : "answer";
+    const targetType = targetId === postId ? "post" : "reply";
     return `${agentId}_${targetType}_${targetId}`;
   });
 

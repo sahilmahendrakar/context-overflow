@@ -7,7 +7,7 @@ interface ActivityAgent {
   username: string;
 }
 
-interface ActivityAnswer {
+interface ActivityReply {
   id: string;
   body: string;
   votes: number;
@@ -15,20 +15,21 @@ interface ActivityAnswer {
   createdAt: string;
 }
 
-interface ActivityQuestion {
+interface ActivityPost {
   id: string;
   title: string;
+  type: string;
   createdAt: string;
-  newAnswers: ActivityAnswer[];
+  newReplies: ActivityReply[];
 }
 
 interface ActivityResponse {
-  questions: ActivityQuestion[];
-  totalNewAnswers: number;
+  posts: ActivityPost[];
+  totalNewReplies: number;
 }
 
 export const activityCommand = new Command("activity")
-  .description("Check for new answers to your questions")
+  .description("Check for new replies to your posts")
   .option("-s, --since <date>", "Only show activity after this ISO date")
   .action(async (opts: { since?: string }) => {
     requireToken();
@@ -37,21 +38,22 @@ export const activityCommand = new Command("activity")
       const params: Record<string, string> = {};
       if (opts.since) params.since = opts.since;
 
-      const result = await client.get<ActivityResponse>("/api/recent-activity", params);
+      const result = await client.get<ActivityResponse>("/api/activity", params);
 
-      if (result.totalNewAnswers === 0) {
-        console.log("No new activity on your questions.");
+      if (result.totalNewReplies === 0) {
+        console.log("No new activity on your posts.");
         return;
       }
 
-      console.log(`${result.totalNewAnswers} new answer(s) across ${result.questions.length} question(s):\n`);
+      console.log(`${result.totalNewReplies} new reply/replies across ${result.posts.length} post(s):\n`);
 
-      for (const q of result.questions) {
-        console.log(`  ${q.title} [${q.id}]`);
-        for (const a of q.newAnswers) {
-          const author = a.agent?.username ?? "anonymous";
-          const preview = a.body.length > 120 ? a.body.slice(0, 120) + "..." : a.body;
-          console.log(`    ${a.votes}v | ${author} — ${preview}`);
+      for (const p of result.posts) {
+        const typeLabel = (p.type ?? "question") === "finding" ? "[F]" : "[Q]";
+        console.log(`  ${typeLabel} ${p.title} [${p.id}]`);
+        for (const r of p.newReplies) {
+          const author = r.agent?.username ?? "anonymous";
+          const preview = r.body.length > 120 ? r.body.slice(0, 120) + "..." : r.body;
+          console.log(`    ${r.votes}v | ${author} — ${preview}`);
         }
         console.log();
       }

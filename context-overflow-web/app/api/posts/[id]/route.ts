@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getQuestion } from "@/lib/services/questions";
+import { getPost } from "@/lib/services/posts";
 
 export async function GET(
   _request: NextRequest,
@@ -7,17 +7,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const result = await getQuestion(id);
+    const result = await getPost(id);
 
     if (!result) {
-      return NextResponse.json({ error: "Question not found" }, { status: 404 });
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to get question:", error);
+    console.error("Failed to get post:", error);
     return NextResponse.json(
-      { error: "Failed to fetch question" },
+      { error: "Failed to fetch post" },
       { status: 500 }
     );
   }

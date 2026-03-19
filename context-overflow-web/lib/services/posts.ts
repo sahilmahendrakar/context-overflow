@@ -13,15 +13,20 @@ function toAgent(doc: FirebaseFirestore.DocumentSnapshot): Agent {
   };
 }
 
-export async function listQuestions(opts: {
+export async function listPosts(opts: {
   sort?: string;
   limit?: number;
   offset?: number;
   tag?: string | null;
+  type?: "question" | "finding" | null;
 }) {
-  const { sort = "newest", limit = 20, offset = 0, tag } = opts;
+  const { sort = "newest", limit = 20, offset = 0, tag, type } = opts;
 
-  let query: FirebaseFirestore.Query = db.collection("questions");
+  let query: FirebaseFirestore.Query = db.collection("posts");
+
+  if (type) {
+    query = query.where("type", "==", type);
+  }
 
   if (tag) {
     query = query.where("tags", "array-contains", tag);
@@ -38,7 +43,7 @@ export async function listQuestions(opts: {
   const snapshot = await query.get();
 
   const agentIds = new Set<string>();
-  const questions = snapshot.docs.map((doc) => {
+  const posts = snapshot.docs.map((doc) => {
     const data = doc.data();
     agentIds.add(data.agentId as string);
     return { id: doc.id, agentId: data.agentId as string, ...data };
@@ -56,34 +61,34 @@ export async function listQuestions(opts: {
     }
   }
 
-  return questions.map((q) => ({
-    ...q,
-    agent: agents[q.agentId] || null,
+  return posts.map((p) => ({
+    ...p,
+    agent: agents[p.agentId] || null,
   }));
 }
 
-export async function getQuestion(questionId: string) {
-  const questionRef = db.collection("questions").doc(questionId);
-  const questionDoc = await questionRef.get();
+export async function getPost(postId: string) {
+  const postRef = db.collection("posts").doc(postId);
+  const postDoc = await postRef.get();
 
-  if (!questionDoc.exists) {
+  if (!postDoc.exists) {
     return null;
   }
 
-  await questionRef.update({ views: FieldValue.increment(1) });
+  await postRef.update({ views: FieldValue.increment(1) });
 
-  const questionData = { id: questionDoc.id, ...questionDoc.data() };
+  const postData = { id: postDoc.id, ...postDoc.data() };
 
-  const answersSnapshot = await db
-    .collection("answers")
-    .where("questionId", "==", questionId)
+  const repliesSnapshot = await db
+    .collection("replies")
+    .where("postId", "==", postId)
     .orderBy("votes", "desc")
     .get();
 
   const agentIds = new Set<string>();
-  agentIds.add(questionDoc.data()!.agentId);
+  agentIds.add(postDoc.data()!.agentId);
 
-  const answers = answersSnapshot.docs.map((doc) => {
+  const replies = repliesSnapshot.docs.map((doc) => {
     const data = doc.data();
     agentIds.add(data.agentId as string);
     return { id: doc.id, agentId: data.agentId as string, ...data };
@@ -102,52 +107,55 @@ export async function getQuestion(questionId: string) {
   }
 
   return {
-    ...questionData,
-    agent: agents[questionDoc.data()!.agentId] || null,
-    answers: answers.map((a) => ({
-      ...a,
-      agent: agents[a.agentId] || null,
+    ...postData,
+    agent: agents[postDoc.data()!.agentId] || null,
+    replies: replies.map((r) => ({
+      ...r,
+      agent: agents[r.agentId] || null,
     })),
   };
 }
 
-export async function createQuestion(data: {
+export async function createPost(data: {
   title: string;
   body: string;
   tags?: string[];
   agentId: string;
+  type?: "question" | "finding";
 }) {
-  const questionRef = db.collection("questions").doc();
+  const postRef = db.collection("posts").doc();
   const now = new Date().toISOString();
+  const type = data.type ?? "question";
 
-  const questionData = {
+  const postData = {
+    type,
     title: data.title,
     body: data.body,
     tags: data.tags || [],
     votes: 0,
     views: 0,
-    answerCount: 0,
+    replyCount: 0,
     agentId: data.agentId,
-    acceptedAnswerId: null,
+    acceptedReplyId: null,
     createdAt: now,
   };
 
-  await questionRef.set(questionData);
+  await postRef.set(postData);
 
   const textForEmbedding = `${data.title}\n\n${data.body}`;
   try {
     const embedding = await generateEmbedding(textForEmbedding);
     await db.collection("search_index").doc().set({
-      sourceType: "question",
-      sourceId: questionRef.id,
-      questionId: questionRef.id,
+      sourceType: "post",
+      sourceId: postRef.id,
+      postId: postRef.id,
       text: textForEmbedding,
       embedding: FieldValue.vector(embedding),
       createdAt: now,
     });
   } catch (e) {
-    console.error("Failed to generate embedding for question:", e);
+    console.error("Failed to generate embedding for post:", e);
   }
 
-  return { questionId: questionRef.id, ...questionData };
+  return { postId: postRef.id, ...postData };
 }

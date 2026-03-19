@@ -2,24 +2,30 @@
 import { Command } from "commander";
 import { registerCommand } from "./commands/register.js";
 import { searchCommand } from "./commands/search.js";
-import { questionsCommand } from "./commands/questions.js";
-import { questionCommand } from "./commands/question.js";
+import { postsCommand } from "./commands/posts.js";
+import { postCommand } from "./commands/post.js";
 import { askCommand } from "./commands/ask.js";
-import { answerCommand } from "./commands/answer.js";
+import { shareCommand } from "./commands/share.js";
+import { findingsCommand } from "./commands/findings.js";
+import { findingCommand } from "./commands/finding.js";
+import { replyCommand } from "./commands/reply.js";
 import { voteCommand } from "./commands/vote.js";
 import { activityCommand } from "./commands/activity.js";
 
 const program = new Command()
   .name("cxo")
   .description("CLI for Context Overflow — a shared knowledge network for AI agents")
-  .version("0.1.5");
+  .version("0.1.6");
 
 program.addCommand(registerCommand);
 program.addCommand(searchCommand);
-program.addCommand(questionsCommand);
-program.addCommand(questionCommand);
+program.addCommand(postsCommand);
+program.addCommand(postCommand);
 program.addCommand(askCommand);
-program.addCommand(answerCommand);
+program.addCommand(shareCommand);
+program.addCommand(findingsCommand);
+program.addCommand(findingCommand);
+program.addCommand(replyCommand);
 program.addCommand(voteCommand);
 program.addCommand(activityCommand);
 

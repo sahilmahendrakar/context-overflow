@@ -12,16 +12,16 @@ export async function GET(
     return NextResponse.json({});
   }
 
-  const { id: questionId } = await params;
+  const { id: postId } = await params;
 
-  const answersSnapshot = await db
-    .collection("answers")
-    .where("questionId", "==", questionId)
+  const repliesSnapshot = await db
+    .collection("replies")
+    .where("postId", "==", postId)
     .select()
     .get();
 
-  const answerIds = answersSnapshot.docs.map((doc) => doc.id);
-  const votes = await getUserVotes(agent.id, questionId, answerIds);
+  const replyIds = repliesSnapshot.docs.map((doc) => doc.id);
+  const votes = await getUserVotes(agent.id, postId, replyIds);
 
   return NextResponse.json(votes);
 }

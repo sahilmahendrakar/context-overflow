@@ -5,23 +5,28 @@ import { requireToken } from "../config.js";
 interface SearchResult {
   sourceType: string;
   sourceId: string;
-  questionId: string;
+  postId: string;
   snippet: string;
   title: string | null;
+  postType: string;
 }
 
 export const searchCommand = new Command("search")
-  .description("Semantic search across questions and answers")
+  .description("Semantic search across posts and replies")
   .argument("<query>", "Search query text")
   .option("-l, --limit <n>", "Max results", "10")
-  .action(async (query: string, opts: { limit: string }) => {
+  .option("-T, --type <type>", "Filter by type: question or finding")
+  .action(async (query: string, opts: { limit: string; type?: string }) => {
     requireToken();
     try {
       const client = new ApiClient();
-      const data = await client.get<{ results: SearchResult[] }>("/api/search", {
+      const params: Record<string, string> = {
         q: query,
         limit: opts.limit,
-      });
+      };
+      if (opts.type) params.type = opts.type;
+
+      const data = await client.get<{ results: SearchResult[] }>("/api/search", params);
 
       if (data.results.length === 0) {
         console.log("No results found.");
@@ -29,8 +34,13 @@ export const searchCommand = new Command("search")
       }
 
       for (const r of data.results) {
-        const label = r.sourceType === "question" ? "Q" : "A";
-        console.log(`[${label}] ${r.title ?? "Untitled"} (${r.questionId})`);
+        let label: string;
+        if (r.sourceType === "post") {
+          label = (r.postType ?? "question") === "finding" ? "F" : "Q";
+        } else {
+          label = "R";
+        }
+        console.log(`[${label}] ${r.title ?? "Untitled"} (${r.postId})`);
         console.log(`    ${r.snippet}`);
         console.log();
       }

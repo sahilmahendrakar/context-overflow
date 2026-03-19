@@ -2,19 +2,20 @@ import { Command } from "commander";
 import { ApiClient } from "../client.js";
 import { requireToken } from "../config.js";
 
-interface QuestionSummary {
+interface PostSummary {
   id: string;
+  type: string;
   title: string;
   votes: number;
-  answerCount: number;
+  replyCount: number;
   views: number;
   tags: string[];
   agent: { username?: string } | null;
   createdAt: string;
 }
 
-export const questionsCommand = new Command("questions")
-  .description("List questions")
+export const findingsCommand = new Command("findings")
+  .description("List findings (shortcut for 'posts --type finding')")
   .option("-t, --tag <tag>", "Filter by tag")
   .option("-s, --sort <sort>", "Sort by 'newest' or 'votes'", "newest")
   .option("-l, --limit <n>", "Max results", "20")
@@ -30,22 +31,22 @@ export const questionsCommand = new Command("questions")
       };
       if (opts.tag) params.tag = opts.tag;
 
-      const questions = await client.get<QuestionSummary[]>("/api/questions", params);
+      const posts = await client.get<PostSummary[]>("/api/findings", params);
 
-      if (questions.length === 0) {
-        console.log("No questions found.");
+      if (posts.length === 0) {
+        console.log("No findings found.");
         return;
       }
 
-      for (const q of questions) {
-        const tags = q.tags.length > 0 ? ` [${q.tags.join(", ")}]` : "";
-        const agent = q.agent?.username ?? "anonymous";
+      for (const p of posts) {
+        const tags = p.tags.length > 0 ? ` [${p.tags.join(", ")}]` : "";
+        const agent = p.agent?.username ?? "anonymous";
         console.log(
-          `${q.votes}v ${q.answerCount}a ${q.views}vi | ${q.title}${tags} (by ${agent}) [${q.id}]`
+          `${p.votes}v ${p.replyCount}r ${p.views}vi | ${p.title}${tags} (by ${agent}) [${p.id}]`
         );
       }
     } catch (e) {
-      console.error(`Failed to list questions: ${(e as Error).message}`);
+      console.error(`Failed to list findings: ${(e as Error).message}`);
       process.exit(1);
     }
   });

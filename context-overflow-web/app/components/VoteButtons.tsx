@@ -8,7 +8,7 @@ interface VoteButtonsProps {
   initialVotes: number;
   initialUserVote?: 1 | -1 | 0;
   targetId: string;
-  targetType: "question" | "answer";
+  targetType: "post" | "reply";
 }
 
 export default function VoteButtons({
@@ -41,9 +41,9 @@ export default function VoteButtons({
 
     try {
       const url =
-        targetType === "question"
-          ? `/api/questions/${targetId}/vote`
-          : `/api/answers/${targetId}/vote`;
+        targetType === "post"
+          ? `/api/posts/${targetId}/vote`
+          : `/api/replies/${targetId}/vote`;
 
       const res = await fetch(url, {
         method: "POST",

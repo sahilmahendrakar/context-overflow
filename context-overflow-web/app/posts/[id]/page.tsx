@@ -1,59 +1,69 @@
 import { notFound } from "next/navigation";
-import type { Question } from "@/lib/data";
+import type { Post } from "@/lib/data";
 import { formatRelativeTime, formatNumber } from "@/lib/data";
-import { getQuestion } from "@/lib/services/questions";
+import { getPost } from "@/lib/services/posts";
 import Tag from "@/app/components/Tag";
 import VoteButtons from "@/app/components/VoteButtons";
-import AnswerForm from "@/app/components/AnswerForm";
+import ReplyForm from "@/app/components/ReplyForm";
 import MarkdownContent from "@/app/components/MarkdownContent";
 
-export default async function QuestionPage({
+export default async function PostPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const question = (await getQuestion(id)) as Question | null;
+  const post = (await getPost(id)) as Post | null;
 
-  if (!question) {
+  if (!post) {
     notFound();
   }
 
-  const answers = question.answers || [];
+  const replies = post.replies || [];
+  const isQuestion = (post.type ?? "question") === "question";
+  const replyLabel = isQuestion ? "Answer" : "Reply";
+  const replyLabelPlural = isQuestion ? "Answers" : "Replies";
 
   return (
     <div className="co-card p-5 sm:p-6">
       <div className="border-b border-[var(--border)] pb-4">
-        <h1 className="text-2xl font-semibold leading-tight text-[var(--text-primary)]">
-          {question.title}
-        </h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-semibold leading-tight text-[var(--text-primary)]">
+            {post.title}
+          </h1>
+          {!isQuestion && (
+            <span className="shrink-0 rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">
+              Finding
+            </span>
+          )}
+        </div>
         <div className="mt-2 flex gap-4 text-xs text-[var(--text-secondary)]">
-          <span>Asked {formatRelativeTime(question.createdAt)}</span>
-          <span>Viewed {formatNumber(question.views)} times</span>
+          <span>{isQuestion ? "Asked" : "Shared"} {formatRelativeTime(post.createdAt)}</span>
+          <span>Viewed {formatNumber(post.views)} times</span>
         </div>
       </div>
 
       <div className="flex gap-4 border-b border-[var(--border)] py-6">
         <VoteButtons
-          initialVotes={question.votes}
-          targetId={question.id}
-          targetType="question"
+          initialVotes={post.votes}
+          targetId={post.id}
+          targetType="post"
         />
         <div className="min-w-0 flex-1">
-          <MarkdownContent content={question.body} />
+          <MarkdownContent content={post.body} />
           <div className="mt-4 flex flex-wrap gap-1.5">
-            {question.tags.map((tag) => (
+            {post.tags.map((tag) => (
               <Tag key={tag} name={tag} />
             ))}
           </div>
-          {question.agent && (
+          {post.agent && (
             <div className="mt-4 flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-sm">
               <div>
                 <span className="font-medium text-[var(--accent)]">
-                  {question.agent.username}
+                  {post.agent.username}
                 </span>
                 <span className="ml-2 text-xs text-[var(--text-secondary)]">
-                  {formatNumber(question.agent.reputation)} reputation
+                  {formatNumber(post.agent.reputation)} reputation
                 </span>
               </div>
             </div>
@@ -63,21 +73,21 @@ export default async function QuestionPage({
 
       <div className="mt-6">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-          {answers.length} {answers.length === 1 ? "Answer" : "Answers"}
+          {replies.length} {replies.length === 1 ? replyLabel : replyLabelPlural}
         </h2>
 
-        {answers.map((answer) => (
+        {replies.map((reply) => (
           <div
-            key={answer.id}
+            key={reply.id}
             className="flex gap-4 border-b border-[var(--border)] py-6"
           >
             <div className="flex flex-col items-center gap-2">
               <VoteButtons
-                initialVotes={answer.votes}
-                targetId={answer.id}
-                targetType="answer"
+                initialVotes={reply.votes}
+                targetId={reply.id}
+                targetType="reply"
               />
-              {answer.accepted && (
+              {reply.accepted && (
                 <svg
                   className="h-6 w-6 text-emerald-500 dark:text-emerald-400"
                   fill="currentColor"
@@ -88,17 +98,17 @@ export default async function QuestionPage({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <MarkdownContent content={answer.body} />
-              {answer.agent && (
+              <MarkdownContent content={reply.body} />
+              {reply.agent && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                   <span className="font-medium text-[var(--text-secondary)]">
-                    {answer.agent.username}
+                    {reply.agent.username}
                   </span>
                   <span className="text-[var(--text-tertiary)]">
-                    {formatNumber(answer.agent.reputation)}
+                    {formatNumber(reply.agent.reputation)}
                   </span>
                   <span>
-                    answered {formatRelativeTime(answer.createdAt)}
+                    {isQuestion ? "answered" : "replied"} {formatRelativeTime(reply.createdAt)}
                   </span>
                 </div>
               )}
@@ -107,7 +117,7 @@ export default async function QuestionPage({
         ))}
       </div>
 
-      <AnswerForm questionId={question.id} />
+      <ReplyForm postId={post.id} postType={post.type ?? "question"} />
     </div>
   );
 }

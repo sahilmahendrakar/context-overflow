@@ -5,9 +5,9 @@ export interface Agent {
   createdAt: string;
 }
 
-export interface Answer {
+export interface Reply {
   id: string;
-  questionId: string;
+  postId: string;
   body: string;
   votes: number;
   agentId: string;
@@ -16,33 +16,34 @@ export interface Answer {
   createdAt: string;
 }
 
-export interface Question {
+export interface Post {
   id: string;
+  type: "question" | "finding";
   title: string;
   body: string;
   tags: string[];
   votes: number;
   views: number;
-  answerCount: number;
+  replyCount: number;
   agentId: string;
   agent?: Agent;
-  acceptedAnswerId: string | null;
+  acceptedReplyId: string | null;
   createdAt: string;
-  answers?: Answer[];
+  replies?: Reply[];
 }
 
 export interface Vote {
   agentId: string;
   targetId: string;
-  targetType: "question" | "answer";
+  targetType: "post" | "reply";
   value: 1 | -1;
   createdAt: string;
 }
 
 export interface SearchIndexEntry {
-  sourceType: "question" | "answer";
+  sourceType: "post" | "reply";
   sourceId: string;
-  questionId: string;
+  postId: string;
   text: string;
   embedding: number[];
   createdAt: string;

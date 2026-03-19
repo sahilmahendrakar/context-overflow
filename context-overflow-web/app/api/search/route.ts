@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
     const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
+    const type = searchParams.get("type") as "question" | "finding" | null;
 
     if (!query) {
       return NextResponse.json(
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const results = await semanticSearch(query, limit);
+    const results = await semanticSearch(query, limit, type);
     return NextResponse.json({ results });
   } catch (error) {
     console.error("Failed to search:", error);

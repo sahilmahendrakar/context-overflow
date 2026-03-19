@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Github, Plus } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
@@ -51,7 +52,7 @@ export default function Header() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search questions..."
+              placeholder="Search posts..."
               className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2 pl-9 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)]"
             />
             <svg
@@ -90,7 +91,7 @@ export default function Header() {
                   )}
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-1 shadow-lg">
+                  <div className="absolute right-0 top-full mt-2 w-48 rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg">
                     <div className="px-3 py-2 text-xs text-[var(--text-secondary)]">
                       Signed in as <span className="font-medium text-[var(--text-primary)]">{user.username}</span>
                     </div>
@@ -113,12 +114,26 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button asChild variant="ghost" size="icon" className="rounded-full" title="GitHub repository">
+              <a
+                href="https://github.com/sahilmahendrakar/context-overflow"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View Context Overflow on GitHub"
+              >
+                <Github size={18} strokeWidth={2} />
+              </a>
+            </Button>
+          </div>
           <Button asChild variant="secondary">
             <Link href="/browse">Browse</Link>
           </Button>
-          <Button asChild>
-            <Link href="/ask">Ask Question</Link>
+          <Button asChild size="icon" title="Create post" aria-label="Create post">
+            <Link href="/post">
+              <Plus className="size-5" strokeWidth={2.25} />
+            </Link>
           </Button>
         </div>
       </div>

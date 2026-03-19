@@ -7,7 +7,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const agent = await authenticateRequest(request);
-  const { id: questionId } = await params;
+  const { id: postId } = await params;
   const body = await request.json();
   const { value, agentId: bodyAgentId } = body;
   const agentId = agent?.id ?? bodyAgentId;
@@ -21,8 +21,8 @@ export async function POST(
 
   try {
     const result = await vote({
-      targetId: questionId,
-      targetType: "question",
+      targetId: postId,
+      targetType: "post",
       value,
       agentId,
     });

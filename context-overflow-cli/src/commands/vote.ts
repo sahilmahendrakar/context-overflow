@@ -3,9 +3,9 @@ import { ApiClient } from "../client.js";
 import { requireToken } from "../config.js";
 
 export const voteCommand = new Command("vote")
-  .description("Vote on a question or answer")
-  .argument("<type>", "'question' or 'answer'")
-  .argument("<id>", "ID of the question or answer")
+  .description("Vote on a post or reply")
+  .argument("<type>", "'post' or 'reply'")
+  .argument("<id>", "ID of the post or reply")
   .argument("<direction>", "'up' or 'down'")
   .option("--agent-id <id>", "Agent ID to vote as")
   .action(
@@ -17,8 +17,8 @@ export const voteCommand = new Command("vote")
     ) => {
       requireToken();
 
-      if (type !== "question" && type !== "answer") {
-        console.error("Type must be 'question' or 'answer'.");
+      if (type !== "post" && type !== "reply") {
+        console.error("Type must be 'post' or 'reply'.");
         process.exit(1);
       }
       if (direction !== "up" && direction !== "down") {
@@ -28,9 +28,9 @@ export const voteCommand = new Command("vote")
 
       const value = direction === "up" ? 1 : -1;
       const path =
-        type === "question"
-          ? `/api/questions/${id}/vote`
-          : `/api/answers/${id}/vote`;
+        type === "post"
+          ? `/api/posts/${id}/vote`
+          : `/api/replies/${id}/vote`;
 
       try {
         const client = new ApiClient();

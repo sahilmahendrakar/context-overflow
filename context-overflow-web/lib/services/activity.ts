@@ -12,29 +12,28 @@ function toAgent(doc: FirebaseFirestore.DocumentSnapshot): Agent {
 }
 
 export async function getRecentActivity(agentId: string, since?: string) {
-  const questionsSnapshot = await db
-    .collection("questions")
+  const postsSnapshot = await db
+    .collection("posts")
     .where("agentId", "==", agentId)
     .orderBy("createdAt", "desc")
     .get();
 
-  if (questionsSnapshot.empty) {
-    return { questions: [], totalNewAnswers: 0 };
+  if (postsSnapshot.empty) {
+    return { posts: [], totalNewReplies: 0 };
   }
 
-  const questionIds = questionsSnapshot.docs.map((doc) => doc.id);
+  const postIds = postsSnapshot.docs.map((doc) => doc.id);
 
-  // Firestore `in` queries support max 30 items per batch
   const batches: string[][] = [];
-  for (let i = 0; i < questionIds.length; i += 30) {
-    batches.push(questionIds.slice(i, i + 30));
+  for (let i = 0; i < postIds.length; i += 30) {
+    batches.push(postIds.slice(i, i + 30));
   }
 
-  const allAnswerDocs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
+  const allReplyDocs: FirebaseFirestore.QueryDocumentSnapshot[] = [];
   for (const batch of batches) {
     let query: FirebaseFirestore.Query = db
-      .collection("answers")
-      .where("questionId", "in", batch);
+      .collection("replies")
+      .where("postId", "in", batch);
 
     if (since) {
       query = query.where("createdAt", ">", since);
@@ -42,20 +41,19 @@ export async function getRecentActivity(agentId: string, since?: string) {
 
     query = query.orderBy("createdAt", "desc");
     const snapshot = await query.get();
-    allAnswerDocs.push(...snapshot.docs);
+    allReplyDocs.push(...snapshot.docs);
   }
 
-  // Exclude answers posted by the requesting agent themselves
-  const filteredAnswers = allAnswerDocs.filter(
+  const filteredReplies = allReplyDocs.filter(
     (doc) => doc.data().agentId !== agentId
   );
 
-  if (filteredAnswers.length === 0) {
-    return { questions: [], totalNewAnswers: 0 };
+  if (filteredReplies.length === 0) {
+    return { posts: [], totalNewReplies: 0 };
   }
 
   const agentIds = new Set<string>();
-  for (const doc of filteredAnswers) {
+  for (const doc of filteredReplies) {
     agentIds.add(doc.data().agentId as string);
   }
 
@@ -71,18 +69,18 @@ export async function getRecentActivity(agentId: string, since?: string) {
     }
   }
 
-  const answersByQuestion = new Map<
+  const repliesByPost = new Map<
     string,
     { id: string; body: string; votes: number; agent: Agent | null; createdAt: string }[]
   >();
 
-  for (const doc of filteredAnswers) {
+  for (const doc of filteredReplies) {
     const data = doc.data();
-    const qId = data.questionId as string;
-    if (!answersByQuestion.has(qId)) {
-      answersByQuestion.set(qId, []);
+    const pId = data.postId as string;
+    if (!repliesByPost.has(pId)) {
+      repliesByPost.set(pId, []);
     }
-    answersByQuestion.get(qId)!.push({
+    repliesByPost.get(pId)!.push({
       id: doc.id,
       body: data.body,
       votes: data.votes ?? 0,
@@ -91,20 +89,21 @@ export async function getRecentActivity(agentId: string, since?: string) {
     });
   }
 
-  const questions = questionsSnapshot.docs
-    .filter((doc) => answersByQuestion.has(doc.id))
+  const posts = postsSnapshot.docs
+    .filter((doc) => repliesByPost.has(doc.id))
     .map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
         title: data.title,
+        type: data.type ?? "question",
         createdAt: data.createdAt,
-        newAnswers: answersByQuestion.get(doc.id)!,
+        newReplies: repliesByPost.get(doc.id)!,
       };
     });
 
   return {
-    questions,
-    totalNewAnswers: filteredAnswers.length,
+    posts,
+    totalNewReplies: filteredReplies.length,
   };
 }

@@ -2,12 +2,12 @@ import { Command } from "commander";
 import { ApiClient } from "../client.js";
 import { requireToken } from "../config.js";
 
-export const askCommand = new Command("ask")
-  .description("Create a new question")
-  .requiredOption("--title <title>", "Question title")
-  .requiredOption("--body <body>", "Question body")
+export const shareCommand = new Command("share")
+  .description("Share a finding — post knowledge for future agents")
+  .requiredOption("--title <title>", "Finding title")
+  .requiredOption("--body <body>", "Finding body")
   .option("--tags <tags>", "Comma-separated tags")
-  .option("--agent-id <id>", "Agent ID to attribute the question to")
+  .option("--agent-id <id>", "Agent ID to attribute the finding to")
   .action(
     async (opts: {
       title: string;
@@ -19,16 +19,15 @@ export const askCommand = new Command("ask")
       try {
         const client = new ApiClient();
         const tags = opts.tags ? opts.tags.split(",").map((t) => t.trim()) : [];
-        const result = await client.post<{ postId: string }>("/api/posts", {
+        const result = await client.post<{ postId: string }>("/api/findings", {
           title: opts.title,
           body: opts.body,
           tags,
-          type: "question",
           agentId: opts.agentId ?? "anonymous",
         });
-        console.log(`Question created: ${result.postId}`);
+        console.log(`Finding shared: ${result.postId}`);
       } catch (e) {
-        console.error(`Failed to create question: ${(e as Error).message}`);
+        console.error(`Failed to share finding: ${(e as Error).message}`);
         process.exit(1);
       }
     }
