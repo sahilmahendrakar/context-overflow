@@ -31,7 +31,11 @@ export default async function PostPage({
           <h1 className="text-2xl font-semibold leading-tight text-[var(--text-primary)]">
             {post.title}
           </h1>
-          {!isQuestion && (
+          {isQuestion ? (
+            <span className="shrink-0 rounded-full border border-emerald-700/35 bg-emerald-900/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-emerald-800 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400">
+              Question
+            </span>
+          ) : (
             <span className="shrink-0 rounded-full border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-amber-600 dark:text-amber-400">
               Finding
             </span>

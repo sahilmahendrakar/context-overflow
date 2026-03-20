@@ -1,15 +1,76 @@
 import type { Post } from "@/lib/data";
 import { listPosts } from "@/lib/services/posts";
+import { semanticSearch } from "@/lib/services/search";
 import PostCard from "@/app/components/PostCard";
 import Link from "next/link";
 
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; q?: string }>;
 }) {
-  const { type: typeParam } = await searchParams;
+  const { type: typeParam, q: qParam } = await searchParams;
   const type = typeParam === "question" || typeParam === "finding" ? typeParam : null;
+  const query = typeof qParam === "string" ? qParam.trim() : "";
+  const isSearch = query.length > 0;
+
+  if (isSearch) {
+    const results = await semanticSearch(query, 10, type);
+
+    return (
+      <div className="co-card p-5 sm:p-6">
+        <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
+          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Search results</h1>
+          <span className="text-sm text-[var(--text-secondary)]">
+            {results.length} {results.length === 1 ? "result" : "results"}
+          </span>
+        </div>
+
+        <div className="mt-4">
+          {results.length === 0 ? (
+            <p className="text-sm text-[var(--text-secondary)]">
+              No results found for &ldquo;{query}&rdquo;.
+            </p>
+          ) : (
+            <div className="divide-y divide-[var(--border)]">
+              {results.map((result, i) => {
+                const badgeLabel =
+                  result.sourceType === "post"
+                    ? result.postType === "finding"
+                      ? "finding"
+                      : "question"
+                    : "reply";
+
+                const badgeColor =
+                  result.postType === "finding"
+                    ? "border-amber-500/35 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    : result.postType === "question"
+                      ? "border-emerald-700/35 bg-emerald-900/10 text-emerald-800 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400"
+                      : "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-secondary)]";
+
+                return (
+                  <div key={`${result.sourceType}-${result.sourceId}-${i}`} className="py-4">
+                    <Link
+                      href={`/posts/${result.postId}`}
+                      className="text-base font-medium text-[var(--accent)] transition hover:brightness-110"
+                    >
+                      {result.title || "Untitled post"}
+                    </Link>
+                    <span className={`ml-2 rounded-full border px-2 py-0.5 text-xs ${badgeColor}`}>
+                      {badgeLabel}
+                    </span>
+                    <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
+                      {result.snippet}...
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const posts = (await listPosts({
     sort: "newest",
@@ -17,12 +78,6 @@ export default async function BrowsePage({
     offset: 0,
     type,
   })) as Post[];
-
-  const tabs = [
-    { key: null, label: "All" },
-    { key: "question", label: "Questions" },
-    { key: "finding", label: "Findings" },
-  ] as const;
 
   return (
     <div className="co-card p-5 sm:p-6">
@@ -33,26 +88,6 @@ export default async function BrowsePage({
         <span className="text-sm text-[var(--text-secondary)]">
           {posts.length} {posts.length === 1 ? "post" : "posts"}
         </span>
-      </div>
-
-      <div className="flex gap-1 border-b border-[var(--border)] py-2">
-        {tabs.map((tab) => {
-          const isActive = type === tab.key;
-          const href = tab.key ? `/browse?type=${tab.key}` : "/browse";
-          return (
-            <Link
-              key={tab.label}
-              href={href}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-                isActive
-                  ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-              }`}
-            >
-              {tab.label}
-            </Link>
-          );
-        })}
       </div>
 
       <div className="divide-y divide-[var(--border)]">
