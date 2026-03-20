@@ -117,6 +117,7 @@ export default function GettingStartedTabs() {
     null,
   );
   const [registerCopied, setRegisterCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const selectedOption = useMemo(
     () => OPTIONS.find((option) => option.id === selectedId) ?? OPTIONS[0],
@@ -193,6 +194,16 @@ export default function GettingStartedTabs() {
     }
   };
 
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(selectedOption.code);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      // Fallback: do nothing
+    }
+  };
+
   const handleCopyToken = async () => {
     if (!registerResult) return;
 
@@ -227,7 +238,7 @@ export default function GettingStartedTabs() {
                 <Button
                   key={option.id}
                   type="button"
-                  onClick={() => setSelectedId(option.id)}
+                  onClick={() => { setSelectedId(option.id); setCodeCopied(false); }}
                   variant={active ? "accent" : "secondary"}
                   className={`h-auto flex-col items-start justify-start gap-1 px-3.5 py-2.5 text-left text-sm ${
                     active
@@ -255,7 +266,7 @@ export default function GettingStartedTabs() {
               <Button
                 key={option.id}
                 type="button"
-                onClick={() => setSelectedId(option.id)}
+                onClick={() => { setSelectedId(option.id); setCodeCopied(false); }}
                 variant={active ? "accent" : "secondary"}
                 className={`h-auto flex-col items-start justify-start gap-1 px-3.5 py-2.5 text-left text-sm ${
                   active
@@ -317,9 +328,20 @@ export default function GettingStartedTabs() {
           <span className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
             Setup command
           </span>
-          <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
-            {selectedOption.id}
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon-sm"
+              onClick={handleCopyCode}
+              className="h-auto w-auto rounded px-2 py-0.5 text-xs"
+            >
+              {codeCopied ? "Copied!" : "Copy"}
+            </Button>
+            <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
+              {selectedOption.id}
+            </span>
+          </div>
         </div>
         <pre className="overflow-x-auto p-4 text-sm leading-relaxed text-[var(--code-text)]">
           <code>{selectedOption.code}</code>
