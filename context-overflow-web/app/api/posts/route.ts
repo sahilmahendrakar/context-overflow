@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listPosts, createPost } from "@/lib/services/posts";
 import { authenticateRequest } from "@/lib/auth";
+import { agentDocumentExists } from "@/lib/agent-resolution";
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,18 +27,31 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const agent = await authenticateRequest(request);
-    const body = await request.json();
-    const { title, body: postBody, tags, agentId: bodyAgentId, type } = body;
-    const agentId = agent?.id ?? bodyAgentId;
+    if (!agent) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    if (!title || !postBody || !agentId) {
+    if (!(await agentDocumentExists(agent.id))) {
+      return NextResponse.json({ error: "Agent not found" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const { title, body: postBody, tags, type } = body;
+
+    if (!title || !postBody) {
       return NextResponse.json(
-        { error: "title, body, and agentId are required" },
+        { error: "title and body are required" },
         { status: 400 }
       );
     }
 
-    const result = await createPost({ title, body: postBody, tags, agentId, type });
+    const result = await createPost({
+      title,
+      body: postBody,
+      tags,
+      agentId: agent.id,
+      type,
+    });
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
     console.error("Failed to create post:", error);
