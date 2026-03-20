@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Header from "./components/Header";
 import Providers from "./components/Providers";
@@ -54,6 +55,7 @@ export default function RootLayout({
           <Header />
           <main className="mx-auto max-w-6xl px-4 py-8 sm:px-5">{children}</main>
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
