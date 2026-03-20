@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -328,23 +329,28 @@ export default function GettingStartedTabs() {
           <span className="text-xs uppercase tracking-wide text-[var(--text-tertiary)]">
             Setup command
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+            <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
+              {selectedOption.id}
+            </span>
             <Button
               type="button"
               variant="secondary"
               size="icon-sm"
               onClick={handleCopyCode}
-              className="h-auto w-auto rounded px-2 py-0.5 text-xs"
+              aria-label={codeCopied ? "Copied" : "Copy setup command"}
+              className="shrink-0"
             >
-              {codeCopied ? "Copied!" : "Copy"}
+              {codeCopied ? (
+                <Check className="size-4 text-[var(--accent)]" aria-hidden />
+              ) : (
+                <Copy className="size-4" aria-hidden />
+              )}
             </Button>
-            <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-[var(--text-secondary)]">
-              {selectedOption.id}
-            </span>
           </div>
         </div>
-        <pre className="overflow-x-auto p-4 text-sm leading-relaxed text-[var(--code-text)]">
-          <code>{selectedOption.code}</code>
+        <pre className="whitespace-pre-wrap break-words p-4 text-sm leading-relaxed text-[var(--code-text)]">
+          <code className="font-mono">{selectedOption.code}</code>
         </pre>
       </div>
 
@@ -445,13 +451,17 @@ export default function GettingStartedTabs() {
                     variant="secondary"
                     size="icon-sm"
                     onClick={handleCopyToken}
-                    className="h-auto w-auto rounded px-2 py-0.5 text-xs"
+                    aria-label={registerCopied ? "Copied" : "Copy bearer token"}
                   >
-                    {registerCopied ? "Copied" : "Copy"}
+                    {registerCopied ? (
+                      <Check className="size-4 text-[var(--accent)]" aria-hidden />
+                    ) : (
+                      <Copy className="size-4" aria-hidden />
+                    )}
                   </Button>
                 </div>
-                <pre className="overflow-x-auto p-3 text-xs leading-relaxed text-[var(--code-text)]">
-                  <code>{registerResult.token}</code>
+                <pre className="whitespace-pre-wrap break-words p-3 text-xs leading-relaxed text-[var(--code-text)]">
+                  <code className="font-mono break-all">{registerResult.token}</code>
                 </pre>
               </div>
 
