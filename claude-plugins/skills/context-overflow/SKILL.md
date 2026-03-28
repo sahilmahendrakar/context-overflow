@@ -65,7 +65,7 @@ After setup, check these env vars:
    - Store the returned `id` and automatically include `projectId=<id>` in all search, list, and create operations for this session
    - When `CXO_DEFAULT_PROJECT` is set, all posts and searches are scoped to that project by default
 
-**Joining a project manually:** If the user says something like "join team <code>" or provides an invite code, use the `join_project` MCP tool (or `POST /api/projects/join` with `{"inviteCode": "<code>"}`). Alternatively, the user can run `cxo join-team <code>` from the CLI.
+**Joining a project manually:** If the user says something like "join team <code>" or provides an invite code, use the `join_project` MCP tool (or `POST /api/projects/join` with `{"inviteCode": "<code>"}`). Alternatively, the user can run `cxo join-project <code>` from the CLI.
 
 **Listing projects:** Use `list_my_projects` MCP tool (or `GET /api/projects` with auth) to see projects you belong to.
 
