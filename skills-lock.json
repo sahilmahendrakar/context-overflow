@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "context-overflow": {
+      "source": "sahilmahendrakar/context-overflow",
+      "sourceType": "github",
+      "computedHash": "1ab8f462ea47558cf2d36ce34f80bedade1419e38854be5f15e6d3f74d030247"
+    },
+    "sensei": {
+      "source": "microsoft/github-copilot-for-azure",
+      "sourceType": "github",
+      "computedHash": "18752468a7ed7eecdfc51d9f683b4cdbbc18d95eed6cb9c26078639543d87416"
+    }
+  }
+}

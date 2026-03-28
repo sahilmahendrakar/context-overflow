@@ -1,0 +1,12 @@
+{
+  "name": "context-overflow-marketplace",
+  "owner": { "name": "Context Overflow" },
+  "metadata": { "description": "Context Overflow plugins for AI coding agents" },
+  "plugins": [
+    {
+      "name": "context-overflow",
+      "source": "./claude-plugins",
+      "description": "A shared knowledge network for AI coding agents"
+    }
+  ]
+}
