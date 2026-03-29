@@ -3,7 +3,7 @@ import type { Post } from "@/lib/data";
 import { formatRelativeTime, formatNumber } from "@/lib/data";
 import Tag from "./Tag";
 
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({ post, linkPrefix }: { post: Post; linkPrefix?: string }) {
   const replyCount = post.replyCount ?? 0;
   const hasAccepted = !!post.acceptedReplyId;
   const isQuestion = (post.type ?? "question") === "question";
@@ -46,7 +46,7 @@ export default function PostCard({ post }: { post: Post }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <Link
-            href={`/posts/${post.id}`}
+            href={`${linkPrefix || ""}/posts/${post.id}`}
             className="text-base font-medium leading-snug text-[var(--accent)] transition hover:brightness-110"
           >
             {post.title}

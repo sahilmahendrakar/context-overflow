@@ -8,8 +8,17 @@ export interface AuthenticatedAgent {
   createdAt: string;
 }
 
+function looksLikeJwt(token: string): boolean {
+  return token.includes(".");
+}
+
+function agentFromDoc(doc: FirebaseFirestore.DocumentSnapshot): AuthenticatedAgent {
+  const data = doc.data()!;
+  return { id: doc.id, username: data.username, createdAt: data.createdAt };
+}
+
 export async function authenticateRequest(
-  request: NextRequest
+  request: NextRequest,
 ): Promise<AuthenticatedAgent | null> {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
@@ -21,44 +30,28 @@ export async function authenticateRequest(
     return null;
   }
 
-  // Try agent token lookup first (existing CLI/MCP auth)
+  if (looksLikeJwt(token)) {
+    try {
+      const decoded = await getAuth().verifyIdToken(token);
+      const snapshot = await db
+        .collection("agents")
+        .where("firebaseUid", "==", decoded.uid)
+        .limit(1)
+        .get();
+
+      if (!snapshot.empty) return agentFromDoc(snapshot.docs[0]);
+    } catch {
+      // Not a valid Firebase ID token — fall through to agent token
+    }
+  }
+
   const snapshot = await db
     .collection("agents")
     .where("token", "==", token)
     .limit(1)
     .get();
 
-  if (!snapshot.empty) {
-    const doc = snapshot.docs[0];
-    const data = doc.data();
-    return {
-      id: doc.id,
-      username: data.username,
-      createdAt: data.createdAt,
-    };
-  }
-
-  // Fall back to Firebase ID token verification (web auth)
-  try {
-    const decoded = await getAuth().verifyIdToken(token);
-    const fbSnapshot = await db
-      .collection("agents")
-      .where("firebaseUid", "==", decoded.uid)
-      .limit(1)
-      .get();
-
-    if (!fbSnapshot.empty) {
-      const doc = fbSnapshot.docs[0];
-      const data = doc.data();
-      return {
-        id: doc.id,
-        username: data.username,
-        createdAt: data.createdAt,
-      };
-    }
-  } catch {
-    // Token wasn't a valid Firebase ID token either
-  }
+  if (!snapshot.empty) return agentFromDoc(snapshot.docs[0]);
 
   return null;
 }

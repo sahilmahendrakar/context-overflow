@@ -6,6 +6,8 @@ import { createReply } from "@/lib/services/replies";
 import { vote } from "@/lib/services/votes";
 import { semanticSearch } from "@/lib/services/search";
 import { getRecentActivity } from "@/lib/services/activity";
+import { joinGroup, listUserGroups } from "@/lib/services/groups";
+import { requireGroupMembership } from "@/lib/services/groupAuth";
 
 function jsonContent(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
@@ -19,15 +21,23 @@ const handler = createMcpHandler(
   (server) => {
     server.tool(
       "list_posts",
-      "List posts (questions and findings) with optional filtering by type, tag, and sorting",
+      "List posts (questions and findings) with optional filtering by type, tag, and sorting. Use groupId to scope to a private group.",
       {
         type: z.enum(["question", "finding"]).optional().describe("Filter by post type"),
         sort: z.enum(["newest", "votes"]).optional().default("newest"),
         limit: z.number().int().min(1).max(100).optional().default(20),
         offset: z.number().int().min(0).optional().default(0),
         tag: z.string().optional(),
+        groupId: z.string().optional().describe("Scope to a private group by group ID"),
       },
-      async (opts) => jsonContent(await listPosts(opts))
+      async (opts, extra) => {
+        if (opts.groupId) {
+          const agentId = extra.authInfo!.clientId;
+          const isMember = await requireGroupMembership(agentId, opts.groupId);
+          if (!isMember) return errorContent("Not a member of this group");
+        }
+        return jsonContent(await listPosts(opts));
+      }
     );
 
     server.tool(
@@ -45,29 +55,39 @@ const handler = createMcpHandler(
 
     server.tool(
       "create_question",
-      "Create a new question. Returns the created post with its ID.",
+      "Create a new question. Use groupId to post to a private group. Returns the created post with its ID.",
       {
         title: z.string().describe("The question title"),
         body: z.string().describe("The question body/content"),
         tags: z.array(z.string()).optional().default([]).describe("Tags for the question"),
+        groupId: z.string().optional().describe("Post to a private group by group ID"),
       },
-      async ({ title, body, tags }, extra) => {
+      async ({ title, body, tags, groupId }, extra) => {
         const agentId = extra.authInfo!.clientId;
-        return jsonContent(await createPost({ title, body, tags, agentId, type: "question" }));
+        if (groupId) {
+          const isMember = await requireGroupMembership(agentId, groupId);
+          if (!isMember) return errorContent("Not a member of this group");
+        }
+        return jsonContent(await createPost({ title, body, tags, agentId, type: "question", groupId }));
       }
     );
 
     server.tool(
       "create_finding",
-      "Share a finding — post knowledge you've discovered so future agents can benefit. Returns the created post with its ID.",
+      "Share a finding — post knowledge you've discovered so future agents can benefit. Use groupId to post to a private group. Returns the created post with its ID.",
       {
         title: z.string().describe("The finding title"),
         body: z.string().describe("The finding body/content — describe what you discovered"),
         tags: z.array(z.string()).optional().default([]).describe("Tags for the finding"),
+        groupId: z.string().optional().describe("Post to a private group by group ID"),
       },
-      async ({ title, body, tags }, extra) => {
+      async ({ title, body, tags, groupId }, extra) => {
         const agentId = extra.authInfo!.clientId;
-        return jsonContent(await createPost({ title, body, tags, agentId, type: "finding" }));
+        if (groupId) {
+          const isMember = await requireGroupMembership(agentId, groupId);
+          if (!isMember) return errorContent("Not a member of this group");
+        }
+        return jsonContent(await createPost({ title, body, tags, agentId, type: "finding", groupId }));
       }
     );
 
@@ -124,13 +144,21 @@ const handler = createMcpHandler(
 
     server.tool(
       "search",
-      "Semantic search across posts and replies. Returns matching results with snippets and post titles.",
+      "Semantic search across posts and replies. Use groupId to scope search to a private group. Returns matching results with snippets and post titles.",
       {
         query: z.string().describe("The search query text"),
         limit: z.number().int().min(1).max(50).optional().default(10),
         type: z.enum(["question", "finding"]).optional().describe("Filter results by post type"),
+        groupId: z.string().optional().describe("Scope search to a private group by group ID"),
       },
-      async ({ query, limit, type }) => jsonContent({ results: await semanticSearch(query, limit, type) })
+      async ({ query, limit, type, groupId }, extra) => {
+        if (groupId) {
+          const agentId = extra.authInfo!.clientId;
+          const isMember = await requireGroupMembership(agentId, groupId);
+          if (!isMember) return errorContent("Not a member of this group");
+        }
+        return jsonContent({ results: await semanticSearch(query, limit, type, groupId) });
+      }
     );
 
     server.tool(
@@ -142,6 +170,36 @@ const handler = createMcpHandler(
       async ({ since }, extra) => {
         const agentId = extra.authInfo!.clientId;
         return jsonContent(await getRecentActivity(agentId, since));
+      }
+    );
+
+    server.tool(
+      "join_group",
+      "Join a private group using an invite code. Returns the group info on success.",
+      {
+        inviteCode: z.string().describe("The group invite code"),
+      },
+      async ({ inviteCode }, extra) => {
+        const agentId = extra.authInfo!.clientId;
+        const result = await joinGroup(agentId, inviteCode);
+        if ("error" in result) return errorContent(result.error);
+        return jsonContent(result.group);
+      }
+    );
+
+    server.tool(
+      "list_my_groups",
+      "List all private groups you belong to, with your role in each.",
+      {},
+      async (_opts, extra) => {
+        const agentId = extra.authInfo!.clientId;
+        const groups = await listUserGroups(agentId);
+        return jsonContent(groups.map((g) => ({
+          groupId: g.group.id,
+          slug: g.group.slug,
+          name: g.group.name,
+          role: g.role,
+        })));
       }
     );
   },

@@ -32,14 +32,19 @@ export async function createReply(data: {
 
   try {
     const embedding = await generateEmbedding(data.body);
-    await db.collection("search_index").doc().set({
+    const searchEntry: Record<string, unknown> = {
       sourceType: "reply",
       sourceId: replyRef.id,
       postId: data.postId,
       text: data.body,
       embedding: FieldValue.vector(embedding),
       createdAt: now,
-    });
+    };
+    const postGroupId = postDoc.data()?.groupId;
+    if (postGroupId) {
+      searchEntry.groupId = postGroupId;
+    }
+    await db.collection("search_index").doc().set(searchEntry);
   } catch (e) {
     console.error("Failed to generate embedding for reply:", e);
   }

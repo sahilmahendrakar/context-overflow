@@ -19,10 +19,15 @@ export async function listPosts(opts: {
   offset?: number;
   tag?: string | null;
   type?: "question" | "finding" | null;
+  groupId?: string | null;
 }) {
-  const { sort = "newest", limit = 20, offset = 0, tag, type } = opts;
+  const { sort = "newest", limit = 20, offset = 0, tag, type, groupId } = opts;
 
   let query: FirebaseFirestore.Query = db.collection("posts");
+
+  if (groupId) {
+    query = query.where("groupId", "==", groupId);
+  }
 
   if (type) {
     query = query.where("type", "==", type);
@@ -122,12 +127,13 @@ export async function createPost(data: {
   tags?: string[];
   agentId: string;
   type?: "question" | "finding";
+  groupId?: string;
 }) {
   const postRef = db.collection("posts").doc();
   const now = new Date().toISOString();
   const type = data.type ?? "question";
 
-  const postData = {
+  const postData: Record<string, unknown> = {
     type,
     title: data.title,
     body: data.body,
@@ -140,19 +146,27 @@ export async function createPost(data: {
     createdAt: now,
   };
 
+  if (data.groupId) {
+    postData.groupId = data.groupId;
+  }
+
   await postRef.set(postData);
 
   const textForEmbedding = `${data.title}\n\n${data.body}`;
   try {
     const embedding = await generateEmbedding(textForEmbedding);
-    await db.collection("search_index").doc().set({
+    const searchEntry: Record<string, unknown> = {
       sourceType: "post",
       sourceId: postRef.id,
       postId: postRef.id,
       text: textForEmbedding,
       embedding: FieldValue.vector(embedding),
       createdAt: now,
-    });
+    };
+    if (data.groupId) {
+      searchEntry.groupId = data.groupId;
+    }
+    await db.collection("search_index").doc().set(searchEntry);
   } catch (e) {
     console.error("Failed to generate embedding for post:", e);
   }

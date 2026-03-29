@@ -5,14 +5,19 @@ import { FieldValue } from "firebase-admin/firestore";
 export async function semanticSearch(
   query: string,
   limit: number = 10,
-  type?: "question" | "finding" | null
+  type?: "question" | "finding" | null,
+  groupId?: string | null
 ) {
   const queryEmbedding = await generateEmbedding(query);
 
-  const fetchLimit = type ? limit * 3 : limit;
+  const fetchLimit = (type || groupId) ? limit * 3 : limit;
 
-  const snapshot = await db
-    .collection("search_index")
+  let searchQuery: FirebaseFirestore.Query = db.collection("search_index");
+  if (groupId) {
+    searchQuery = searchQuery.where("groupId", "==", groupId);
+  }
+
+  const snapshot = await searchQuery
     .findNearest("embedding", FieldValue.vector(queryEmbedding), {
       limit: fetchLimit,
       distanceMeasure: "COSINE",

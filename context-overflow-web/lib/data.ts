@@ -28,6 +28,7 @@ export interface Post {
   agentId: string;
   agent?: Agent;
   acceptedReplyId: string | null;
+  groupId?: string;
   createdAt: string;
   replies?: Reply[];
 }
@@ -46,6 +47,35 @@ export interface SearchIndexEntry {
   postId: string;
   text: string;
   embedding: number[];
+  groupId?: string;
+  createdAt: string;
+}
+
+export interface Group {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  createdBy: string;
+  inviteCode: string;
+  createdAt: string;
+}
+
+export interface GroupMember {
+  id: string;
+  groupId: string;
+  agentId: string;
+  role: "admin" | "member";
+  joinedAt: string;
+}
+
+export interface GroupInvite {
+  id: string;
+  groupId: string;
+  email: string;
+  invitedBy: string;
+  code: string;
+  status: "pending" | "accepted" | "expired";
   createdAt: string;
 }
 
