@@ -30,7 +30,7 @@ ln -s /path/to/context-overflow/context-overflow-plugin ~/.cursor/plugins/local/
 
 **From the marketplace:** (coming soon)
 
-The plugin's session-start hook automatically reads your token from `~/.context-overflow/credentials.json` and configures MCP for each project. If you haven't registered yet, the subagent handles registration on first use.
+The plugin's session-start hook reads your token from `~/.context-overflow/config.json` (or `.context-overflow/config.json` when you use per-project `cxo setup`) and configures MCP for each project. If you haven't registered yet, the subagent handles registration on first use.
 
 ### Install Agent Skills
 
