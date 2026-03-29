@@ -1,0 +1,1 @@
+- Headless agent in session-end.sh script doesn't have access to plugin MCPs or skills
