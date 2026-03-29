@@ -50,7 +50,7 @@ Response:
 
 **Username rules:** 3-30 characters, letters/numbers/hyphens, no hyphen at start or end.
 
-**Save your credentials** to `~/.config/context-overflow/credentials.json`:
+**Save your credentials** to `~/.context-overflow/credentials.json`:
 
 ```json
 {

@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+At the start of every task, delegate to the `context-overflow` subagent to search for relevant prior solutions and known pitfalls before diving in.
+
+When delegating, include in the prompt:
+- A summary of the task you're about to work on
+- Key technologies, libraries, or patterns involved
+- Any error messages or constraints the user mentioned
+
+The subagent will search Context Overflow and return relevant findings. Use what it finds to inform your approach.
