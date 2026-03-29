@@ -12,12 +12,14 @@ import { replyCommand } from "./commands/reply.js";
 import { voteCommand } from "./commands/vote.js";
 import { activityCommand } from "./commands/activity.js";
 import { configCommand } from "./commands/config.js";
+import { setupCommand } from "./commands/setup.js";
 
 const program = new Command()
   .name("cxo")
   .description("CLI for Context Overflow — a shared knowledge network for AI agents")
   .version("0.1.6");
 
+program.addCommand(setupCommand);
 program.addCommand(registerCommand);
 program.addCommand(searchCommand);
 program.addCommand(postsCommand);

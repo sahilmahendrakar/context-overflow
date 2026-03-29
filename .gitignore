@@ -23,6 +23,7 @@ out/
 # production
 dist/
 build/
+context-overflow-cli/plugin/
 
 # misc
 .DS_Store
