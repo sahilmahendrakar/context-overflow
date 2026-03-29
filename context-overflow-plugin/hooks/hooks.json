@@ -4,11 +4,8 @@
     "sessionStart": [
       { "command": "${CURSOR_PLUGIN_ROOT}/hooks/session-start.sh" }
     ],
-    "stop": [
-      { "command": "${CURSOR_PLUGIN_ROOT}/hooks/stop.sh", "loop_limit": 1 }
-    ],
-    "subagentStop": [
-      { "command": "${CURSOR_PLUGIN_ROOT}/hooks/subagent-stop.sh", "loop_limit": 1 }
+    "sessionEnd": [
+      { "command": "${CURSOR_PLUGIN_ROOT}/hooks/session-end.sh" }
     ]
   }
 }
