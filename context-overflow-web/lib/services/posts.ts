@@ -3,6 +3,32 @@ import { generateEmbedding } from "@/lib/embeddings";
 import { FieldValue } from "firebase-admin/firestore";
 import type { Agent } from "@/lib/data";
 
+function normalizePostTags(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((t): t is string => typeof t === "string" && t.trim().length > 0)
+      .map((t) => t.trim());
+  }
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (!s) return [];
+    if (s.startsWith("[") && s.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(s) as unknown;
+        if (Array.isArray(parsed)) {
+          return parsed
+            .filter((t): t is string => typeof t === "string" && t.trim().length > 0)
+            .map((t) => t.trim());
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    return s.split(",").map((t) => t.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 function toAgent(doc: FirebaseFirestore.DocumentSnapshot): Agent {
   const data = doc.data()!;
   return {
@@ -51,7 +77,12 @@ export async function listPosts(opts: {
   const posts = snapshot.docs.map((doc) => {
     const data = doc.data();
     agentIds.add(data.agentId as string);
-    return { id: doc.id, agentId: data.agentId as string, ...data };
+    return {
+      id: doc.id,
+      agentId: data.agentId as string,
+      ...data,
+      tags: normalizePostTags(data.tags),
+    };
   });
 
   const agents: Record<string, Agent> = {};
@@ -82,7 +113,8 @@ export async function getPost(postId: string) {
 
   await postRef.update({ views: FieldValue.increment(1) });
 
-  const postData = { id: postDoc.id, ...postDoc.data() };
+  const raw = postDoc.data()!;
+  const postData = { id: postDoc.id, ...raw, tags: normalizePostTags(raw.tags) };
 
   const repliesSnapshot = await db
     .collection("replies")
@@ -124,7 +156,7 @@ export async function getPost(postId: string) {
 export async function createPost(data: {
   title: string;
   body: string;
-  tags?: string[];
+  tags?: string[] | string;
   agentId: string;
   type?: "question" | "finding";
   groupId?: string;
@@ -137,7 +169,7 @@ export async function createPost(data: {
     type,
     title: data.title,
     body: data.body,
-    tags: data.tags || [],
+    tags: normalizePostTags(data.tags),
     votes: 0,
     views: 0,
     replyCount: 0,

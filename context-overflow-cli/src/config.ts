@@ -4,12 +4,12 @@ import { join } from "node:path";
 
 interface Config {
   token?: string;
+  username?: string;
   apiUrl: string;
 }
 
 const LOCAL_DIR = join(process.cwd(), ".context-overflow");
-const GLOBAL_CONFIG_DIR = join(homedir(), ".config", "context-overflow");
-const GLOBAL_CREDENTIALS_DIR = join(homedir(), ".context-overflow");
+const GLOBAL_CONFIG_DIR = join(homedir(), ".context-overflow");
 
 const DEFAULT_API_URL = "https://ctxoverflow.dev";
 
@@ -87,7 +87,7 @@ interface Credentials {
 
 export function loadCredentials(): Credentials | null {
   const localFile = join(LOCAL_DIR, "credentials.json");
-  const globalFile = join(GLOBAL_CREDENTIALS_DIR, "credentials.json");
+  const globalFile = join(GLOBAL_CONFIG_DIR, "credentials.json");
 
   for (const file of [localFile, globalFile]) {
     const data = readJson(file);
@@ -97,7 +97,7 @@ export function loadCredentials(): Credentials | null {
 }
 
 export function saveCredentials(username: string, token: string, dir?: string) {
-  const targetDir = dir ? join(dir, ".context-overflow") : GLOBAL_CREDENTIALS_DIR;
+  const targetDir = dir ? join(dir, ".context-overflow") : GLOBAL_CONFIG_DIR;
   mkdirSync(targetDir, { recursive: true });
   writeFileSync(
     join(targetDir, "credentials.json"),

@@ -24,9 +24,11 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ApiClient } from "../client.js";
-import { saveConfig, saveCredentials } from "../config.js";
-
-const MCP_URL = "https://www.ctxoverflow.dev/api/mcp";
+import { saveConfig } from "../config.js";
+import {
+  mergeProjectMcpConfig,
+  mergePluginMcpConfig,
+} from "../mcp-merge.js";
 
 function getPluginSourcePath(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -42,33 +44,9 @@ function handleCancel(value: unknown): value is symbol {
   return false;
 }
 
-function mergeMcpConfig(dir: string, token: string) {
-  const mcpDir = join(dir, ".cursor");
-  const mcpFile = join(mcpDir, "mcp.json");
-
-  let config: Record<string, unknown> = { mcpServers: {} };
-  if (existsSync(mcpFile)) {
-    try {
-      config = JSON.parse(readFileSync(mcpFile, "utf-8"));
-    } catch {
-      // corrupt file, start fresh
-    }
-  }
-
-  if (!config.mcpServers || typeof config.mcpServers !== "object") {
-    config.mcpServers = {};
-  }
-
-  (config.mcpServers as Record<string, unknown>)["context-overflow"] = {
-    url: MCP_URL,
-    headers: { Authorization: `Bearer ${token}` },
-  };
-
-  mkdirSync(mcpDir, { recursive: true });
-  writeFileSync(mcpFile, JSON.stringify(config, null, 2) + "\n");
-}
-
-function installGlobalCursorPlugin(): { success: boolean; path: string } {
+function installGlobalCursorPlugin(
+  token: string
+): { success: boolean; path: string } {
   const source = getPluginSourcePath();
   const target = join(
     homedir(),
@@ -84,6 +62,7 @@ function installGlobalCursorPlugin(): { success: boolean; path: string } {
 
   mkdirSync(dirname(target), { recursive: true });
   cpSync(source, target, { recursive: true, force: true });
+  mergePluginMcpConfig(target, token);
   return { success: true, path: target };
 }
 
@@ -100,6 +79,14 @@ function installLocalCursorFiles(projectDir: string, token: string) {
     force: true,
   });
 
+  const skillsSrc = join(source, "skills");
+  if (existsSync(skillsSrc)) {
+    cpSync(skillsSrc, join(cursorDir, "skills"), {
+      recursive: true,
+      force: true,
+    });
+  }
+
   const hooksDir = join(cursorDir, "hooks");
   mkdirSync(hooksDir, { recursive: true });
 
@@ -108,8 +95,8 @@ function installLocalCursorFiles(projectDir: string, token: string) {
     if (!existsSync(srcFile)) continue;
     let content = readFileSync(srcFile, "utf-8");
     content = content.replace(
-      'CRED_FILE="$HOME/.context-overflow/credentials.json"',
-      'CRED_FILE=".context-overflow/credentials.json"'
+      'CONFIG_FILE="$HOME/.context-overflow/config.json"',
+      'CONFIG_FILE=".context-overflow/config.json"'
     );
     writeFileSync(join(hooksDir, script), content, { mode: 0o755 });
   }
@@ -126,7 +113,7 @@ function installLocalCursorFiles(projectDir: string, token: string) {
     JSON.stringify(hooksJson, null, 2) + "\n"
   );
 
-  mergeMcpConfig(projectDir, token);
+  mergeProjectMcpConfig(projectDir, token);
 }
 
 function ensureGitignore(projectDir: string, entry: string) {
@@ -157,7 +144,7 @@ export const setupCommand = new Command("setup")
     const tools = await multiselect({
       message: "Which tools do you use?",
       options: [
-        { value: "cursor", label: "Cursor", hint: "plugin available" },
+        { value: "cursor", label: "Cursor" },
         { value: "claude-code", label: "Claude Code", hint: "coming soon" },
       ],
       required: true,
@@ -219,33 +206,33 @@ export const setupCommand = new Command("setup")
     const projectDir = process.cwd();
 
     if (isGlobal) {
-      s.start("Saving credentials...");
-      saveConfig({ token });
-      saveCredentials(username, token);
-      s.stop("Credentials saved");
+      s.start("Saving config...");
+      saveConfig({ token, username });
+      s.stop("Config saved");
 
       if (installCursor) {
         s.start("Installing Cursor plugin...");
-        const result = installGlobalCursorPlugin();
+        const result = installGlobalCursorPlugin(token);
         if (result.success) {
-          s.stop(`Plugin installed to ${pc.dim(result.path)}`);
+          s.stop(
+            `Plugin and ${pc.dim("mcp.json")} installed to ${pc.dim(result.path)}`
+          );
         } else {
           s.stop(pc.yellow("Plugin source not found — skipping install"), 1);
         }
       }
     } else {
-      s.start("Saving credentials...");
-      saveConfig({ token }, projectDir);
-      saveCredentials(username, token, projectDir);
-      s.stop("Credentials saved to .context-overflow/");
+      s.start("Saving config...");
+      saveConfig({ token, username }, projectDir);
+      s.stop("Config saved to .context-overflow/");
 
       if (installCursor) {
         s.start("Installing Cursor integration...");
         installLocalCursorFiles(projectDir, token);
-        s.stop("Cursor agents, rules, hooks, and MCP configured");
+        s.stop("Cursor agents, rules, skills, hooks, and MCP configured");
       } else {
         s.start("Configuring MCP...");
-        mergeMcpConfig(projectDir, token);
+        mergeProjectMcpConfig(projectDir, token);
         s.stop("MCP configured in .cursor/mcp.json");
       }
 
@@ -258,25 +245,23 @@ export const setupCommand = new Command("setup")
 
     if (isGlobal) {
       summaryLines.push(
-        `CLI config:   ${pc.dim("~/.config/context-overflow/config.json")}`,
-        `Credentials:  ${pc.dim("~/.context-overflow/credentials.json")}`,
+        `Config:       ${pc.dim("~/.context-overflow/config.json")}`,
       );
       if (installCursor) {
         summaryLines.push(
           `Plugin:       ${pc.dim("~/.cursor/plugins/local/context-overflow-plugin")}`,
-          "",
-          pc.dim("The plugin will auto-configure MCP in each project on session start."),
+          `MCP config:   ${pc.dim("mcp.json (plugin root)")}`,
         );
       }
     } else {
       summaryLines.push(
         `Config:       ${pc.dim(".context-overflow/config.json")}`,
-        `Credentials:  ${pc.dim(".context-overflow/credentials.json")}`,
       );
       if (installCursor) {
         summaryLines.push(
           `Agents:       ${pc.dim(".cursor/agents/")}`,
           `Rules:        ${pc.dim(".cursor/rules/")}`,
+          `Skills:       ${pc.dim(".cursor/skills/")}`,
           `Hooks:        ${pc.dim(".cursor/hooks.json + .cursor/hooks/")}`,
           `MCP config:   ${pc.dim(".cursor/mcp.json")}`,
         );
