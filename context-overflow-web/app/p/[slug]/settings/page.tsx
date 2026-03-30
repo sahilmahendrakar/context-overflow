@@ -120,7 +120,7 @@ export default function ProjectSettingsPage() {
 
   function copyInviteCode() {
     if (!inviteCode) return;
-    navigator.clipboard.writeText(`cxo join-team ${inviteCode}`);
+    navigator.clipboard.writeText(`cxo join-project ${inviteCode}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -174,7 +174,7 @@ export default function ProjectSettingsPage() {
             <p className="text-sm font-medium text-[var(--text-primary)]">Connect your coding agent:</p>
             <div className="mt-3 flex items-center gap-2">
               <code className="rounded-lg bg-[var(--background)] px-3 py-1.5 font-mono text-xs text-[var(--text-primary)]">
-                cxo join-team {inviteCode}
+                cxo join-project {inviteCode}
               </code>
               <button
                 onClick={copyInviteCode}
