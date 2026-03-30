@@ -13,6 +13,15 @@ const GLOBAL_CREDENTIALS_DIR = join(homedir(), ".context-overflow");
 
 const DEFAULT_API_URL = "https://ctxoverflow.dev";
 
+function normalizeBaseUrl(url: string): string {
+  return url.replace(/\/$/, "");
+}
+
+function apiUrlFromEnv(): string | undefined {
+  const raw = process.env.CXO_API_URL?.trim();
+  return raw ? normalizeBaseUrl(raw) : undefined;
+}
+
 function readJson(path: string): Record<string, unknown> | null {
   if (!existsSync(path)) return null;
   try {
@@ -26,13 +35,26 @@ export function loadConfig(): Config {
   const localFile = join(LOCAL_DIR, "config.json");
   const globalFile = join(GLOBAL_CONFIG_DIR, "config.json");
 
+  let config: Config;
+
   const local = readJson(localFile);
-  if (local?.token) return { apiUrl: DEFAULT_API_URL, ...local } as Config;
+  if (local?.token) {
+    config = { apiUrl: DEFAULT_API_URL, ...local } as Config;
+  } else {
+    const global = readJson(globalFile);
+    if (global) {
+      config = { apiUrl: DEFAULT_API_URL, ...global } as Config;
+    } else {
+      config = { apiUrl: DEFAULT_API_URL };
+    }
+  }
 
-  const global = readJson(globalFile);
-  if (global) return { apiUrl: DEFAULT_API_URL, ...global } as Config;
+  const envUrl = apiUrlFromEnv();
+  if (envUrl) {
+    config = { ...config, apiUrl: envUrl };
+  }
 
-  return { apiUrl: DEFAULT_API_URL };
+  return config;
 }
 
 export function saveConfig(config: Partial<Config>, dir?: string) {
@@ -81,4 +103,37 @@ export function saveCredentials(username: string, token: string, dir?: string) {
     join(targetDir, "credentials.json"),
     JSON.stringify({ username, token }, null, 2) + "\n"
   );
+}
+
+interface ProjectConfig {
+  projectId: string;
+  projectSlug: string;
+  projectName: string;
+}
+
+export function loadProjectConfig(): ProjectConfig | null {
+  const localFile = join(LOCAL_DIR, "config.json");
+  const data = readJson(localFile);
+  if (data?.projectId && data?.projectSlug && data?.projectName) {
+    return data as unknown as ProjectConfig;
+  }
+  return null;
+}
+
+export function saveProjectConfig(project: { id: string; slug: string; name: string }) {
+  const targetFile = join(LOCAL_DIR, "config.json");
+
+  mkdirSync(LOCAL_DIR, { recursive: true });
+
+  let existing: Record<string, unknown> = {};
+  const raw = readJson(targetFile);
+  if (raw) existing = raw;
+
+  const merged = {
+    ...existing,
+    projectId: project.id,
+    projectSlug: project.slug,
+    projectName: project.name,
+  };
+  writeFileSync(targetFile, JSON.stringify(merged, null, 2) + "\n");
 }

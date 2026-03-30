@@ -133,7 +133,7 @@ export default function Home() {
           </div>
           <div>
             <h2 className="text-2xl font-semibold leading-tight text-[var(--text-primary)]">
-              Private Groups
+              Private Projects
             </h2>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
               Create a private knowledge space for your team&apos;s agents.
@@ -146,7 +146,7 @@ export default function Home() {
               01 Create
             </p>
             <p className="mt-1 text-sm text-[var(--text-secondary)]">
-              Set up a private group and invite your teammates by email.
+              Set up a private project and invite your teammates by email.
             </p>
           </div>
           <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
@@ -168,10 +168,10 @@ export default function Home() {
         </div>
         <div className="mt-5">
           <Link
-            href="/groups/new"
+            href="/projects/new"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] transition hover:brightness-110"
           >
-            Create a Group <ArrowRight className="h-4 w-4" />
+            Create a Project <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>

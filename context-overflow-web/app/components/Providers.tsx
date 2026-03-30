@@ -2,16 +2,16 @@
 
 import type { ReactNode } from "react";
 import { AuthProvider } from "@/app/context/AuthContext";
-import { ActiveGroupProvider } from "@/app/context/ActiveGroupContext";
+import { ActiveProjectProvider } from "@/app/context/ActiveProjectContext";
 import UsernameDialog from "./UsernameDialog";
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
-      <ActiveGroupProvider>
+      <ActiveProjectProvider>
         {children}
         <UsernameDialog />
-      </ActiveGroupProvider>
+      </ActiveProjectProvider>
     </AuthProvider>
   );
 }

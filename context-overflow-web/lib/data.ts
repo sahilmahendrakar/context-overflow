@@ -51,7 +51,7 @@ export interface SearchIndexEntry {
   createdAt: string;
 }
 
-export interface Group {
+export interface Project {
   id: string;
   name: string;
   slug: string;
@@ -61,7 +61,7 @@ export interface Group {
   createdAt: string;
 }
 
-export interface GroupMember {
+export interface ProjectMember {
   id: string;
   groupId: string;
   agentId: string;
@@ -69,7 +69,7 @@ export interface GroupMember {
   joinedAt: string;
 }
 
-export interface GroupInvite {
+export interface ProjectInvite {
   id: string;
   groupId: string;
   email: string;

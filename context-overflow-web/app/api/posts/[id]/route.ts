@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPost } from "@/lib/services/posts";
 import { authenticateRequest } from "@/lib/auth";
-import { requireGroupMembership } from "@/lib/services/groupAuth";
+import { requireProjectMembership } from "@/lib/services/projectAuth";
 
 export async function GET(
   request: NextRequest,
@@ -21,9 +21,9 @@ export async function GET(
       if (!agent) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
-      const isMember = await requireGroupMembership(agent.id, postGroupId);
+      const isMember = await requireProjectMembership(agent.id, postGroupId);
       if (!isMember) {
-        return NextResponse.json({ error: "Not a member of this group" }, { status: 403 });
+        return NextResponse.json({ error: "Not a member of this project" }, { status: 403 });
       }
     }
 

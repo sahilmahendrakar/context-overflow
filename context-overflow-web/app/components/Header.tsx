@@ -7,20 +7,20 @@ import { ChevronDown, Github, ListFilter, Plus, Users, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
-import { useActiveGroup } from "@/app/context/ActiveGroupContext";
+import { useActiveProject } from "@/app/context/ActiveProjectContext";
 
 function browsePath(
   q: string | undefined,
   type: "question" | "finding" | null,
-  groupSlug?: string | null,
+  projectSlug?: string | null,
 ) {
   const p = new URLSearchParams();
   const trimmed = q?.trim();
   if (trimmed) p.set("q", trimmed);
   if (type) p.set("type", type);
   const s = p.toString();
-  if (groupSlug) {
-    return s ? `/g/${groupSlug}?${s}` : `/g/${groupSlug}`;
+  if (projectSlug) {
+    return s ? `/p/${projectSlug}?${s}` : `/p/${projectSlug}`;
   }
   return s ? `/browse?${s}` : "/browse";
 }
@@ -31,8 +31,8 @@ const TYPE_OPTIONS: { key: "question" | "finding" | null; label: string }[] = [
   { key: "finding", label: "Findings" },
 ];
 
-interface UserGroup {
-  group: { id: string; slug: string; name: string };
+interface UserProject {
+  project: { id: string; slug: string; name: string };
   role: string;
 }
 
@@ -40,33 +40,33 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [groupSwitcherOpen, setGroupSwitcherOpen] = useState(false);
-  const [groups, setGroups] = useState<UserGroup[]>([]);
+  const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
+  const [projects, setProjects] = useState<UserProject[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
-  const groupRef = useRef<HTMLDivElement>(null);
+  const projectRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user, loading, signIn, signOut, getIdToken } = useAuth();
-  const { activeGroup, setActiveGroup } = useActiveGroup();
-  const activeGroupSlug = activeGroup?.slug ?? null;
+  const { activeProject, setActiveProject } = useActiveProject();
+  const activeProjectSlug = activeProject?.slug ?? null;
 
-  const fetchGroups = useCallback(async () => {
-    if (!user) { setGroups([]); return; }
+  const fetchProjects = useCallback(async () => {
+    if (!user) { setProjects([]); return; }
     const token = await getIdToken();
     if (!token) return;
-    const res = await fetch("/api/groups", { headers: { Authorization: `Bearer ${token}` } });
-    if (res.ok) setGroups(await res.json());
+    const res = await fetch("/api/projects", { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) setProjects(await res.json());
   }, [user, getIdToken]);
 
-  useEffect(() => { fetchGroups(); }, [fetchGroups]);
+  useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
   const searchParamsKey = useMemo(() => searchParams.toString(), [searchParams]);
 
   const isSearchablePage =
     pathname === "/browse" ||
-    (activeGroupSlug && pathname === `/g/${activeGroupSlug}`);
+    (activeProjectSlug && pathname === `/p/${activeProjectSlug}`);
 
   useEffect(() => {
     if (isSearchablePage) {
@@ -88,7 +88,7 @@ export default function Header() {
     if (!trimmed) return;
     const t = searchParams.get("type");
     const type = t === "question" || t === "finding" ? t : null;
-    router.push(browsePath(trimmed, type, activeGroupSlug));
+    router.push(browsePath(trimmed, type, activeProjectSlug));
   }
 
   function clearSearch(e: React.MouseEvent) {
@@ -97,12 +97,12 @@ export default function Header() {
     setSearchQuery("");
     const t = searchParams.get("type");
     const type = t === "question" || t === "finding" ? t : null;
-    router.replace(browsePath(undefined, type, activeGroupSlug));
+    router.replace(browsePath(undefined, type, activeProjectSlug));
   }
 
   function applyTypeFilter(type: "question" | "finding" | null) {
     setFilterOpen(false);
-    router.push(browsePath(qForNavigation(), type, activeGroupSlug));
+    router.push(browsePath(qForNavigation(), type, activeProjectSlug));
   }
 
   const urlQ = searchParams.get("q") ?? "";
@@ -115,17 +115,17 @@ export default function Header() {
       const t = e.target as Node;
       if (menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false);
       if (filterRef.current && !filterRef.current.contains(t)) setFilterOpen(false);
-      if (groupRef.current && !groupRef.current.contains(t)) setGroupSwitcherOpen(false);
+      if (projectRef.current && !projectRef.current.contains(t)) setProjectSwitcherOpen(false);
     }
-    if (menuOpen || filterOpen || groupSwitcherOpen) document.addEventListener("mousedown", handleClickOutside);
+    if (menuOpen || filterOpen || projectSwitcherOpen) document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen, filterOpen, groupSwitcherOpen]);
+  }, [menuOpen, filterOpen, projectSwitcherOpen]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-5">
         <div className="flex items-center gap-2">
-          <Link href={activeGroupSlug ? `/g/${activeGroupSlug}/home` : "/"} className="flex items-center gap-2">
+          <Link href={activeProjectSlug ? `/p/${activeProjectSlug}/home` : "/"} className="flex items-center gap-2">
             <img
               src="/context-overflow-icon.png"
               alt="Context Overflow"
@@ -136,26 +136,26 @@ export default function Header() {
             </span>
           </Link>
 
-          {!loading && user && groups.length > 0 && (
-            <div ref={groupRef} className="relative hidden sm:block">
+          {!loading && user && projects.length > 0 && (
+            <div ref={projectRef} className="relative hidden sm:block">
               <button
-                onClick={() => setGroupSwitcherOpen((o) => !o)}
+                onClick={() => setProjectSwitcherOpen((o) => !o)}
                 className="flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1.5 text-sm transition hover:bg-[var(--surface-strong)]"
               >
                 <Users className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                 <span className="max-w-[8rem] truncate text-[var(--text-secondary)]">
-                  {activeGroupSlug
-                    ? groups.find((g) => g.group.slug === activeGroupSlug)?.group.name || activeGroupSlug
+                  {activeProjectSlug
+                    ? projects.find((p) => p.project.slug === activeProjectSlug)?.project.name || activeProjectSlug
                     : "Public"}
                 </span>
-                <ChevronDown className={`h-3.5 w-3.5 text-[var(--text-tertiary)] transition ${groupSwitcherOpen ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-3.5 w-3.5 text-[var(--text-tertiary)] transition ${projectSwitcherOpen ? "rotate-180" : ""}`} />
               </button>
-              {groupSwitcherOpen && (
+              {projectSwitcherOpen && (
                 <div className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[12rem] rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg">
                   <button
-                    onClick={() => { setGroupSwitcherOpen(false); setActiveGroup(null); router.push("/"); }}
+                    onClick={() => { setProjectSwitcherOpen(false); setActiveProject(null); router.push("/"); }}
                     className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                      !activeGroupSlug
+                      !activeProjectSlug
                         ? "bg-[var(--accent)]/10 font-medium text-[var(--accent)]"
                         : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
                     }`}
@@ -163,26 +163,26 @@ export default function Header() {
                     Public
                   </button>
                   <hr className="my-1 border-[var(--border)]" />
-                  {groups.map((g) => (
+                  {projects.map((p) => (
                     <button
-                      key={g.group.id}
-                      onClick={() => { setGroupSwitcherOpen(false); setActiveGroup(g.group); router.push(`/g/${g.group.slug}`); }}
+                      key={p.project.id}
+                      onClick={() => { setProjectSwitcherOpen(false); setActiveProject(p.project); router.push(`/p/${p.project.slug}`); }}
                       className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                        activeGroupSlug === g.group.slug
+                        activeProjectSlug === p.project.slug
                           ? "bg-[var(--accent)]/10 font-medium text-[var(--accent)]"
                           : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
                       }`}
                     >
-                      {g.group.name}
+                      {p.project.name}
                     </button>
                   ))}
                   <hr className="my-1 border-[var(--border)]" />
                   <button
-                    onClick={() => { setGroupSwitcherOpen(false); router.push("/groups/new"); }}
+                    onClick={() => { setProjectSwitcherOpen(false); router.push("/projects/new"); }}
                     className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-[var(--text-tertiary)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    Create Group
+                    Create Project
                   </button>
                 </div>
               )}
@@ -333,10 +333,10 @@ export default function Header() {
             <ThemeToggle />
           </div>
           <Button asChild variant="secondary">
-            <Link href={activeGroupSlug ? `/g/${activeGroupSlug}` : "/browse"}>Browse</Link>
+            <Link href={activeProjectSlug ? `/p/${activeProjectSlug}` : "/browse"}>Browse</Link>
           </Button>
           <Button asChild size="icon" title="Create post" aria-label="Create post">
-            <Link href={activeGroupSlug ? `/g/${activeGroupSlug}/post` : "/post"}>
+            <Link href={activeProjectSlug ? `/p/${activeProjectSlug}/post` : "/post"}>
               <Plus className="size-5" strokeWidth={2.25} />
             </Link>
           </Button>

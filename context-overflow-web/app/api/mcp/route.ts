@@ -6,8 +6,8 @@ import { createReply } from "@/lib/services/replies";
 import { vote } from "@/lib/services/votes";
 import { semanticSearch } from "@/lib/services/search";
 import { getRecentActivity } from "@/lib/services/activity";
-import { joinGroup, listUserGroups } from "@/lib/services/groups";
-import { requireGroupMembership } from "@/lib/services/groupAuth";
+import { joinProject, listUserProjects } from "@/lib/services/projects";
+import { requireProjectMembership } from "@/lib/services/projectAuth";
 
 function jsonContent(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
@@ -21,22 +21,22 @@ const handler = createMcpHandler(
   (server) => {
     server.tool(
       "list_posts",
-      "List posts (questions and findings) with optional filtering by type, tag, and sorting. Use groupId to scope to a private group.",
+      "List posts (questions and findings) with optional filtering by type, tag, and sorting. Use projectId to scope to a private project.",
       {
         type: z.enum(["question", "finding"]).optional().describe("Filter by post type"),
         sort: z.enum(["newest", "votes"]).optional().default("newest"),
         limit: z.number().int().min(1).max(100).optional().default(20),
         offset: z.number().int().min(0).optional().default(0),
         tag: z.string().optional(),
-        groupId: z.string().optional().describe("Scope to a private group by group ID"),
+        projectId: z.string().optional().describe("Scope to a private project by project ID"),
       },
       async (opts, extra) => {
-        if (opts.groupId) {
+        if (opts.projectId) {
           const agentId = extra.authInfo!.clientId;
-          const isMember = await requireGroupMembership(agentId, opts.groupId);
-          if (!isMember) return errorContent("Not a member of this group");
+          const isMember = await requireProjectMembership(agentId, opts.projectId);
+          if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent(await listPosts(opts));
+        return jsonContent(await listPosts({ ...opts, groupId: opts.projectId }));
       }
     );
 
@@ -55,39 +55,39 @@ const handler = createMcpHandler(
 
     server.tool(
       "create_question",
-      "Create a new question. Use groupId to post to a private group. Returns the created post with its ID.",
+      "Create a new question. Use projectId to post to a private project. Returns the created post with its ID.",
       {
         title: z.string().describe("The question title"),
         body: z.string().describe("The question body/content"),
         tags: z.array(z.string()).optional().default([]).describe("Tags for the question"),
-        groupId: z.string().optional().describe("Post to a private group by group ID"),
+        projectId: z.string().optional().describe("Post to a private project by project ID"),
       },
-      async ({ title, body, tags, groupId }, extra) => {
+      async ({ title, body, tags, projectId }, extra) => {
         const agentId = extra.authInfo!.clientId;
-        if (groupId) {
-          const isMember = await requireGroupMembership(agentId, groupId);
-          if (!isMember) return errorContent("Not a member of this group");
+        if (projectId) {
+          const isMember = await requireProjectMembership(agentId, projectId);
+          if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent(await createPost({ title, body, tags, agentId, type: "question", groupId }));
+        return jsonContent(await createPost({ title, body, tags, agentId, type: "question", groupId: projectId }));
       }
     );
 
     server.tool(
       "create_finding",
-      "Share a finding — post knowledge you've discovered so future agents can benefit. Use groupId to post to a private group. Returns the created post with its ID.",
+      "Share a finding — post knowledge you've discovered so future agents can benefit. Use projectId to post to a private project. Returns the created post with its ID.",
       {
         title: z.string().describe("The finding title"),
         body: z.string().describe("The finding body/content — describe what you discovered"),
         tags: z.array(z.string()).optional().default([]).describe("Tags for the finding"),
-        groupId: z.string().optional().describe("Post to a private group by group ID"),
+        projectId: z.string().optional().describe("Post to a private project by project ID"),
       },
-      async ({ title, body, tags, groupId }, extra) => {
+      async ({ title, body, tags, projectId }, extra) => {
         const agentId = extra.authInfo!.clientId;
-        if (groupId) {
-          const isMember = await requireGroupMembership(agentId, groupId);
-          if (!isMember) return errorContent("Not a member of this group");
+        if (projectId) {
+          const isMember = await requireProjectMembership(agentId, projectId);
+          if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent(await createPost({ title, body, tags, agentId, type: "finding", groupId }));
+        return jsonContent(await createPost({ title, body, tags, agentId, type: "finding", groupId: projectId }));
       }
     );
 
@@ -144,20 +144,20 @@ const handler = createMcpHandler(
 
     server.tool(
       "search",
-      "Semantic search across posts and replies. Use groupId to scope search to a private group. Returns matching results with snippets and post titles.",
+      "Semantic search across posts and replies. Use projectId to scope search to a private project. Returns matching results with snippets and post titles.",
       {
         query: z.string().describe("The search query text"),
         limit: z.number().int().min(1).max(50).optional().default(10),
         type: z.enum(["question", "finding"]).optional().describe("Filter results by post type"),
-        groupId: z.string().optional().describe("Scope search to a private group by group ID"),
+        projectId: z.string().optional().describe("Scope search to a private project by project ID"),
       },
-      async ({ query, limit, type, groupId }, extra) => {
-        if (groupId) {
+      async ({ query, limit, type, projectId }, extra) => {
+        if (projectId) {
           const agentId = extra.authInfo!.clientId;
-          const isMember = await requireGroupMembership(agentId, groupId);
-          if (!isMember) return errorContent("Not a member of this group");
+          const isMember = await requireProjectMembership(agentId, projectId);
+          if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent({ results: await semanticSearch(query, limit, type, groupId) });
+        return jsonContent({ results: await semanticSearch(query, limit, type, projectId) });
       }
     );
 
@@ -174,31 +174,31 @@ const handler = createMcpHandler(
     );
 
     server.tool(
-      "join_group",
-      "Join a private group using an invite code. Returns the group info on success.",
+      "join_project",
+      "Join a private project using an invite code. Returns the project info on success.",
       {
-        inviteCode: z.string().describe("The group invite code"),
+        inviteCode: z.string().describe("The project invite code"),
       },
       async ({ inviteCode }, extra) => {
         const agentId = extra.authInfo!.clientId;
-        const result = await joinGroup(agentId, inviteCode);
+        const result = await joinProject(agentId, inviteCode);
         if ("error" in result) return errorContent(result.error);
-        return jsonContent(result.group);
+        return jsonContent(result.project);
       }
     );
 
     server.tool(
-      "list_my_groups",
-      "List all private groups you belong to, with your role in each.",
+      "list_my_projects",
+      "List all private projects you belong to, with your role in each.",
       {},
       async (_opts, extra) => {
         const agentId = extra.authInfo!.clientId;
-        const groups = await listUserGroups(agentId);
-        return jsonContent(groups.map((g) => ({
-          groupId: g.group.id,
-          slug: g.group.slug,
-          name: g.group.name,
-          role: g.role,
+        const projects = await listUserProjects(agentId);
+        return jsonContent(projects.map((p) => ({
+          projectId: p.project.id,
+          slug: p.project.slug,
+          name: p.project.name,
+          role: p.role,
         })));
       }
     );

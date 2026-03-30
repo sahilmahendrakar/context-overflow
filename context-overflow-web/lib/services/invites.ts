@@ -1,20 +1,20 @@
 import crypto from "crypto";
 import { db } from "@/lib/firebase";
-import { sendGroupInviteEmail } from "@/lib/email";
-import type { GroupInvite, Group } from "@/lib/data";
+import { sendProjectInviteEmail } from "@/lib/email";
+import type { ProjectInvite, Project } from "@/lib/data";
 
 function generateInviteCode(): string {
   return crypto.randomBytes(16).toString("hex");
 }
 
 export async function createEmailInvites(params: {
-  groupId: string;
+  projectId: string;
   emails: string[];
   inviterAgentId: string;
-  groupName: string;
+  projectName: string;
   inviterUsername: string;
 }): Promise<{ sent: number; failed: string[] }> {
-  const { groupId, emails, inviterAgentId, groupName, inviterUsername } = params;
+  const { projectId, emails, inviterAgentId, projectName, inviterUsername } = params;
   const now = new Date().toISOString();
   const failed: string[] = [];
   let sent = 0;
@@ -25,7 +25,7 @@ export async function createEmailInvites(params: {
 
     const existing = await db
       .collection("group_invites")
-      .where("groupId", "==", groupId)
+      .where("groupId", "==", projectId)
       .where("email", "==", normalizedEmail)
       .where("status", "==", "pending")
       .limit(1)
@@ -38,7 +38,7 @@ export async function createEmailInvites(params: {
 
     const code = generateInviteCode();
     await db.collection("group_invites").add({
-      groupId,
+      groupId: projectId,
       email: normalizedEmail,
       invitedBy: inviterAgentId,
       code,
@@ -49,7 +49,7 @@ export async function createEmailInvites(params: {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.ctxoverflow.dev";
       const inviteLink = `${baseUrl}/invite/${code}`;
-      await sendGroupInviteEmail(normalizedEmail, groupName, inviterUsername, inviteLink);
+      await sendProjectInviteEmail(normalizedEmail, projectName, inviterUsername, inviteLink);
       sent++;
     } catch (e) {
       console.error(`Failed to send invite email to ${normalizedEmail}:`, e);
@@ -62,7 +62,7 @@ export async function createEmailInvites(params: {
 
 export async function getInviteByCode(
   code: string
-): Promise<(GroupInvite & { group: Group }) | null> {
+): Promise<(ProjectInvite & { project: Project }) | null> {
   const snapshot = await db
     .collection("group_invites")
     .where("code", "==", code)
@@ -75,20 +75,20 @@ export async function getInviteByCode(
   const doc = snapshot.docs[0];
   const data = doc.data();
 
-  const groupDoc = await db.collection("groups").doc(data.groupId).get();
-  if (!groupDoc.exists) return null;
+  const projectDoc = await db.collection("groups").doc(data.groupId).get();
+  if (!projectDoc.exists) return null;
 
   return {
     id: doc.id,
     ...data,
-    group: { id: groupDoc.id, ...groupDoc.data() },
-  } as GroupInvite & { group: Group };
+    project: { id: projectDoc.id, ...projectDoc.data() },
+  } as ProjectInvite & { project: Project };
 }
 
 export async function acceptInvite(
   code: string,
   agentId: string
-): Promise<{ group: Group } | { error: string }> {
+): Promise<{ project: Project } | { error: string }> {
   const invite = await getInviteByCode(code);
   if (!invite) {
     return { error: "Invalid or expired invite." };
@@ -118,5 +118,5 @@ export async function acceptInvite(
 
   await batch.commit();
 
-  return { group: invite.group };
+  return { project: invite.project };
 }

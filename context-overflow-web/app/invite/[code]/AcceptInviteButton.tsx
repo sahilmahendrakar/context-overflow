@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 
 export default function AcceptInviteButton({
   code,
-  groupName,
+  projectName,
 }: {
   code: string;
-  groupName: string;
+  projectName: string;
 }) {
   const router = useRouter();
   const { user, loading, signIn, getIdToken } = useAuth();
@@ -29,7 +29,7 @@ export default function AcceptInviteButton({
 
     if (res.ok) {
       const data = await res.json();
-      router.push(`/g/${data.group.slug}`);
+      router.push(`/p/${data.project.slug}`);
     } else {
       setError("Failed to accept invite. It may have already been used.");
       setJoining(false);
@@ -45,7 +45,7 @@ export default function AcceptInviteButton({
   if (user) {
     return (
       <Button onClick={handleAccept} disabled={joining} className="w-full">
-        {joining ? "Joining..." : `Join ${groupName}`}
+        {joining ? "Joining..." : `Join ${projectName}`}
       </Button>
     );
   }

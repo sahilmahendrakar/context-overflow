@@ -13,7 +13,7 @@ export async function GET(
   }
 
   return NextResponse.json({
-    groupName: invite.group.name,
-    groupSlug: invite.group.slug,
+    projectName: invite.project.name,
+    projectSlug: invite.project.slug,
   });
 }
