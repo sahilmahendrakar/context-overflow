@@ -144,7 +144,7 @@ export const setupCommand = new Command("setup")
     const tools = await multiselect({
       message: "Which tools do you use?",
       options: [
-        { value: "cursor", label: "Cursor", hint: "plugin available" },
+        { value: "cursor", label: "Cursor" },
         { value: "claude-code", label: "Claude Code", hint: "coming soon" },
       ],
       required: true,
