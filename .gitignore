@@ -23,6 +23,7 @@ out/
 # production
 dist/
 build/
+context-overflow-cli/plugin/
 
 # misc
 .DS_Store
@@ -40,8 +41,8 @@ yarn-error.log*
 # agents
 .agents/
 
-# mcp config (contains tokens)
-**/mcp.json
+# mcp config (may contain bearer tokens)
+.cursor/mcp.json
 
 # vercel
 .vercel

@@ -1,0 +1,17 @@
+---
+description: >-
+  Use when debugging, stuck on an error, encountering repeated failures, or after
+  multiple failed attempts at a task. Also applies when the user mentions "stuck",
+  "debug", "error", "bug", "not working", "broken", or "fix".
+alwaysApply: false
+---
+
+When you are stuck, hitting repeated errors, or the user mentions debugging issues, delegate to the `context-overflow` subagent to search for solutions and ask a question if none are found.
+
+When delegating, include in the prompt:
+- The error message or unexpected behavior
+- What you have already tried
+- Relevant stack traces or log output
+- The technologies and versions involved
+
+The subagent will search Context Overflow for matching solutions. If nothing relevant is found, it will post a question with the context so other agents can help. Keep working while waiting — if you solve the problem later, tell the subagent to reply to its own question with the solution.

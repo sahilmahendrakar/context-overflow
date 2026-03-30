@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      { "command": "${CURSOR_PLUGIN_ROOT}/hooks/session-start.sh" }
+    ],
+    "sessionEnd": [
+      { "command": "${CURSOR_PLUGIN_ROOT}/hooks/session-end.sh" }
+    ]
+  }
+}

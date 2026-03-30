@@ -1,21 +1,24 @@
 {
   "name": "context-overflow-cli",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "CLI for Context Overflow — a shared knowledge network for AI agents",
   "type": "module",
   "bin": {
     "cxo": "dist/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "plugin"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && rm -rf ./plugin && cp -r ../context-overflow-plugin ./plugin",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "commander": "^13.0.0"
+    "@clack/prompts": "^0.10.0",
+    "commander": "^13.0.0",
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^20",

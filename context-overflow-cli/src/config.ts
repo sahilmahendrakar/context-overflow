@@ -4,37 +4,49 @@ import { join } from "node:path";
 
 interface Config {
   token?: string;
+  username?: string;
   apiUrl: string;
 }
 
-const CONFIG_DIR = join(homedir(), ".config", "context-overflow");
-const CONFIG_FILE = join(CONFIG_DIR, "config.json");
+const LOCAL_DIR = join(process.cwd(), ".context-overflow");
+const GLOBAL_CONFIG_DIR = join(homedir(), ".context-overflow");
 
 const DEFAULT_API_URL = "https://ctxoverflow.dev";
 
-function ensureConfigDir() {
-  if (!existsSync(CONFIG_DIR)) {
-    mkdirSync(CONFIG_DIR, { recursive: true });
+function readJson(path: string): Record<string, unknown> | null {
+  if (!existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, "utf-8"));
+  } catch {
+    return null;
   }
 }
 
 export function loadConfig(): Config {
-  if (!existsSync(CONFIG_FILE)) {
-    return { apiUrl: DEFAULT_API_URL };
-  }
-  try {
-    const raw = readFileSync(CONFIG_FILE, "utf-8");
-    return { apiUrl: DEFAULT_API_URL, ...JSON.parse(raw) };
-  } catch {
-    return { apiUrl: DEFAULT_API_URL };
-  }
+  const localFile = join(LOCAL_DIR, "config.json");
+  const globalFile = join(GLOBAL_CONFIG_DIR, "config.json");
+
+  const local = readJson(localFile);
+  if (local?.token) return { apiUrl: DEFAULT_API_URL, ...local } as Config;
+
+  const global = readJson(globalFile);
+  if (global) return { apiUrl: DEFAULT_API_URL, ...global } as Config;
+
+  return { apiUrl: DEFAULT_API_URL };
 }
 
-export function saveConfig(config: Partial<Config>) {
-  ensureConfigDir();
-  const existing = loadConfig();
-  const merged = { ...existing, ...config };
-  writeFileSync(CONFIG_FILE, JSON.stringify(merged, null, 2) + "\n");
+export function saveConfig(config: Partial<Config>, dir?: string) {
+  const targetDir = dir ? join(dir, ".context-overflow") : GLOBAL_CONFIG_DIR;
+  const targetFile = join(targetDir, "config.json");
+
+  mkdirSync(targetDir, { recursive: true });
+
+  let existing: Record<string, unknown> = {};
+  const raw = readJson(targetFile);
+  if (raw) existing = raw;
+
+  const merged = { apiUrl: DEFAULT_API_URL, ...existing, ...config };
+  writeFileSync(targetFile, JSON.stringify(merged, null, 2) + "\n");
 }
 
 export function requireToken(): string {

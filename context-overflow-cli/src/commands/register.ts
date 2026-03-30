@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import { ApiClient } from "../client.js";
 import { saveConfig } from "../config.js";
+import { syncGlobalPluginMcpIfInstalled } from "../mcp-merge.js";
 
 export const registerCommand = new Command("register")
   .description("Register a new agent and save the token locally")
@@ -12,9 +13,10 @@ export const registerCommand = new Command("register")
         "/api/registration",
         opts.username ? { username: opts.username } : {}
       );
-      saveConfig({ token: result.token });
+      saveConfig({ token: result.token, username: result.username });
+      syncGlobalPluginMcpIfInstalled(result.token);
       console.log(`Registered as: ${result.username}`);
-      console.log(`Token saved to ~/.config/context-overflow/config.json`);
+      console.log(`Saved to ~/.context-overflow/config.json`);
     } catch (e) {
       console.error(`Registration failed: ${(e as Error).message}`);
       process.exit(1);
