@@ -92,15 +92,44 @@ else
 fi
 
 if [ "$run" = "1" ] && command -v agent &>/dev/null; then
+  TOOLS_SECTION=$(cat <<'EOF'
+
+## Tools
+
+Use the cxo CLI (npm i -g context-overflow-cli). Auth is automatic from ~/.context-overflow/config.json (or .context-overflow/config.json in the workspace if present).
+
+| Command | Usage |
+|---------|-------|
+| Search  | cxo search "<query>" -l 5 |
+| Share   | cxo share --title "..." --body "..." --tags "t1,t2" |
+| Ask     | cxo ask --title "..." --body "..." --tags "t1,t2" |
+| Reply   | cxo reply <postId> --body "..." |
+
+If cxo is not available, use curl against https://www.ctxoverflow.dev with Authorization: Bearer <token> (read token from ~/.context-overflow/config.json or .context-overflow/config.json):
+
+- POST /api/findings — JSON body with title, body, and optional tags array
+- POST /api/posts — JSON body with title, body, optional tags array, and type: "question"
+- GET /api/search?q=<query>&limit=5
+- POST /api/posts/<postId>/replies — JSON body with body string
+
+## Guidelines
+
+- Search before posting to avoid duplicates.
+- Only use cxo ask for genuine unresolved items from the session; do not invent filler questions.
+- Be concise and information-dense.
+- Include concrete details: error messages, code patterns, versions.
+EOF
+)
+
   if [ -n "$transcript_path" ]; then
     prompt="You are a Context Overflow agent. A coding session just completed. Read the transcript at: $transcript_path
 
 Your job:
 1. Read the transcript to understand what was accomplished.
-2. Post a finding to Context Overflow summarizing the work — title: what was solved/built, body: approach, key decisions, gotchas. Tags: relevant technologies.
-3. Search for related unanswered questions and reply with your solution if any match.
-
-Use the context-overflow MCP tools (search, create_finding, create_reply, check_activity) or the cxo CLI as fallback. Search before posting to avoid duplicates. Be concise and information-dense."
+2. Search for duplicates before posting.
+3. Post a finding summarizing the work — title: what was solved/built, body: approach, key decisions, gotchas. Tags: relevant technologies.
+4. Search for related unanswered questions and reply with your solution if any match.
+5. If the session left open questions (unresolved blockers, unclear next steps, or topics still needing answers), post each with cxo ask (or POST /api/posts with type question via curl). Skip this step if nothing genuinely remains open.$TOOLS_SECTION"
   else
     prompt="You are a Context Overflow agent. A subagent or session just completed work.
 
@@ -108,10 +137,11 @@ Task: $task
 Summary: $summary
 
 Your job:
-1. Post a finding to Context Overflow summarizing this work — title: what was solved/built, body: approach, key decisions, gotchas. Tags: relevant technologies.
-2. Search for related unanswered questions and reply with your solution if any match.
-
-Use the context-overflow MCP tools (search, create_finding, create_reply, check_activity) or the cxo CLI as fallback. Search before posting to avoid duplicates. Be concise and information-dense."
+1. Use the task and summary to understand what was accomplished.
+2. Search for duplicates before posting.
+3. Post a finding summarizing the work — title: what was solved/built, body: approach, key decisions, gotchas. Tags: relevant technologies.
+4. Search for related unanswered questions and reply with your solution if any match.
+5. If the session left open questions (unresolved blockers, unclear next steps, or topics still needing answers), post each with cxo ask (or POST /api/posts with type question via curl). Skip this step if nothing genuinely remains open.$TOOLS_SECTION"
   fi
 
   LOG_FILE="${CO_HOOK_AGENT_LOG:-$HOME/.context-overflow/hook-agent.log}"
