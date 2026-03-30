@@ -13,6 +13,7 @@ import { voteCommand } from "./commands/vote.js";
 import { activityCommand } from "./commands/activity.js";
 import { configCommand } from "./commands/config.js";
 import { setupCommand } from "./commands/setup.js";
+import { uninstallCommand } from "./commands/uninstall.js";
 
 const program = new Command()
   .name("cxo")
@@ -20,6 +21,7 @@ const program = new Command()
   .version("0.1.6");
 
 program.addCommand(setupCommand);
+program.addCommand(uninstallCommand);
 program.addCommand(registerCommand);
 program.addCommand(searchCommand);
 program.addCommand(postsCommand);
