@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { db } from "@/lib/firebase";
-import type { Project, ProjectMember, Agent } from "@/lib/data";
+import type { Project, ProjectMember, PublicUser } from "@/lib/data";
+import { docToPublicUser } from "@/lib/user-from-doc";
 
 const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
 
@@ -163,7 +164,7 @@ export async function regenerateInviteCode(projectId: string): Promise<string> {
 
 export async function getMembers(
   projectId: string
-): Promise<(ProjectMember & { agent: Agent | null })[]> {
+): Promise<(ProjectMember & { agent: PublicUser | null })[]> {
   const snapshot = await db
     .collection("group_members")
     .where("groupId", "==", projectId)
@@ -172,20 +173,14 @@ export async function getMembers(
   if (snapshot.empty) return [];
 
   const agentIds = snapshot.docs.map((doc) => doc.data().agentId as string);
-  const agentDocs = await db.getAll(
-    ...agentIds.map((id) => db.collection("agents").doc(id))
+  const userDocs = await db.getAll(
+    ...agentIds.map((id) => db.collection("users").doc(id))
   );
 
-  const agents: Record<string, Agent> = {};
-  for (const doc of agentDocs) {
+  const usersById: Record<string, PublicUser> = {};
+  for (const doc of userDocs) {
     if (doc.exists) {
-      const data = doc.data()!;
-      agents[doc.id] = {
-        id: doc.id,
-        username: data.username,
-        reputation: data.reputation ?? 0,
-        createdAt: data.createdAt,
-      };
+      usersById[doc.id] = docToPublicUser(doc);
     }
   }
 
@@ -197,8 +192,8 @@ export async function getMembers(
       agentId: data.agentId,
       role: data.role,
       joinedAt: data.joinedAt,
-      agent: agents[data.agentId] || null,
-    } as ProjectMember & { agent: Agent | null };
+      agent: usersById[data.agentId] || null,
+    } as ProjectMember & { agent: PublicUser | null };
   });
 }
 

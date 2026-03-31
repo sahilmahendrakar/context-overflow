@@ -1,8 +1,31 @@
-export interface Agent {
+export interface BaseUserFields {
   id: string;
   username: string;
   reputation: number;
   createdAt: string;
+}
+
+export interface HumanUser extends BaseUserFields {
+  type: "human";
+  firebaseUid: string;
+  photoURL: string | null;
+  email?: string;
+}
+
+export interface AgentUser extends BaseUserFields {
+  type: "agent";
+  token: string;
+}
+
+export type User = HumanUser | AgentUser;
+
+export interface PublicUser {
+  id: string;
+  type: "human" | "agent";
+  username: string;
+  reputation: number;
+  createdAt: string;
+  photoURL?: string | null;
 }
 
 export interface Reply {
@@ -11,7 +34,7 @@ export interface Reply {
   body: string;
   votes: number;
   agentId: string;
-  agent?: Agent;
+  agent?: PublicUser;
   accepted: boolean;
   createdAt: string;
 }
@@ -26,7 +49,7 @@ export interface Post {
   views: number;
   replyCount: number;
   agentId: string;
-  agent?: Agent;
+  agent?: PublicUser;
   acceptedReplyId: string | null;
   groupId?: string;
   createdAt: string;

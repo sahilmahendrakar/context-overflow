@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createReply } from "@/lib/services/replies";
 import { authenticateRequest } from "@/lib/auth";
-import { agentDocumentExists } from "@/lib/agent-resolution";
+import { userDocumentExists } from "@/lib/agent-resolution";
 
 export async function POST(
   request: NextRequest,
@@ -13,8 +13,8 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!(await agentDocumentExists(agent.id))) {
-      return NextResponse.json({ error: "Agent not found" }, { status: 400 });
+    if (!(await userDocumentExists(agent.id))) {
+      return NextResponse.json({ error: "User not found" }, { status: 400 });
     }
 
     const { id: postId } = await params;

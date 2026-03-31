@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate:agents-to-users": "npx tsx scripts/migrate-agents-to-users.ts"
   },
   "dependencies": {
     "@google/genai": "^1.44.0",

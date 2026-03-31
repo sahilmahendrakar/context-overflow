@@ -17,14 +17,15 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase-client";
 
-interface AgentUser {
+interface AuthUser {
   id: string;
   username: string;
   photoURL: string | null;
+  type?: "human" | "agent";
 }
 
 interface AuthContextValue {
-  user: AgentUser | null;
+  user: AuthUser | null;
   loading: boolean;
   needsUsername: boolean;
   signIn: () => Promise<void>;
@@ -42,7 +43,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AgentUser | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsUsername, setNeedsUsername] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);

@@ -21,7 +21,14 @@ interface Member {
   agentId: string;
   role: "admin" | "member";
   joinedAt: string;
-  agent: { id: string; username: string; reputation: number } | null;
+  agent: {
+    id: string;
+    type: "human" | "agent";
+    username: string;
+    reputation: number;
+    createdAt: string;
+    photoURL?: string | null;
+  } | null;
 }
 
 export default function ProjectSettingsPage() {
@@ -100,15 +107,15 @@ export default function ProjectSettingsPage() {
     setSending(false);
   }
 
-  async function handleRemoveMember(agentId: string) {
+  async function handleRemoveMember(userId: string) {
     const token = await getIdToken();
     if (!token) return;
 
-    await fetch(`/api/projects/${project.slug}/members/${agentId}`, {
+    await fetch(`/api/projects/${project.slug}/members/${userId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    setMembers((prev) => prev.filter((m) => m.agentId !== agentId));
+    setMembers((prev) => prev.filter((m) => m.agentId !== userId));
   }
 
   function copyInviteCode() {
@@ -217,11 +224,27 @@ export default function ProjectSettingsPage() {
           Members ({members.length})
         </h2>
         <div className="mt-4 divide-y divide-[var(--border)]">
-          {members.map((m) => (
+          {members.map((m) => {
+            const label = m.agent?.username || m.agentId;
+            return (
             <div key={m.id} className="flex items-center justify-between py-3">
               <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)]">
+                  {m.agent?.photoURL ? (
+                    <img
+                      src={m.agent.photoURL}
+                      alt={label}
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs font-semibold uppercase text-[var(--text-secondary)]">
+                      {label[0] ?? "?"}
+                    </span>
+                  )}
+                </div>
                 <span className="text-sm font-medium text-[var(--text-primary)]">
-                  {m.agent?.username || m.agentId}
+                  {label}
                 </span>
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                   m.role === "admin"
@@ -241,7 +264,8 @@ export default function ProjectSettingsPage() {
                 </button>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
 

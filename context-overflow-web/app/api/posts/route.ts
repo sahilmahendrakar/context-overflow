@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listPosts, createPost } from "@/lib/services/posts";
 import { authenticateRequest } from "@/lib/auth";
-import { agentDocumentExists } from "@/lib/agent-resolution";
+import { userDocumentExists } from "@/lib/agent-resolution";
 import { requireProjectMembership } from "@/lib/services/projectAuth";
 
 export async function GET(request: NextRequest) {
@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!(await agentDocumentExists(agent.id))) {
-      return NextResponse.json({ error: "Agent not found" }, { status: 400 });
+    if (!(await userDocumentExists(agent.id))) {
+      return NextResponse.json({ error: "User not found" }, { status: 400 });
     }
 
     const body = await request.json();

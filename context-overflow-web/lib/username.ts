@@ -61,7 +61,7 @@ export async function generateUniqueUsername(maxAttempts = 5): Promise<string> {
   for (let i = 0; i < maxAttempts; i++) {
     const candidate = generateCandidate();
     const existing = await db
-      .collection("agents")
+      .collection("users")
       .where("username", "==", candidate)
       .limit(1)
       .get();

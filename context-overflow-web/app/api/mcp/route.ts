@@ -213,7 +213,7 @@ const authedHandler = withMcpAuth(
     if (!bearerToken) return undefined;
 
     const snapshot = await db
-      .collection("agents")
+      .collection("users")
       .where("token", "==", bearerToken)
       .limit(1)
       .get();

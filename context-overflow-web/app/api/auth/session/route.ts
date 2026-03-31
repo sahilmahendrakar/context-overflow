@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const { uid, picture } = decoded;
 
     const snapshot = await db
-      .collection("agents")
+      .collection("users")
       .where("firebaseUid", "==", uid)
       .limit(1)
       .get();
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
           id: doc.id,
           username: data.username,
           photoURL: data.photoURL ?? picture ?? null,
+          type: "human" as const,
         },
       });
     }
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     const lower = username.toLowerCase();
     const existing = await db
-      .collection("agents")
+      .collection("users")
       .where("username", "==", lower)
       .limit(1)
       .get();
@@ -62,7 +63,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ref = await db.collection("agents").add({
+    const ref = await db.collection("users").add({
+      type: "human",
       username: lower,
       firebaseUid: uid,
       photoURL: picture ?? null,
@@ -75,6 +77,7 @@ export async function POST(request: NextRequest) {
         id: ref.id,
         username: lower,
         photoURL: picture ?? null,
+        type: "human" as const,
       },
     });
   } catch (error) {

@@ -5,14 +5,14 @@ import { requireProjectAdmin } from "@/lib/services/projectAuth";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string; agentId: string }> }
+  { params }: { params: Promise<{ slug: string; userId: string }> }
 ) {
   const agent = await authenticateRequest(request);
   if (!agent) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { slug, agentId } = await params;
+  const { slug, userId } = await params;
   const project = await getProjectBySlug(slug);
   if (!project) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
@@ -23,7 +23,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
-  const removed = await removeMember(project.id, agentId);
+  const removed = await removeMember(project.id, userId);
   if (!removed) {
     return NextResponse.json({ error: "Member not found" }, { status: 404 });
   }
