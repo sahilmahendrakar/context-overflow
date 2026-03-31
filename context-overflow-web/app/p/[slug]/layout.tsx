@@ -6,7 +6,6 @@ import { useActiveProject } from "@/app/context/ActiveProjectContext";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Users } from "lucide-react";
 import { ProjectProvider } from "./ProjectContext";
 
 interface ProjectInfo {
@@ -29,32 +28,6 @@ function AccessDenied({ message, showSignIn, onSignIn }: { message: string; show
   );
 }
 
-function ProjectHeader({ project, slug }: { project: ProjectInfo; slug: string }) {
-  return (
-    <div className="mb-6 flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-muted)] px-5 py-4">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
-          <Users className="h-5 w-5" />
-        </div>
-        <div>
-          <Link
-            href={`/p/${slug}`}
-            className="text-lg font-semibold text-[var(--text-primary)] hover:text-[var(--accent)] transition"
-          >
-            {project.name}
-          </Link>
-          {project.description && (
-            <p className="text-sm text-[var(--text-secondary)]">{project.description}</p>
-          )}
-        </div>
-      </div>
-      <Button asChild variant="ghost" size="sm">
-        <Link href={`/p/${slug}/settings`}>Settings</Link>
-      </Button>
-    </div>
-  );
-}
-
 export default function ProjectLayout({ children }: { children: ReactNode }) {
   const { slug } = useParams<{ slug: string }>();
   const { user, loading, signIn, getIdToken } = useAuth();
@@ -65,18 +38,24 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!user) {
-      setStatus("forbidden");
-      return;
+      const id = window.setTimeout(() => setStatus("forbidden"), 0);
+      return () => clearTimeout(id);
     }
 
+    let cancelled = false;
     (async () => {
       const token = await getIdToken();
-      if (!token) { setStatus("forbidden"); return; }
+      if (cancelled) return;
+      if (!token) {
+        window.setTimeout(() => setStatus("forbidden"), 0);
+        return;
+      }
 
       const res = await fetch(`/api/projects/${slug}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      if (cancelled) return;
       if (res.ok) {
         const data = await res.json();
         setProject(data);
@@ -88,6 +67,10 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
         setStatus("not_found");
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [slug, user, loading, getIdToken, setActiveProject]);
 
   if (loading || status === "loading") {
@@ -118,10 +101,7 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
 
   return (
     <ProjectProvider value={project!}>
-      <div>
-        <ProjectHeader project={project!} slug={slug} />
-        {children}
-      </div>
+      {children}
     </ProjectProvider>
   );
 }

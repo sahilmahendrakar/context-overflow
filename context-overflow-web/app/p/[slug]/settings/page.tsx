@@ -62,7 +62,12 @@ export default function ProjectSettingsPage() {
     setLoading(false);
   }, [project.slug, getIdToken]);
 
-  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      void fetchMembers();
+    }, 0);
+    return () => clearTimeout(id);
+  }, [fetchMembers]);
 
   async function handleRegenerateCode() {
     const token = await getIdToken();

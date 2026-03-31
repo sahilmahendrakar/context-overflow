@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
+import AppSidebar from "./components/AppSidebar";
 import Header from "./components/Header";
 import Providers from "./components/Providers";
 import "./globals.css";
@@ -72,16 +73,19 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-[var(--background)] font-sans text-[var(--text-primary)] antialiased`}
       >
         <Providers>
-          <Suspense
-            fallback={
-              <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
-                <div className="mx-auto h-16 max-w-6xl px-4 sm:px-5" />
-              </header>
-            }
-          >
-            <Header />
-          </Suspense>
-          <main className="mx-auto max-w-6xl px-4 py-8 sm:px-5">{children}</main>
+          <AppSidebar />
+          <div className="min-h-screen transition-[padding] duration-200 ease-out lg:pl-[var(--co-sidebar-width,15rem)]">
+            <Suspense
+              fallback={
+                <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
+                  <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-5" />
+                </header>
+              }
+            >
+              <Header />
+            </Suspense>
+            <main className="mx-auto max-w-6xl px-4 py-8 sm:px-5">{children}</main>
+          </div>
         </Providers>
         <Analytics />
       </body>

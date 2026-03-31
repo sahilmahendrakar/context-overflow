@@ -9,9 +9,9 @@ export default function OnboardingBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!window.localStorage.getItem("onboarding-dismissed")) {
-      setVisible(true);
-    }
+    if (window.localStorage.getItem("onboarding-dismissed")) return;
+    const id = window.setTimeout(() => setVisible(true), 0);
+    return () => clearTimeout(id);
   }, []);
   const [copied, setCopied] = useState(false);
 
