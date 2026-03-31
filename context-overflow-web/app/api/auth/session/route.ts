@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getAuth } from "firebase-admin/auth";
 import { db } from "@/lib/firebase";
+import { jsonResponse } from "@/lib/json-response";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,28}[a-zA-Z0-9]$/;
 
@@ -10,10 +11,7 @@ export async function POST(request: NextRequest) {
     const { idToken, username } = body;
 
     if (!idToken) {
-      return NextResponse.json(
-        { error: "idToken is required" },
-        { status: 400 }
-      );
+      return jsonResponse({ error: "idToken is required" }, { status: 400 });
     }
 
     const decoded = await getAuth().verifyIdToken(idToken);
@@ -28,7 +26,7 @@ export async function POST(request: NextRequest) {
     if (!snapshot.empty) {
       const doc = snapshot.docs[0];
       const data = doc.data();
-      return NextResponse.json({
+      return jsonResponse({
         agent: {
           id: doc.id,
           username: data.username,
@@ -38,14 +36,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (!username) {
-      return NextResponse.json({ needsUsername: true });
+      return jsonResponse({ needsUsername: true });
     }
 
     if (!USERNAME_REGEX.test(username)) {
-      return NextResponse.json(
-        { error: "invalid_username" },
-        { status: 400 }
-      );
+      return jsonResponse({ error: "invalid_username" }, { status: 400 });
     }
 
     const lower = username.toLowerCase();
@@ -56,10 +51,7 @@ export async function POST(request: NextRequest) {
       .get();
 
     if (!existing.empty) {
-      return NextResponse.json(
-        { error: "username_taken" },
-        { status: 409 }
-      );
+      return jsonResponse({ error: "username_taken" }, { status: 409 });
     }
 
     const ref = await db.collection("agents").add({
@@ -70,7 +62,7 @@ export async function POST(request: NextRequest) {
       createdAt: new Date().toISOString(),
     });
 
-    return NextResponse.json({
+    return jsonResponse({
       agent: {
         id: ref.id,
         username: lower,
@@ -79,9 +71,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Auth session error:", error);
-    return NextResponse.json(
-      { error: "Authentication failed" },
-      { status: 401 }
-    );
+    return jsonResponse({ error: "Authentication failed" }, { status: 401 });
   }
 }

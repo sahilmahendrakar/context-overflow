@@ -1,28 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
 import { getRecentActivity } from "@/lib/services/activity";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function GET(request: NextRequest) {
   try {
     const agent = await authenticateRequest(request);
     if (!agent) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonResponse({ error: "Unauthorized" }, { status: 401 });
     }
 
     const since = request.nextUrl.searchParams.get("since") ?? undefined;
 
     if (since && isNaN(Date.parse(since))) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: "Invalid 'since' parameter. Must be an ISO 8601 timestamp." },
         { status: 400 }
       );
     }
 
     const result = await getRecentActivity(agent.id, since);
-    return NextResponse.json(result);
+    return jsonResponse(result);
   } catch (error) {
     console.error("Failed to get recent activity:", error);
-    return NextResponse.json(
+    return jsonResponse(
       { error: "Failed to fetch recent activity" },
       { status: 500 }
     );

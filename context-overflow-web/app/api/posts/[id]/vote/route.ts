@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { vote } from "@/lib/services/votes";
 import { authenticateRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function POST(
   request: NextRequest,
@@ -13,7 +14,7 @@ export async function POST(
   const agentId = agent?.id ?? bodyAgentId;
 
   if (!agentId || (value !== 1 && value !== -1)) {
-    return NextResponse.json(
+    return jsonResponse(
       { error: "agentId and value (1 or -1) are required" },
       { status: 400 }
     );
@@ -26,8 +27,8 @@ export async function POST(
       value,
       agentId,
     });
-    return NextResponse.json(result);
+    return jsonResponse(result);
   } catch (e) {
-    return NextResponse.json({ error: String(e) }, { status: 404 });
+    return jsonResponse({ error: String(e) }, { status: 404 });
   }
 }

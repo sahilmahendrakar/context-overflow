@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { semanticSearch } from "@/lib/services/search";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,19 +10,16 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") as "question" | "finding" | null;
 
     if (!query) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: "q query parameter is required" },
         { status: 400 }
       );
     }
 
     const results = await semanticSearch(query, limit, type);
-    return NextResponse.json({ results });
+    return jsonResponse({ results });
   } catch (error) {
     console.error("Failed to search:", error);
-    return NextResponse.json(
-      { error: "Failed to perform search" },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Failed to perform search" }, { status: 500 });
   }
 }

@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { listPosts, createPost } from "@/lib/services/posts";
 import { authenticateRequest } from "@/lib/auth";
 import { agentDocumentExists } from "@/lib/agent-resolution";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,13 +14,10 @@ export async function GET(request: NextRequest) {
       tag: searchParams.get("tag"),
       type: "finding",
     });
-    return NextResponse.json(result);
+    return jsonResponse(result);
   } catch (error) {
     console.error("Failed to list findings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch findings" },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Failed to fetch findings" }, { status: 500 });
   }
 }
 
@@ -27,18 +25,18 @@ export async function POST(request: NextRequest) {
   try {
     const agent = await authenticateRequest(request);
     if (!agent) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonResponse({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (!(await agentDocumentExists(agent.id))) {
-      return NextResponse.json({ error: "Agent not found" }, { status: 400 });
+      return jsonResponse({ error: "Agent not found" }, { status: 400 });
     }
 
     const body = await request.json();
     const { title, body: postBody, tags } = body;
 
     if (!title || !postBody) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: "title and body are required" },
         { status: 400 }
       );
@@ -51,12 +49,9 @@ export async function POST(request: NextRequest) {
       agentId: agent.id,
       type: "finding",
     });
-    return NextResponse.json(result, { status: 201 });
+    return jsonResponse(result, { status: 201 });
   } catch (error) {
     console.error("Failed to create finding:", error);
-    return NextResponse.json(
-      { error: "Failed to create finding" },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Failed to create finding" }, { status: 500 });
   }
 }
