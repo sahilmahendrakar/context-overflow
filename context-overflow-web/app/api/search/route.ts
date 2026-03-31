@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { semanticSearch } from "@/lib/services/search";
 import { authenticateRequest } from "@/lib/auth";
 import { requireProjectMembership } from "@/lib/services/projectAuth";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
     const groupId = searchParams.get("groupId");
 
     if (!query) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: "q query parameter is required" },
         { status: 400 }
       );
@@ -21,21 +22,21 @@ export async function GET(request: NextRequest) {
     if (groupId) {
       const agent = await authenticateRequest(request);
       if (!agent) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return jsonResponse({ error: "Unauthorized" }, { status: 401 });
       }
       const isMember = await requireProjectMembership(agent.id, groupId);
       if (!isMember) {
-        return NextResponse.json({ error: "Not a member of this project" }, { status: 403 });
+        return jsonResponse(
+          { error: "Not a member of this project" },
+          { status: 403 }
+        );
       }
     }
 
     const results = await semanticSearch(query, limit, type, groupId);
-    return NextResponse.json({ results });
+    return jsonResponse({ results });
   } catch (error) {
     console.error("Failed to search:", error);
-    return NextResponse.json(
-      { error: "Failed to perform search" },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Failed to perform search" }, { status: 500 });
   }
 }

@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { listPosts, createPost } from "@/lib/services/posts";
 import { authenticateRequest } from "@/lib/auth";
 import { userDocumentExists } from "@/lib/agent-resolution";
 import { requireProjectMembership } from "@/lib/services/projectAuth";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,11 +13,14 @@ export async function GET(request: NextRequest) {
     if (groupId) {
       const agent = await authenticateRequest(request);
       if (!agent) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return jsonResponse({ error: "Unauthorized" }, { status: 401 });
       }
       const isMember = await requireProjectMembership(agent.id, groupId);
       if (!isMember) {
-        return NextResponse.json({ error: "Not a member of this project" }, { status: 403 });
+        return jsonResponse(
+          { error: "Not a member of this project" },
+          { status: 403 }
+        );
       }
     }
 
@@ -28,13 +32,10 @@ export async function GET(request: NextRequest) {
       type: "finding",
       groupId,
     });
-    return NextResponse.json(result);
+    return jsonResponse(result);
   } catch (error) {
     console.error("Failed to list findings:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch findings" },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Failed to fetch findings" }, { status: 500 });
   }
 }
 
@@ -42,18 +43,18 @@ export async function POST(request: NextRequest) {
   try {
     const agent = await authenticateRequest(request);
     if (!agent) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return jsonResponse({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (!(await userDocumentExists(agent.id))) {
-      return NextResponse.json({ error: "User not found" }, { status: 400 });
+      return jsonResponse({ error: "User not found" }, { status: 400 });
     }
 
     const body = await request.json();
     const { title, body: postBody, tags, groupId } = body;
 
     if (!title || !postBody) {
-      return NextResponse.json(
+      return jsonResponse(
         { error: "title and body are required" },
         { status: 400 }
       );
@@ -62,7 +63,10 @@ export async function POST(request: NextRequest) {
     if (groupId) {
       const isMember = await requireProjectMembership(agent.id, groupId);
       if (!isMember) {
-        return NextResponse.json({ error: "Not a member of this project" }, { status: 403 });
+        return jsonResponse(
+          { error: "Not a member of this project" },
+          { status: 403 }
+        );
       }
     }
 
@@ -74,12 +78,9 @@ export async function POST(request: NextRequest) {
       type: "finding",
       groupId,
     });
-    return NextResponse.json(result, { status: 201 });
+    return jsonResponse(result, { status: 201 });
   } catch (error) {
     console.error("Failed to create finding:", error);
-    return NextResponse.json(
-      { error: "Failed to create finding" },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Failed to create finding" }, { status: 500 });
   }
 }

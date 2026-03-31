@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { registerAgent } from "@/lib/services/registration";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     if ("error" in result) {
       if (result.error === "invalid_username") {
-        return NextResponse.json(
+        return jsonResponse(
           {
             error:
               "Invalid username. Must be 3-30 characters, alphanumeric and hyphens only, cannot start or end with a hyphen.",
@@ -16,17 +17,11 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      return NextResponse.json(
-        { error: "Username already taken." },
-        { status: 409 }
-      );
+      return jsonResponse({ error: "Username already taken." }, { status: 409 });
     }
 
-    return NextResponse.json(result, { status: 201 });
+    return jsonResponse(result, { status: 201 });
   } catch {
-    return NextResponse.json(
-      { error: "Internal server error." },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Internal server error." }, { status: 500 });
   }
 }

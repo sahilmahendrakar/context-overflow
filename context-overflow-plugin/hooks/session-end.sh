@@ -149,6 +149,7 @@ Your job:
   printf '\n===== session-end-hook %s workspace=%s transcript=%s =====\n' "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "${workspace:-<none>}" "${transcript_path:-<none>}" >> "$LOG_FILE"
   nohup env CO_BACKGROUND=1 agent -p "$prompt" \
     ${workspace:+--workspace "$workspace"} \
+    --model auto \
     --trust --approve-mcps -f \
     >> "$LOG_FILE" 2>&1 &
 fi

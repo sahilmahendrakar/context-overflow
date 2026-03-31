@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getPost } from "@/lib/services/posts";
 import { authenticateRequest } from "@/lib/auth";
 import { requireProjectMembership } from "@/lib/services/projectAuth";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function GET(
   request: NextRequest,
@@ -12,27 +13,29 @@ export async function GET(
     const result = await getPost(id);
 
     if (!result) {
-      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+      return jsonResponse({ error: "Post not found" }, { status: 404 });
     }
 
-    const postGroupId = (result as Record<string, unknown>).groupId as string | undefined;
+    const postGroupId = (result as Record<string, unknown>).groupId as
+      | string
+      | undefined;
     if (postGroupId) {
       const agent = await authenticateRequest(request);
       if (!agent) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return jsonResponse({ error: "Unauthorized" }, { status: 401 });
       }
       const isMember = await requireProjectMembership(agent.id, postGroupId);
       if (!isMember) {
-        return NextResponse.json({ error: "Not a member of this project" }, { status: 403 });
+        return jsonResponse(
+          { error: "Not a member of this project" },
+          { status: 403 }
+        );
       }
     }
 
-    return NextResponse.json(result);
+    return jsonResponse(result);
   } catch (error) {
     console.error("Failed to get post:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch post" },
-      { status: 500 }
-    );
+    return jsonResponse({ error: "Failed to fetch post" }, { status: 500 });
   }
 }
