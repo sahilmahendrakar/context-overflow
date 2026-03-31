@@ -51,6 +51,7 @@ export default function Header() {
   const { user, loading, signIn, signOut, getIdToken } = useAuth();
   const { activeProject, setActiveProject } = useActiveProject();
   const activeProjectSlug = activeProject?.slug ?? null;
+  const navigationProjectSlug = user ? activeProjectSlug : null;
 
   const fetchProjects = useCallback(async () => {
     if (!user) { setProjects([]); return; }
@@ -62,11 +63,15 @@ export default function Header() {
 
   useEffect(() => { fetchProjects(); }, [fetchProjects]);
 
+  useEffect(() => {
+    if (projectSwitcherOpen) void fetchProjects();
+  }, [projectSwitcherOpen, fetchProjects]);
+
   const searchParamsKey = useMemo(() => searchParams.toString(), [searchParams]);
 
   const isSearchablePage =
     pathname === "/browse" ||
-    (activeProjectSlug && pathname === `/p/${activeProjectSlug}`);
+    (navigationProjectSlug && pathname === `/p/${navigationProjectSlug}`);
 
   useEffect(() => {
     if (isSearchablePage) {
@@ -88,7 +93,7 @@ export default function Header() {
     if (!trimmed) return;
     const t = searchParams.get("type");
     const type = t === "question" || t === "finding" ? t : null;
-    router.push(browsePath(trimmed, type, activeProjectSlug));
+    router.push(browsePath(trimmed, type, navigationProjectSlug));
   }
 
   function clearSearch(e: React.MouseEvent) {
@@ -97,12 +102,12 @@ export default function Header() {
     setSearchQuery("");
     const t = searchParams.get("type");
     const type = t === "question" || t === "finding" ? t : null;
-    router.replace(browsePath(undefined, type, activeProjectSlug));
+    router.replace(browsePath(undefined, type, navigationProjectSlug));
   }
 
   function applyTypeFilter(type: "question" | "finding" | null) {
     setFilterOpen(false);
-    router.push(browsePath(qForNavigation(), type, activeProjectSlug));
+    router.push(browsePath(qForNavigation(), type, navigationProjectSlug));
   }
 
   const urlQ = searchParams.get("q") ?? "";
@@ -125,7 +130,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-5">
         <div className="flex items-center gap-2">
-          <Link href={activeProjectSlug ? `/p/${activeProjectSlug}/home` : "/"} className="flex items-center gap-2">
+          <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}/home` : "/"} className="flex items-center gap-2">
             <img
               src="/context-overflow-icon.png"
               alt="Context Overflow"
@@ -135,59 +140,6 @@ export default function Header() {
               Context<span className="text-[var(--accent)]">Overflow</span>
             </span>
           </Link>
-
-          {!loading && user && projects.length > 0 && (
-            <div ref={projectRef} className="relative hidden sm:block">
-              <button
-                onClick={() => setProjectSwitcherOpen((o) => !o)}
-                className="flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1.5 text-sm transition hover:bg-[var(--surface-strong)]"
-              >
-                <Users className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                <span className="max-w-[8rem] truncate text-[var(--text-secondary)]">
-                  {activeProjectSlug
-                    ? projects.find((p) => p.project.slug === activeProjectSlug)?.project.name || activeProjectSlug
-                    : "Public"}
-                </span>
-                <ChevronDown className={`h-3.5 w-3.5 text-[var(--text-tertiary)] transition ${projectSwitcherOpen ? "rotate-180" : ""}`} />
-              </button>
-              {projectSwitcherOpen && (
-                <div className="absolute left-0 top-[calc(100%+6px)] z-50 min-w-[12rem] rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg">
-                  <button
-                    onClick={() => { setProjectSwitcherOpen(false); setActiveProject(null); router.push("/"); }}
-                    className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                      !activeProjectSlug
-                        ? "bg-[var(--accent)]/10 font-medium text-[var(--accent)]"
-                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    Public
-                  </button>
-                  <hr className="my-1 border-[var(--border)]" />
-                  {projects.map((p) => (
-                    <button
-                      key={p.project.id}
-                      onClick={() => { setProjectSwitcherOpen(false); setActiveProject(p.project); router.push(`/p/${p.project.slug}`); }}
-                      className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                        activeProjectSlug === p.project.slug
-                          ? "bg-[var(--accent)]/10 font-medium text-[var(--accent)]"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-                      }`}
-                    >
-                      {p.project.name}
-                    </button>
-                  ))}
-                  <hr className="my-1 border-[var(--border)]" />
-                  <button
-                    onClick={() => { setProjectSwitcherOpen(false); router.push("/projects/new"); }}
-                    className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-[var(--text-tertiary)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Create Project
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         <div className="hidden min-w-0 flex-1 items-center gap-2 px-4 sm:flex md:gap-3 md:px-8">
@@ -302,6 +254,7 @@ export default function Header() {
                     <button
                       onClick={() => {
                         setMenuOpen(false);
+                        setActiveProject(null);
                         signOut();
                       }}
                       className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
@@ -316,6 +269,104 @@ export default function Header() {
                 Sign in
               </Button>
             ))}
+
+          {!loading && (
+            <div ref={projectRef} className="relative shrink-0">
+              <button
+                type="button"
+                onClick={() => setProjectSwitcherOpen((o) => !o)}
+                className="flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-2.5 py-1.5 text-sm transition hover:bg-[var(--surface-strong)]"
+                aria-expanded={projectSwitcherOpen}
+                aria-haspopup="listbox"
+                aria-label="Project scope"
+              >
+                <Users className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                <span className="max-w-[8rem] truncate text-[var(--text-secondary)]">
+                  {!user || !activeProjectSlug
+                    ? "Public"
+                    : activeProject?.slug === activeProjectSlug
+                      ? activeProject.name
+                      : projects.find((p) => p.project.slug === activeProjectSlug)?.project.name || activeProjectSlug}
+                </span>
+                <ChevronDown className={`h-3.5 w-3.5 text-[var(--text-tertiary)] transition ${projectSwitcherOpen ? "rotate-180" : ""}`} />
+              </button>
+              {projectSwitcherOpen && (
+                <div
+                  className="absolute right-0 top-[calc(100%+6px)] z-50 min-w-[12rem] rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg"
+                  role="listbox"
+                  aria-label="Project scope"
+                >
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={!navigationProjectSlug}
+                    onClick={() => {
+                      setProjectSwitcherOpen(false);
+                      setActiveProject(null);
+                      router.push("/");
+                    }}
+                    className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                      !navigationProjectSlug
+                        ? "bg-[var(--accent)]/10 font-medium text-[var(--accent)]"
+                        : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+                    }`}
+                  >
+                    Public
+                  </button>
+                  {projects.length > 0 && (
+                    <>
+                      <hr className="my-1 border-[var(--border)]" />
+                      {projects.map((p) => (
+                        <button
+                          key={p.project.id}
+                          type="button"
+                          role="option"
+                          aria-selected={activeProjectSlug === p.project.slug}
+                          onClick={() => {
+                            setProjectSwitcherOpen(false);
+                            setActiveProject(p.project);
+                            router.push(`/p/${p.project.slug}`);
+                          }}
+                          className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                            activeProjectSlug === p.project.slug
+                              ? "bg-[var(--accent)]/10 font-medium text-[var(--accent)]"
+                              : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+                          }`}
+                        >
+                          {p.project.name}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  <hr className="my-1 border-[var(--border)]" />
+                  {user ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProjectSwitcherOpen(false);
+                        router.push("/projects/new");
+                      }}
+                      className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-[var(--text-tertiary)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Create Project
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      role="option"
+                      aria-disabled
+                      className="flex w-full cursor-not-allowed items-center gap-1.5 rounded-lg px-3 py-2 text-left text-sm text-[var(--text-tertiary)] opacity-50"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Create Project
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -333,10 +384,10 @@ export default function Header() {
             <ThemeToggle />
           </div>
           <Button asChild variant="secondary">
-            <Link href={activeProjectSlug ? `/p/${activeProjectSlug}` : "/browse"}>Browse</Link>
+            <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}` : "/browse"}>Browse</Link>
           </Button>
           <Button asChild size="icon" title="Create post" aria-label="Create post">
-            <Link href={activeProjectSlug ? `/p/${activeProjectSlug}/post` : "/post"}>
+            <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}/post` : "/post"}>
               <Plus className="size-5" strokeWidth={2.25} />
             </Link>
           </Button>

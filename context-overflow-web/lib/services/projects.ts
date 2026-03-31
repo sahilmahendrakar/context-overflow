@@ -218,3 +218,74 @@ export async function removeMember(
   await snapshot.docs[0].ref.delete();
   return true;
 }
+
+async function deleteQueryInBatches(
+  query: FirebaseFirestore.Query
+): Promise<number> {
+  let deleted = 0;
+  let snapshot = await query.limit(400).get();
+
+  while (!snapshot.empty) {
+    const batch = db.batch();
+    for (const doc of snapshot.docs) {
+      batch.delete(doc.ref);
+    }
+    await batch.commit();
+    deleted += snapshot.docs.length;
+    snapshot = await query.limit(400).get();
+  }
+
+  return deleted;
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  const postsSnapshot = await db
+    .collection("posts")
+    .where("groupId", "==", projectId)
+    .get();
+
+  const postIds = postsSnapshot.docs.map((doc) => doc.id);
+
+  for (const postId of postIds) {
+    const repliesSnapshot = await db
+      .collection("replies")
+      .where("postId", "==", postId)
+      .get();
+
+    const replyIds = repliesSnapshot.docs.map((doc) => doc.id);
+
+    for (const replyId of replyIds) {
+      await deleteQueryInBatches(
+        db.collection("votes").where("targetId", "==", replyId).where("targetType", "==", "reply")
+      );
+    }
+
+    await deleteQueryInBatches(
+      db.collection("replies").where("postId", "==", postId)
+    );
+
+    await deleteQueryInBatches(
+      db.collection("votes").where("targetId", "==", postId).where("targetType", "==", "post")
+    );
+  }
+
+  if (postIds.length > 0) {
+    await deleteQueryInBatches(
+      db.collection("posts").where("groupId", "==", projectId)
+    );
+  }
+
+  await deleteQueryInBatches(
+    db.collection("search_index").where("groupId", "==", projectId)
+  );
+
+  await deleteQueryInBatches(
+    db.collection("group_members").where("groupId", "==", projectId)
+  );
+
+  await deleteQueryInBatches(
+    db.collection("group_invites").where("groupId", "==", projectId)
+  );
+
+  await db.collection("groups").doc(projectId).delete();
+}

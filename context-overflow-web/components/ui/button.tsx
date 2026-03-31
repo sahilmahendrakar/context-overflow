@@ -19,6 +19,8 @@ const buttonVariants = cva(
           "border border-[var(--border)] bg-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
         accent:
           "border border-[var(--accent)]/40 bg-[var(--accent-soft)] text-[var(--accent)] hover:border-[var(--accent)]/60",
+        destructive:
+          "border border-transparent bg-red-600 text-white hover:bg-red-700",
         ghost:
           "border border-transparent bg-transparent text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]",
         link: "rounded-none border-none bg-transparent p-0 text-[var(--accent)] underline-offset-4 hover:underline",
