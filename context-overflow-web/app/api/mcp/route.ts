@@ -17,6 +17,33 @@ function errorContent(message: string) {
   return { content: [{ type: "text" as const, text: message }], isError: true };
 }
 
+/** Optional HTTP header: default Firestore project id for scoped tools (set by CLI / mcp.json). */
+const CXO_PROJECT_ID_HEADER = "x-cxo-project-id";
+
+function getMcpDefaultProjectIdFromExtra(extra: {
+  authInfo?: { extra?: Record<string, unknown> };
+}): string | undefined {
+  const v = extra.authInfo?.extra?.mcpDefaultProjectId;
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+}
+
+function resolveMcpProjectId(
+  headerId: string | undefined,
+  argId: string | undefined
+):
+  | { ok: true; projectId: string | undefined }
+  | { ok: false; message: string } {
+  const h = headerId?.trim() || undefined;
+  const a = argId?.trim() || undefined;
+  if (h && a && h !== a) {
+    return {
+      ok: false,
+      message: "projectId conflicts with X-CXO-Project-Id header",
+    };
+  }
+  return { ok: true, projectId: a ?? h };
+}
+
 const handler = createMcpHandler(
   (server) => {
     server.tool(
@@ -31,12 +58,19 @@ const handler = createMcpHandler(
         projectId: z.string().optional().describe("Scope to a private project by project ID"),
       },
       async (opts, extra) => {
-        if (opts.projectId) {
+        const { projectId: argProjectId, ...listOpts } = opts;
+        const resolved = resolveMcpProjectId(
+          getMcpDefaultProjectIdFromExtra(extra),
+          argProjectId
+        );
+        if (!resolved.ok) return errorContent(resolved.message);
+        const effectiveId = resolved.projectId;
+        if (effectiveId) {
           const agentId = extra.authInfo!.clientId;
-          const isMember = await requireProjectMembership(agentId, opts.projectId);
+          const isMember = await requireProjectMembership(agentId, effectiveId);
           if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent(await listPosts({ ...opts, groupId: opts.projectId }));
+        return jsonContent(await listPosts({ ...listOpts, groupId: effectiveId }));
       }
     );
 
@@ -64,11 +98,26 @@ const handler = createMcpHandler(
       },
       async ({ title, body, tags, projectId }, extra) => {
         const agentId = extra.authInfo!.clientId;
-        if (projectId) {
-          const isMember = await requireProjectMembership(agentId, projectId);
+        const resolved = resolveMcpProjectId(
+          getMcpDefaultProjectIdFromExtra(extra),
+          projectId
+        );
+        if (!resolved.ok) return errorContent(resolved.message);
+        const effectiveId = resolved.projectId;
+        if (effectiveId) {
+          const isMember = await requireProjectMembership(agentId, effectiveId);
           if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent(await createPost({ title, body, tags, agentId, type: "question", groupId: projectId }));
+        return jsonContent(
+          await createPost({
+            title,
+            body,
+            tags,
+            agentId,
+            type: "question",
+            groupId: effectiveId,
+          })
+        );
       }
     );
 
@@ -83,11 +132,26 @@ const handler = createMcpHandler(
       },
       async ({ title, body, tags, projectId }, extra) => {
         const agentId = extra.authInfo!.clientId;
-        if (projectId) {
-          const isMember = await requireProjectMembership(agentId, projectId);
+        const resolved = resolveMcpProjectId(
+          getMcpDefaultProjectIdFromExtra(extra),
+          projectId
+        );
+        if (!resolved.ok) return errorContent(resolved.message);
+        const effectiveId = resolved.projectId;
+        if (effectiveId) {
+          const isMember = await requireProjectMembership(agentId, effectiveId);
           if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent(await createPost({ title, body, tags, agentId, type: "finding", groupId: projectId }));
+        return jsonContent(
+          await createPost({
+            title,
+            body,
+            tags,
+            agentId,
+            type: "finding",
+            groupId: effectiveId,
+          })
+        );
       }
     );
 
@@ -152,12 +216,20 @@ const handler = createMcpHandler(
         projectId: z.string().optional().describe("Scope search to a private project by project ID"),
       },
       async ({ query, limit, type, projectId }, extra) => {
-        if (projectId) {
+        const resolved = resolveMcpProjectId(
+          getMcpDefaultProjectIdFromExtra(extra),
+          projectId
+        );
+        if (!resolved.ok) return errorContent(resolved.message);
+        const effectiveId = resolved.projectId;
+        if (effectiveId) {
           const agentId = extra.authInfo!.clientId;
-          const isMember = await requireProjectMembership(agentId, projectId);
+          const isMember = await requireProjectMembership(agentId, effectiveId);
           if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent({ results: await semanticSearch(query, limit, type, projectId) });
+        return jsonContent({
+          results: await semanticSearch(query, limit, type, effectiveId),
+        });
       }
     );
 
@@ -209,7 +281,7 @@ const handler = createMcpHandler(
 
 const authedHandler = withMcpAuth(
   handler,
-  async (_req, bearerToken) => {
+  async (req, bearerToken) => {
     if (!bearerToken) return undefined;
 
     const snapshot = await db
@@ -221,11 +293,16 @@ const authedHandler = withMcpAuth(
     if (snapshot.empty) return undefined;
 
     const doc = snapshot.docs[0];
+    const headerProjectId = req.headers.get(CXO_PROJECT_ID_HEADER)?.trim() || undefined;
+    const extra: Record<string, unknown> = { username: doc.data().username };
+    if (headerProjectId) {
+      extra.mcpDefaultProjectId = headerProjectId;
+    }
     return {
       token: bearerToken,
       clientId: doc.id,
       scopes: [],
-      extra: { username: doc.data().username },
+      extra,
     };
   },
   { required: true }

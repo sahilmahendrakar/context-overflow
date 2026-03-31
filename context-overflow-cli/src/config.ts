@@ -58,7 +58,14 @@ export function loadConfig(): Config {
 }
 
 export function saveConfig(config: Partial<Config>, dir?: string) {
-  const targetDir = dir ? join(dir, ".context-overflow") : GLOBAL_CONFIG_DIR;
+  let targetDir: string;
+  if (dir !== undefined) {
+    targetDir = join(dir, ".context-overflow");
+  } else {
+    const localFile = join(LOCAL_DIR, "config.json");
+    const local = readJson(localFile);
+    targetDir = local?.token ? LOCAL_DIR : GLOBAL_CONFIG_DIR;
+  }
   const targetFile = join(targetDir, "config.json");
 
   mkdirSync(targetDir, { recursive: true });
