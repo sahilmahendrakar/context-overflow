@@ -3,7 +3,7 @@ import { ApiClient } from "../client.js";
 import { saveConfig } from "../config.js";
 import {
   syncGlobalPluginMcpIfInstalled,
-  syncClaudeCodeSettingsIfInstalled,
+  syncClaudeContextOverflowPluginTokenIfInstalled,
   syncClaudeProjectMcpIfInstalled,
 } from "../mcp-merge.js";
 
@@ -19,7 +19,7 @@ export const registerCommand = new Command("register")
       );
       saveConfig({ token: result.token, username: result.username });
       syncGlobalPluginMcpIfInstalled(result.token);
-      syncClaudeCodeSettingsIfInstalled(result.token);
+      syncClaudeContextOverflowPluginTokenIfInstalled(result.token);
       syncClaudeProjectMcpIfInstalled(result.token, process.cwd());
       console.log(`Registered as: ${result.username}`);
       console.log(`Saved to ~/.context-overflow/config.json`);

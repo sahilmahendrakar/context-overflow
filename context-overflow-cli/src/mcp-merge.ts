@@ -7,6 +7,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { runClaudeCli } from "./claude-exec.js";
 
 export const MCP_URL = "https://www.ctxoverflow.dev/api/mcp";
 
@@ -281,8 +282,8 @@ export function syncGlobalPluginMcpIfInstalled(token: string) {
 export const CLAUDE_SETTINGS_DIR = join(homedir(), ".claude");
 export const CLAUDE_SETTINGS_PATH = join(CLAUDE_SETTINGS_DIR, "settings.json");
 
-const MARKETPLACE_NAME = "context-overflow-plugins";
-const PLUGIN_ID = `context-overflow@${MARKETPLACE_NAME}`;
+export const CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME = "context-overflow-plugins";
+export const CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID = `context-overflow@${CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME}`;
 
 function readClaudeSettings(): Record<string, unknown> {
   if (!existsSync(CLAUDE_SETTINGS_PATH)) return {};
@@ -298,29 +299,35 @@ function writeClaudeSettings(settings: Record<string, unknown>) {
   writeFileSync(CLAUDE_SETTINGS_PATH, JSON.stringify(settings, null, 2) + "\n");
 }
 
-export function mergeClaudeCodeSettings(token: string, repoSource: string) {
+function listInstalledClaudePluginsFromCli(): { id: string }[] | null {
+  const r = runClaudeCli(["plugin", "list", "--json"]);
+  if (r.enoent || r.status !== 0 || !r.stdout.trim()) return null;
+  try {
+    const parsed = JSON.parse(r.stdout) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    return parsed.filter(
+      (x): x is { id: string } =>
+        x != null && typeof x === "object" && typeof (x as { id?: unknown }).id === "string"
+    );
+  } catch {
+    return null;
+  }
+}
+
+export function mergeClaudeContextOverflowPluginToken(token: string) {
   const settings = readClaudeSettings();
-
-  if (!settings.extraKnownMarketplaces || typeof settings.extraKnownMarketplaces !== "object") {
-    settings.extraKnownMarketplaces = {};
-  }
-  (settings.extraKnownMarketplaces as Record<string, unknown>)[MARKETPLACE_NAME] = {
-    source: { source: "github", repo: repoSource },
-  };
-
-  if (!settings.enabledPlugins || typeof settings.enabledPlugins !== "object") {
-    settings.enabledPlugins = {};
-  }
-  (settings.enabledPlugins as Record<string, unknown>)[PLUGIN_ID] = true;
 
   if (!settings.pluginConfigs || typeof settings.pluginConfigs !== "object") {
     settings.pluginConfigs = {};
   }
   const pluginConfigs = settings.pluginConfigs as Record<string, unknown>;
-  if (!pluginConfigs[PLUGIN_ID] || typeof pluginConfigs[PLUGIN_ID] !== "object") {
-    pluginConfigs[PLUGIN_ID] = {};
+  if (
+    !pluginConfigs[CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID] ||
+    typeof pluginConfigs[CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID] !== "object"
+  ) {
+    pluginConfigs[CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID] = {};
   }
-  const pluginEntry = pluginConfigs[PLUGIN_ID] as Record<string, unknown>;
+  const pluginEntry = pluginConfigs[CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID] as Record<string, unknown>;
   if (!pluginEntry.options || typeof pluginEntry.options !== "object") {
     pluginEntry.options = {};
   }
@@ -336,22 +343,22 @@ export function removeClaudeCodeSettings() {
   let changed = false;
 
   const marketplaces = settings.extraKnownMarketplaces as Record<string, unknown> | undefined;
-  if (marketplaces && MARKETPLACE_NAME in marketplaces) {
-    delete marketplaces[MARKETPLACE_NAME];
+  if (marketplaces && CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME in marketplaces) {
+    delete marketplaces[CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME];
     if (Object.keys(marketplaces).length === 0) delete settings.extraKnownMarketplaces;
     changed = true;
   }
 
   const enabled = settings.enabledPlugins as Record<string, unknown> | undefined;
-  if (enabled && PLUGIN_ID in enabled) {
-    delete enabled[PLUGIN_ID];
+  if (enabled && CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID in enabled) {
+    delete enabled[CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID];
     if (Object.keys(enabled).length === 0) delete settings.enabledPlugins;
     changed = true;
   }
 
   const configs = settings.pluginConfigs as Record<string, unknown> | undefined;
-  if (configs && PLUGIN_ID in configs) {
-    delete configs[PLUGIN_ID];
+  if (configs && CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID in configs) {
+    delete configs[CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID];
     if (Object.keys(configs).length === 0) delete settings.pluginConfigs;
     changed = true;
   }
@@ -363,25 +370,29 @@ export function removeClaudeCodeSettings() {
 }
 
 export function detectClaudeCodeInstall(): boolean {
+  const fromCli = listInstalledClaudePluginsFromCli();
+  if (fromCli?.some((p) => p.id === CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID)) {
+    return true;
+  }
   if (!existsSync(CLAUDE_SETTINGS_PATH)) return false;
   const settings = readClaudeSettings();
   const enabled = settings.enabledPlugins as Record<string, unknown> | undefined;
-  return !!(enabled && PLUGIN_ID in enabled);
+  return !!(enabled && CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID in enabled);
 }
 
-export function syncClaudeCodeSettingsIfInstalled(token: string) {
+export function hasClaudeContextOverflowInSettings(): boolean {
+  if (!existsSync(CLAUDE_SETTINGS_PATH)) return false;
+  const settings = readClaudeSettings();
+  const marketplaces = settings.extraKnownMarketplaces as Record<string, unknown> | undefined;
+  if (marketplaces && CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME in marketplaces) return true;
+  const enabled = settings.enabledPlugins as Record<string, unknown> | undefined;
+  if (enabled && CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID in enabled) return true;
+  const configs = settings.pluginConfigs as Record<string, unknown> | undefined;
+  return !!(configs && CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID in configs);
+}
+
+export function syncClaudeContextOverflowPluginTokenIfInstalled(token: string) {
   if (detectClaudeCodeInstall()) {
-    const settings = readClaudeSettings();
-    const configs = settings.pluginConfigs as Record<string, unknown> | undefined;
-    if (configs) {
-      const entry = configs[PLUGIN_ID] as Record<string, unknown> | undefined;
-      if (entry) {
-        if (!entry.options || typeof entry.options !== "object") {
-          entry.options = {};
-        }
-        (entry.options as Record<string, unknown>).token = token;
-        writeClaudeSettings(settings);
-      }
-    }
+    mergeClaudeContextOverflowPluginToken(token);
   }
 }

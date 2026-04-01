@@ -23,12 +23,16 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import {
   GLOBAL_CURSOR_PLUGIN_DIR,
+  CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME,
+  CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID,
   detectClaudeCodeInstall,
   detectProjectClaudeLocalInstall,
+  hasClaudeContextOverflowInSettings,
   removeClaudeCodeSettings,
   removeClaudeProjectContextOverflowHooks,
   removeContextOverflowFromClaudeProjectMcp,
 } from "../mcp-merge.js";
+import { uninstallGlobalClaudeContextOverflowPlugin } from "../claude-plugin-cli.js";
 
 const GLOBAL_CONFIG_DIR = join(homedir(), ".context-overflow");
 
@@ -97,7 +101,9 @@ function isDirEmpty(path: string): boolean {
   return readdirSync(path).length === 0;
 }
 
-function cleanupGlobal(): string[] {
+async function cleanupGlobal(
+  onClaudeProgress?: (message: string) => void
+): Promise<string[]> {
   const removed: string[] = [];
 
   if (removeIfExists(GLOBAL_CONFIG_DIR)) {
@@ -106,8 +112,29 @@ function cleanupGlobal(): string[] {
   if (removeIfExists(GLOBAL_CURSOR_PLUGIN_DIR)) {
     removed.push("~/.cursor/plugins/local/context-overflow-cursor-plugin/");
   }
+  let claudeCliWarning: string | null = null;
+  if (detectClaudeCodeInstall() || hasClaudeContextOverflowInSettings()) {
+    try {
+      const claudeUninstall = await uninstallGlobalClaudeContextOverflowPlugin(
+        onClaudeProgress
+      );
+      if (claudeUninstall.pluginRemoved) {
+        removed.push(`Claude Code plugin: uninstalled (${CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID})`);
+      }
+      if (claudeUninstall.marketplaceRemoved) {
+        removed.push(
+          `Claude Code marketplace: removed (${CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME})`
+        );
+      }
+    } catch (e) {
+      claudeCliWarning = (e as Error).message;
+    }
+  }
   if (removeClaudeCodeSettings()) {
     removed.push("~/.claude/settings.json (context-overflow entries removed)");
+  }
+  if (claudeCliWarning) {
+    removed.push(`Claude plugin CLI: ${claudeCliWarning} (settings cleaned up if present)`);
   }
 
   return removed;
@@ -299,7 +326,7 @@ export const uninstallCommand = new Command("uninstall")
 
     if (removeGlobal) {
       s.start("Removing global installation...");
-      const removed = cleanupGlobal();
+      const removed = await cleanupGlobal((msg) => s.message(msg));
       allRemoved.push(...removed);
       s.stop(
         removed.length > 0

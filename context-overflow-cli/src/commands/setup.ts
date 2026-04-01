@@ -28,10 +28,10 @@ import { saveConfig } from "../config.js";
 import {
   mergeProjectMcpConfig,
   mergePluginMcpConfig,
-  mergeClaudeCodeSettings,
   mergeClaudeProjectMcpConfig,
   mergeClaudeProjectContextOverflowHooks,
 } from "../mcp-merge.js";
+import { installGlobalClaudeContextOverflowPlugin } from "../claude-plugin-cli.js";
 
 function getPluginSourcePath(): string {
   const __filename = fileURLToPath(import.meta.url);
@@ -277,11 +277,11 @@ export const setupCommand = new Command("setup")
       }
 
       if (installClaudeCode) {
-        s.start("Installing Claude Code plugin...");
+        s.start("Claude Code: starting…");
         try {
-          mergeClaudeCodeSettings(token, "sahilmahendrakar/context-overflow");
+          await installGlobalClaudeContextOverflowPlugin(token, (msg) => s.message(msg));
           s.stop(
-            `Plugin configured in ${pc.dim("~/.claude/settings.json")}`
+            `Ran ${pc.dim("claude plugin marketplace add")} + ${pc.dim("claude plugin install")}; MCP token in ${pc.dim("~/.claude/settings.json")}`
           );
         } catch (e) {
           s.stop(pc.yellow(`Claude Code setup failed: ${(e as Error).message}`), 1);
@@ -338,7 +338,7 @@ export const setupCommand = new Command("setup")
       }
       if (installClaudeCode) {
         summaryLines.push(
-          `Claude Code:  ${pc.dim("~/.claude/settings.json (marketplace + plugin)")}`,
+          `Claude Code:  ${pc.dim("claude plugin (marketplace + install); token in settings if needed for MCP")}`,
         );
       }
     } else {
