@@ -21,7 +21,14 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { GLOBAL_CURSOR_PLUGIN_DIR } from "../mcp-merge.js";
+import {
+  GLOBAL_CURSOR_PLUGIN_DIR,
+  detectClaudeCodeInstall,
+  detectProjectClaudeLocalInstall,
+  removeClaudeCodeSettings,
+  removeClaudeProjectContextOverflowHooks,
+  removeContextOverflowFromClaudeProjectMcp,
+} from "../mcp-merge.js";
 
 const GLOBAL_CONFIG_DIR = join(homedir(), ".context-overflow");
 
@@ -40,6 +47,16 @@ const LOCAL_CURSOR_DIRS = [
 
 const CLEANABLE_CURSOR_DIRS = ["agents", "rules", "skills", "hooks"];
 
+const LOCAL_CLAUDE_FILES = [
+  "agents/context-overflow.md",
+  "hooks/session-start.sh",
+  "hooks/session-end.sh",
+];
+
+const LOCAL_CLAUDE_DIRS = ["skills/context-overflow"];
+
+const CLEANABLE_CLAUDE_DIRS = ["agents", "skills", "hooks"];
+
 function handleCancel(value: unknown): value is symbol {
   if (isCancel(value)) {
     cancel("Uninstall cancelled.");
@@ -51,12 +68,16 @@ function handleCancel(value: unknown): value is symbol {
 function detectGlobal(): boolean {
   return (
     existsSync(join(GLOBAL_CONFIG_DIR, "config.json")) ||
-    existsSync(GLOBAL_CURSOR_PLUGIN_DIR)
+    existsSync(GLOBAL_CURSOR_PLUGIN_DIR) ||
+    detectClaudeCodeInstall()
   );
 }
 
 function detectLocal(projectDir: string): boolean {
-  return existsSync(join(projectDir, ".context-overflow", "config.json"));
+  return (
+    existsSync(join(projectDir, ".context-overflow", "config.json")) ||
+    detectProjectClaudeLocalInstall(projectDir)
+  );
 }
 
 function removeIfExists(path: string): boolean {
@@ -83,7 +104,10 @@ function cleanupGlobal(): string[] {
     removed.push("~/.context-overflow/");
   }
   if (removeIfExists(GLOBAL_CURSOR_PLUGIN_DIR)) {
-    removed.push("~/.cursor/plugins/local/context-overflow-plugin/");
+    removed.push("~/.cursor/plugins/local/context-overflow-cursor-plugin/");
+  }
+  if (removeClaudeCodeSettings()) {
+    removed.push("~/.claude/settings.json (context-overflow entries removed)");
   }
 
   return removed;
@@ -155,6 +179,30 @@ function cleanupLocal(projectDir: string): string[] {
     removed.push(".cursor/mcp.json (context-overflow server removed)");
   }
 
+  const claudeDir = join(projectDir, ".claude");
+
+  for (const file of LOCAL_CLAUDE_FILES) {
+    if (unlinkIfExists(join(claudeDir, file))) {
+      removed.push(`.claude/${file}`);
+    }
+  }
+
+  for (const dir of LOCAL_CLAUDE_DIRS) {
+    if (removeIfExists(join(claudeDir, dir))) {
+      removed.push(`.claude/${dir}/`);
+    }
+  }
+
+  if (removeClaudeProjectContextOverflowHooks(projectDir)) {
+    removed.push(
+      ".claude/settings.local.json or .claude/settings.json (context-overflow hooks removed)"
+    );
+  }
+
+  if (removeContextOverflowFromClaudeProjectMcp(projectDir)) {
+    removed.push(".mcp.json (context-overflow server removed)");
+  }
+
   if (removeGitignoreEntry(projectDir, ".context-overflow/")) {
     removed.push(".gitignore (removed .context-overflow/ entry)");
   }
@@ -165,6 +213,19 @@ function cleanupLocal(projectDir: string): string[] {
       rmSync(fullPath);
       removed.push(`.cursor/${dir}/ (empty, removed)`);
     }
+  }
+
+  for (const dir of CLEANABLE_CLAUDE_DIRS) {
+    const fullPath = join(claudeDir, dir);
+    if (isDirEmpty(fullPath)) {
+      rmSync(fullPath);
+      removed.push(`.claude/${dir}/ (empty, removed)`);
+    }
+  }
+
+  if (isDirEmpty(claudeDir)) {
+    rmSync(claudeDir);
+    removed.push(".claude/ (empty, removed)");
   }
 
   return removed;
@@ -193,8 +254,12 @@ export const uninstallCommand = new Command("uninstall")
         message: "Both global and local installations detected. What would you like to remove?",
         options: [
           { value: "both", label: "Both", hint: "remove everything" },
-          { value: "global", label: "Global only", hint: "~/.context-overflow + Cursor plugin" },
-          { value: "local", label: "Local (this project) only", hint: ".context-overflow + .cursor files" },
+          { value: "global", label: "Global only", hint: "~/.context-overflow + Cursor/Claude Code plugins" },
+          {
+            value: "local",
+            label: "Local (this project) only",
+            hint: ".context-overflow + .cursor / .claude files",
+          },
         ],
       });
       if (handleCancel(scope)) return;
@@ -261,5 +326,5 @@ export const uninstallCommand = new Command("uninstall")
       );
     }
 
-    outro(pc.green("Uninstall complete. Restart Cursor to apply changes."));
+    outro(pc.green("Uninstall complete. Restart your editor to apply changes."));
   });

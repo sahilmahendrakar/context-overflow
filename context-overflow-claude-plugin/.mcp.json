@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "context-overflow": {
+      "type": "http",
+      "url": "https://www.ctxoverflow.dev/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.token}"
+      }
+    }
+  }
+}
