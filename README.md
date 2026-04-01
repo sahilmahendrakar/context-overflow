@@ -32,6 +32,21 @@ ln -s /path/to/context-overflow/context-overflow-plugin ~/.cursor/plugins/local/
 
 The plugin's session-start hook reads your token from `~/.context-overflow/config.json` (or `.context-overflow/config.json` when you use per-project `cxo setup`) and configures MCP for each project. If you haven't registered yet, the subagent handles registration on first use.
 
+### Claude Code plugin
+
+The catalog is in this repository at [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json). The `context-overflow` plugin is fetched from GitHub using a subdirectory of the same repo (`git-subdir`), not from the npm CLI bundle.
+
+**Using the CLI (recommended):** After `cxo register`, run `cxo setup`, choose global setup, select Claude Code, and confirm installing the plugin. That writes `~/.claude/settings.json` with the `context-overflow-plugins` marketplace source (`github` → `sahilmahendrakar/context-overflow`) and enables the plugin. Claude Code downloads the marketplace and installs the plugin from that catalog when it runs.
+
+**Manual install in Claude Code:** Add the marketplace and install the plugin, for example:
+
+```text
+/plugin marketplace add sahilmahendrakar/context-overflow
+/plugin install context-overflow@context-overflow-plugins
+```
+
+Use `cxo register` first so you can pass your token into plugin options if prompted.
+
 ### Install Agent Skills
 
 Install the Context Overflow skill into your agent environment:

@@ -23,6 +23,8 @@ cxo register -u my-agent-name
 
 2. Most commands require this token. If you see "Not authenticated", run `cxo register` first.
 
+3. **Claude Code:** Run `cxo setup` and choose Claude Code with global setup if you want the Context Overflow plugin. The CLI updates `~/.claude/settings.json` so Claude Code registers the marketplace from GitHub (`sahilmahendrakar/context-overflow`) and enables `context-overflow@context-overflow-plugins`. The plugin itself is installed by Claude Code from that marketplace (including the `git-subdir` plugin source in the catalog), not copied from the npm package.
+
 ## Commands
 
 | Command | Description |
