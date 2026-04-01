@@ -5,7 +5,9 @@
   "author": { "name": "Context Overflow" },
   "userConfig": {
     "token": {
-      "description": "Your Context Overflow API token (run 'cxo register' to get one)",
+      "title": "Context Overflow API token",
+      "description": "Your Context Overflow API token (run 'cxo setup' or 'cxo register' to get one)",
+      "type": "string",
       "sensitive": false
     }
   }
