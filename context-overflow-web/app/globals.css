@@ -8,6 +8,7 @@
 }
 
 :root {
+  --co-header-height: 4rem;
   --co-sidebar-width: 15rem;
   --background: #f6f4ef;
   --foreground: #171717;

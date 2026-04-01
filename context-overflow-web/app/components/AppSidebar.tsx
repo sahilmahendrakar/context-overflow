@@ -5,8 +5,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
+  ChevronsUpDown,
   FileText,
   Github,
   LayoutGrid,
@@ -26,8 +25,41 @@ interface UserProject {
   role: string;
 }
 
+function UserAccountMenu({
+  username,
+  onSignOut,
+  align,
+}: {
+  username: string;
+  onSignOut: () => void;
+  align: "collapsed" | "expanded";
+}) {
+  return (
+    <div
+      className={`absolute z-50 rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg ${
+        align === "collapsed"
+          ? "bottom-full left-1/2 mb-2 w-44 -translate-x-1/2"
+          : "bottom-full left-0 right-0 mb-2"
+      }`}
+      role="menu"
+      aria-label="Account"
+    >
+      <p className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
+        <span className="block truncate font-medium text-[var(--text-primary)]">{username}</span>
+      </p>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={onSignOut}
+        className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-[var(--destructive)] transition hover:bg-[color-mix(in_srgb,var(--destructive)_14%,transparent)]"
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
 export default function AppSidebar() {
-  const [collapsed, setCollapsed] = useState(false);
   const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [projects, setProjects] = useState<UserProject[]>([]);
@@ -37,7 +69,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const { user, loading, signIn, signOut, getIdToken } = useAuth();
   const { activeProject, setActiveProject } = useActiveProject();
-  const { mobileOpen, setMobileOpen, closeMobileSidebar } = useSidebar();
+  const { mobileOpen, setMobileOpen, closeMobileSidebar, desktopCollapsed } = useSidebar();
 
   const activeProjectSlug = activeProject?.slug ?? null;
   const navigationProjectSlug = user ? activeProjectSlug : null;
@@ -71,12 +103,12 @@ export default function AppSidebar() {
   }, [projectSwitcherOpen, fetchProjects]);
 
   useEffect(() => {
-    const w = collapsed ? "4.5rem" : "15rem";
+    const w = desktopCollapsed ? "4.5rem" : "15rem";
     document.documentElement.style.setProperty("--co-sidebar-width", w);
     return () => {
       document.documentElement.style.removeProperty("--co-sidebar-width");
     };
-  }, [collapsed]);
+  }, [desktopCollapsed]);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -125,7 +157,7 @@ export default function AppSidebar() {
 
   function navLinkClass(active: boolean) {
     return `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-200 ${
-      collapsed ? "justify-center px-2" : ""
+      desktopCollapsed ? "justify-center px-2" : ""
     } ${
       active
         ? "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -138,55 +170,38 @@ export default function AppSidebar() {
       className={`co-sidebar-panel flex h-full w-[min(17rem,88vw)] shrink-0 flex-col border-r border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md lg:w-[var(--co-sidebar-width,15rem)] lg:min-w-0 lg:transition-[width] lg:duration-200 lg:ease-out`}
       aria-label="App navigation"
     >
-      <div className={`flex items-center gap-2 border-b border-[var(--border)] px-3 py-4 ${collapsed ? "flex-col gap-3" : "justify-between"}`}>
-        {!collapsed && (
-          <Link
-            href={homeHref}
-            onClick={closeMobileSidebar}
-            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-1 py-0.5 transition hover:opacity-90"
-          >
-            <img
-              src="/context-overflow-icon.png"
-              alt=""
-              className="h-9 w-9 shrink-0 rounded-lg object-contain"
-            />
-            <span className="truncate text-base font-semibold text-[var(--text-primary)]">
+      <div className="flex h-[var(--co-header-height)] shrink-0 items-center px-3">
+        <Link
+          href={homeHref}
+          onClick={closeMobileSidebar}
+          title="Home"
+          className={`flex min-w-0 items-center gap-2 rounded-lg py-0.5 transition hover:opacity-90 ${desktopCollapsed ? "mx-auto justify-center" : "flex-1"}`}
+        >
+          <img
+            src="/context-overflow-icon.png"
+            alt=""
+            className="h-8 w-8 shrink-0 rounded-lg object-contain"
+          />
+          {!desktopCollapsed && (
+            <span className="truncate text-sm font-semibold leading-tight text-[var(--text-primary)]">
               Context<span className="text-[var(--accent)]">Overflow</span>
             </span>
-          </Link>
-        )}
-        {collapsed && (
-          <Link
-            href={homeHref}
-            onClick={closeMobileSidebar}
-            className="flex h-9 w-9 items-center justify-center rounded-lg transition hover:bg-[var(--surface-muted)]"
-            title="Home"
-          >
-            <img src="/context-overflow-icon.png" alt="Home" className="h-9 w-9 rounded-lg object-contain" />
-          </Link>
-        )}
-        <button
-          type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-[var(--border)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)] lg:flex"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" strokeWidth={2} /> : <ChevronLeft className="h-4 w-4" strokeWidth={2} />}
-        </button>
+          )}
+        </Link>
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-3">
+      <div className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 pb-3 pt-4">
         <div ref={projectRef} className="relative px-1">
           <button
             type="button"
             onClick={() => setProjectSwitcherOpen((o) => !o)}
-            className={`flex w-full items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5 text-left text-sm transition hover:border-[var(--text-tertiary)]/30 hover:bg-[var(--surface-strong)] ${collapsed ? "justify-center px-2" : ""}`}
+            className={`flex w-full items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-2.5 text-left text-sm transition hover:border-[var(--text-tertiary)]/30 hover:bg-[var(--surface-strong)] ${desktopCollapsed ? "justify-center px-2" : ""}`}
             aria-expanded={projectSwitcherOpen}
             aria-haspopup="listbox"
             aria-label="Project scope"
           >
             <Users className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} />
-            {!collapsed && (
+            {!desktopCollapsed && (
               <>
                 <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-primary)]">{displayName}</span>
                 <ChevronDown
@@ -198,7 +213,7 @@ export default function AppSidebar() {
           </button>
           {projectSwitcherOpen && (
             <div
-              className={`absolute left-1 right-1 top-[calc(100%+6px)] z-50 rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg ${collapsed ? "left-0 right-auto min-w-[12rem]" : ""}`}
+              className={`absolute left-1 right-1 top-[calc(100%+6px)] z-50 rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg ${desktopCollapsed ? "left-0 right-auto min-w-[12rem]" : ""}`}
               role="listbox"
               aria-label="Project scope"
             >
@@ -279,7 +294,7 @@ export default function AppSidebar() {
 
         {navigationProjectSlug && (
           <nav className="mt-2 flex flex-col gap-0.5 px-1" aria-label="Project">
-            {!collapsed && (
+            {!desktopCollapsed && (
               <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Project
               </p>
@@ -288,24 +303,24 @@ export default function AppSidebar() {
               href={`/p/${navigationProjectSlug}`}
               onClick={closeMobileSidebar}
               className={navLinkClass(postsActive(navigationProjectSlug))}
-              title={collapsed ? "Posts" : undefined}
+              title={desktopCollapsed ? "Posts" : undefined}
             >
               <FileText className="h-4 w-4 shrink-0" strokeWidth={2} />
-              {!collapsed && <span>Posts</span>}
+              {!desktopCollapsed && <span>Posts</span>}
             </Link>
             <Link
               href={`/p/${navigationProjectSlug}/settings`}
               onClick={closeMobileSidebar}
               className={navLinkClass(settingsActive(navigationProjectSlug))}
-              title={collapsed ? "Settings" : undefined}
+              title={desktopCollapsed ? "Settings" : undefined}
             >
               <Settings className="h-4 w-4 shrink-0" strokeWidth={2} />
-              {!collapsed && <span>Settings</span>}
+              {!desktopCollapsed && <span>Settings</span>}
             </Link>
           </nav>
         )}
 
-        {!navigationProjectSlug && !collapsed && (
+        {!navigationProjectSlug && !desktopCollapsed && (
           <div className="mt-2 px-2">
             <Link
               href="/browse"
@@ -317,7 +332,7 @@ export default function AppSidebar() {
             </Link>
           </div>
         )}
-        {!navigationProjectSlug && collapsed && (
+        {!navigationProjectSlug && desktopCollapsed && (
           <div className="mt-2 flex flex-col gap-0.5 px-1">
             <Link
               href="/browse"
@@ -331,16 +346,16 @@ export default function AppSidebar() {
         )}
       </div>
 
-      <div className={`mt-auto border-t border-[var(--border)] p-3 ${collapsed ? "flex flex-col items-center gap-2" : "space-y-2"}`}>
+      <div className={`mt-auto p-3 pt-4 ${desktopCollapsed ? "flex flex-col items-center gap-2" : "space-y-2"}`}>
         {!loading &&
           (user ? (
-            <div className={`relative ${collapsed ? "flex flex-col items-center" : ""}`} ref={userMenuRef}>
-              {collapsed ? (
+            <div className={`relative ${desktopCollapsed ? "flex flex-col items-center" : ""}`} ref={userMenuRef}>
+              {desktopCollapsed ? (
                 <>
                   <button
                     type="button"
                     onClick={() => setUserMenuOpen((o) => !o)}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)] transition hover:ring-2 hover:ring-[var(--ring)]"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)] transition hover:bg-[var(--surface-strong)] hover:ring-2 hover:ring-[var(--ring)]"
                     aria-expanded={userMenuOpen}
                     aria-haspopup="menu"
                     title={user.username}
@@ -359,76 +374,74 @@ export default function AppSidebar() {
                     )}
                   </button>
                   {userMenuOpen && (
-                    <div
-                      className="absolute bottom-full left-1/2 z-50 mb-2 w-44 -translate-x-1/2 rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg"
-                      role="menu"
-                    >
-                      <p className="px-3 py-2 text-xs text-[var(--text-secondary)]">
-                        <span className="block truncate font-medium text-[var(--text-primary)]">{user.username}</span>
-                      </p>
-                      <hr className="border-[var(--border)]" />
-                      <button
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          setActiveProject(null);
-                          signOut();
-                          closeMobileSidebar();
-                        }}
-                        className="w-full rounded-lg px-3 py-2 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-                      >
-                        Sign out
-                      </button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)]">
-                    {user.photoURL ? (
-                      <img
-                        src={user.photoURL}
-                        alt=""
-                        referrerPolicy="no-referrer"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-xs font-semibold uppercase text-[var(--text-secondary)]">
-                        {user.username[0]}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-[var(--text-primary)]">{user.username}</p>
-                    <button
-                      type="button"
-                      onClick={() => {
+                    <UserAccountMenu
+                      username={user.username}
+                      onSignOut={() => {
+                        setUserMenuOpen(false);
                         setActiveProject(null);
                         signOut();
                         closeMobileSidebar();
                       }}
-                      className="text-xs text-[var(--text-tertiary)] transition hover:text-[var(--accent)]"
-                    >
-                      Sign out
-                    </button>
-                  </div>
-                </div>
+                      align="collapsed"
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen((o) => !o)}
+                    className="flex w-full items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-2 py-2 text-left transition hover:border-[var(--text-tertiary)]/30 hover:bg-[var(--surface-strong)]"
+                    aria-expanded={userMenuOpen}
+                    aria-haspopup="menu"
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--background)]">
+                      {user.photoURL ? (
+                        <img
+                          src={user.photoURL}
+                          alt=""
+                          referrerPolicy="no-referrer"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-xs font-semibold uppercase text-[var(--text-secondary)]">
+                          {user.username[0]}
+                        </span>
+                      )}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--text-primary)]">
+                      {user.username}
+                    </span>
+                    <ChevronsUpDown className="h-4 w-4 shrink-0 text-[var(--text-tertiary)]" strokeWidth={2} />
+                  </button>
+                  {userMenuOpen && (
+                    <UserAccountMenu
+                      username={user.username}
+                      onSignOut={() => {
+                        setUserMenuOpen(false);
+                        setActiveProject(null);
+                        signOut();
+                        closeMobileSidebar();
+                      }}
+                      align="expanded"
+                    />
+                  )}
+                </>
               )}
             </div>
           ) : (
             <Button
               variant="secondary"
               size="sm"
-              className={collapsed ? "h-9 w-9 p-0" : "w-full"}
+              className={desktopCollapsed ? "h-9 w-9 p-0" : "w-full"}
               onClick={signIn}
               title="Sign in"
             >
-              {collapsed ? <LogIn className="h-4 w-4" strokeWidth={2} /> : "Sign in"}
+              {desktopCollapsed ? <LogIn className="h-4 w-4" strokeWidth={2} /> : "Sign in"}
             </Button>
           ))}
 
-        <div className={`flex items-center ${collapsed ? "flex-col gap-1" : "justify-between gap-2"}`}>
+        <div className={`flex items-center ${desktopCollapsed ? "flex-col gap-1" : "justify-between gap-2"}`}>
           <Button asChild variant="ghost" size="icon" className="rounded-full shrink-0" title="GitHub">
             <a
               href="https://github.com/sahilmahendrakar/context-overflow"

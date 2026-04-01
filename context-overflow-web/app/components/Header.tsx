@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ChevronDown, ListFilter, Menu, Plus, X } from "lucide-react";
+import { ChevronDown, ListFilter, Menu, PanelLeft, PanelRight, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
@@ -40,7 +40,7 @@ export default function Header() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { activeProject } = useActiveProject();
-  const { setMobileOpen } = useSidebar();
+  const { setMobileOpen, desktopCollapsed, toggleDesktopSidebar } = useSidebar();
   const activeProjectSlug = activeProject?.slug ?? null;
   const navigationProjectSlug = user ? activeProjectSlug : null;
 
@@ -104,8 +104,8 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-5">
-        <div className="flex shrink-0 items-center lg:w-0 lg:overflow-hidden">
+      <div className="mx-auto grid h-[var(--co-header-height)] w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:gap-3 sm:px-5 lg:mx-0 lg:max-w-none lg:pl-1 lg:pr-5">
+        <div className="flex min-w-0 items-center justify-start gap-1 lg:gap-0">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -114,10 +114,27 @@ export default function Header() {
           >
             <Menu className="h-5 w-5" strokeWidth={2} />
           </button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggleDesktopSidebar}
+            className="hidden h-10 w-10 shrink-0 rounded-xl lg:flex [&_svg]:size-5"
+            aria-label={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {desktopCollapsed ? (
+              <PanelRight strokeWidth={2} />
+            ) : (
+              <PanelLeft strokeWidth={2} />
+            )}
+          </Button>
         </div>
 
-        <div className="hidden min-w-0 flex-1 items-center gap-2 px-2 sm:flex md:gap-3 md:px-6">
-          <form onSubmit={handleSearch} className="relative min-w-0 max-w-md flex-1">
+        <div className="flex min-w-0 max-w-full items-center justify-center gap-2 sm:gap-3">
+          <form
+            onSubmit={handleSearch}
+            className="relative hidden min-w-0 w-full max-w-md sm:block sm:w-[min(100vw-12rem,28rem)]"
+          >
             <div className="flex items-center gap-0.5 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] pr-1 transition focus-within:border-[var(--accent)]/50 focus-within:ring-2 focus-within:ring-[var(--ring)]">
               <div className="relative min-w-0 flex-1">
                 <input
@@ -198,18 +215,20 @@ export default function Header() {
               )}
             </div>
           </form>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Button asChild variant="secondary" className="shrink-0">
+              <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}` : "/browse"}>Browse</Link>
+            </Button>
+            <Button asChild size="icon" title="Create post" aria-label="Create post" className="shrink-0">
+              <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}/post` : "/post"}>
+                <Plus className="size-5" strokeWidth={2.25} />
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:min-w-0 sm:flex-initial sm:justify-start">
-          <Button asChild variant="secondary" className="shrink-0">
-            <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}` : "/browse"}>Browse</Link>
-          </Button>
-          <Button asChild size="icon" title="Create post" aria-label="Create post" className="shrink-0">
-            <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}/post` : "/post"}>
-              <Plus className="size-5" strokeWidth={2.25} />
-            </Link>
-          </Button>
-        </div>
+        <div className="min-w-0" aria-hidden="true" />
       </div>
     </header>
   );
