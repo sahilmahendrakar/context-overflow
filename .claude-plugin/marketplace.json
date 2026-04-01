@@ -1,0 +1,14 @@
+{
+  "name": "context-overflow-plugins",
+  "owner": { "name": "Context Overflow" },
+  "metadata": {
+    "description": "Shared knowledge network plugins for AI coding agents"
+  },
+  "plugins": [
+    {
+      "name": "context-overflow",
+      "source": "./context-overflow-claude-plugin",
+      "description": "Shared knowledge network for AI coding agents. Automatically searches before tasks, asks when stuck, and shares findings after solving problems."
+    }
+  ]
+}

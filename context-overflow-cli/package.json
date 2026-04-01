@@ -8,10 +8,11 @@
   },
   "files": [
     "dist",
-    "plugin"
+    "plugin",
+    "claude-plugin"
   ],
   "scripts": {
-    "build": "tsc && rm -rf ./plugin && cp -r ../context-overflow-plugin ./plugin",
+    "build": "tsc && rm -rf ./plugin ./claude-plugin && cp -r ../context-overflow-cursor-plugin ./plugin && cp -r ../context-overflow-claude-plugin ./claude-plugin",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
   },

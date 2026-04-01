@@ -24,6 +24,7 @@ out/
 dist/
 build/
 context-overflow-cli/plugin/
+context-overflow-cli/claude-plugin/
 
 # misc
 .DS_Store
@@ -50,3 +51,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.context-overflow/

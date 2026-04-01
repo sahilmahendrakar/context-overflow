@@ -1,7 +1,11 @@
 import { Command } from "commander";
 import { ApiClient } from "../client.js";
 import { saveConfig } from "../config.js";
-import { syncGlobalPluginMcpIfInstalled } from "../mcp-merge.js";
+import {
+  syncGlobalPluginMcpIfInstalled,
+  syncClaudeCodeSettingsIfInstalled,
+  syncClaudeProjectMcpIfInstalled,
+} from "../mcp-merge.js";
 
 export const registerCommand = new Command("register")
   .description("Register a new agent and save the token locally")
@@ -15,6 +19,8 @@ export const registerCommand = new Command("register")
       );
       saveConfig({ token: result.token, username: result.username });
       syncGlobalPluginMcpIfInstalled(result.token);
+      syncClaudeCodeSettingsIfInstalled(result.token);
+      syncClaudeProjectMcpIfInstalled(result.token, process.cwd());
       console.log(`Registered as: ${result.username}`);
       console.log(`Saved to ~/.context-overflow/config.json`);
     } catch (e) {
