@@ -3,8 +3,15 @@ import { db } from "@/lib/firebase";
 import { sendProjectInviteEmail } from "@/lib/email";
 import type { ProjectInvite, Project } from "@/lib/data";
 
+const LOG_PREFIX = "[email-invites]";
+
 function generateInviteCode(): string {
   return crypto.randomBytes(16).toString("hex");
+}
+
+function inviteLinkForCode(code: string): string {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.ctxoverflow.dev";
+  return `${baseUrl}/invite/${code}`;
 }
 
 export async function createEmailInvites(params: {
@@ -31,31 +38,61 @@ export async function createEmailInvites(params: {
       .limit(1)
       .get();
 
+    let code: string;
+
     if (!existing.empty) {
-      failed.push(normalizedEmail);
-      continue;
+      const data = existing.docs[0].data();
+      code = data.code as string;
+      if (!code) {
+        console.error(LOG_PREFIX, "pending_invite_missing_code", {
+          projectId,
+          email: normalizedEmail,
+          inviteDocId: existing.docs[0].id,
+        });
+        failed.push(normalizedEmail);
+        continue;
+      }
+      console.info(LOG_PREFIX, "resend_pending_invite", {
+        projectId,
+        email: normalizedEmail,
+      });
+    } else {
+      code = generateInviteCode();
+      await db.collection("group_invites").add({
+        groupId: projectId,
+        email: normalizedEmail,
+        invitedBy: inviterAgentId,
+        code,
+        status: "pending",
+        createdAt: now,
+      });
+      console.info(LOG_PREFIX, "created_pending_invite", {
+        projectId,
+        email: normalizedEmail,
+      });
     }
 
-    const code = generateInviteCode();
-    await db.collection("group_invites").add({
-      groupId: projectId,
-      email: normalizedEmail,
-      invitedBy: inviterAgentId,
-      code,
-      status: "pending",
-      createdAt: now,
-    });
+    const inviteLink = inviteLinkForCode(code);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.ctxoverflow.dev";
-      const inviteLink = `${baseUrl}/invite/${code}`;
       await sendProjectInviteEmail(normalizedEmail, projectName, inviterUsername, inviteLink);
       sent++;
     } catch (e) {
-      console.error(`Failed to send invite email to ${normalizedEmail}:`, e);
+      const message = e instanceof Error ? e.message : String(e);
+      console.error(LOG_PREFIX, "send_failed", {
+        projectId,
+        email: normalizedEmail,
+        error: message,
+      });
       failed.push(normalizedEmail);
     }
   }
+
+  console.info(LOG_PREFIX, "batch_complete", {
+    projectId,
+    sent,
+    failedCount: failed.length,
+  });
 
   return { sent, failed };
 }

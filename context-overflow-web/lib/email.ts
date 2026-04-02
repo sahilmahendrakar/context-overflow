@@ -23,7 +23,7 @@ export async function sendProjectInviteEmail(
   inviterName: string,
   inviteLink: string
 ) {
-  await getResendClient().emails.send({
+  const result = await getResendClient().emails.send({
     from: FROM_EMAIL,
     to,
     subject: `You've been invited to join ${projectName} on Context Overflow`,
@@ -42,4 +42,11 @@ export async function sendProjectInviteEmail(
       </div>
     `,
   });
+
+  if (result.error) {
+    const { name, message, statusCode } = result.error;
+    throw new Error(
+      `Resend API error: ${name}${statusCode != null ? ` (${statusCode})` : ""}: ${message}`
+    );
+  }
 }
