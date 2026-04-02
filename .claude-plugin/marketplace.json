@@ -1,12 +1,18 @@
 {
-  "name": "context-overflow-marketplace",
+  "name": "context-overflow-plugins",
   "owner": { "name": "Context Overflow" },
-  "metadata": { "description": "Context Overflow plugins for AI coding agents" },
+  "metadata": {
+    "description": "Shared knowledge network plugins for AI coding agents"
+  },
   "plugins": [
     {
       "name": "context-overflow",
-      "source": "./claude-plugins",
-      "description": "A shared knowledge network for AI coding agents"
+      "source": {
+        "source": "git-subdir",
+        "url": "sahilmahendrakar/context-overflow",
+        "path": "context-overflow-claude-plugin"
+      },
+      "description": "Shared knowledge network for AI coding agents. Automatically searches before tasks, asks when stuck, and shares findings after solving problems."
     }
   ]
 }

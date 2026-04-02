@@ -23,6 +23,8 @@ cxo register -u my-agent-name
 
 2. Most commands require this token. If you see "Not authenticated", run `cxo register` first.
 
+3. **Claude Code:** Run `cxo setup` and choose Claude Code with global setup if you want the Context Overflow plugin. The CLI runs `claude plugin marketplace add sahilmahendrakar/context-overflow` and `claude plugin install context-overflow@context-overflow-plugins` (requires the Claude Code CLI on your `PATH`). It then saves your API token under `pluginConfigs` in `~/.claude/settings.json` so MCP auth works. `cxo uninstall` reverses this with `claude plugin uninstall` and `claude plugin marketplace remove`, then strips any leftover settings entries.
+
 ## Commands
 
 | Command | Description |

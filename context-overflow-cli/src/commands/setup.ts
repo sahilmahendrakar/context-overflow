@@ -28,12 +28,56 @@ import { saveConfig } from "../config.js";
 import {
   mergeProjectMcpConfig,
   mergePluginMcpConfig,
+  mergeClaudeProjectMcpConfig,
+  mergeClaudeProjectContextOverflowHooks,
 } from "../mcp-merge.js";
+import { installGlobalClaudeContextOverflowPlugin } from "../claude-plugin-cli.js";
 
 function getPluginSourcePath(): string {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
   return join(__dirname, "..", "..", "plugin");
+}
+
+function getClaudePluginSourcePath(): string {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  return join(__dirname, "..", "..", "claude-plugin");
+}
+
+function installLocalClaudeFiles(
+  projectDir: string,
+  token: string
+): { success: boolean } {
+  const source = getClaudePluginSourcePath();
+  if (!existsSync(source)) {
+    return { success: false };
+  }
+
+  const claudeDir = join(projectDir, ".claude");
+  const hooksDir = join(claudeDir, "hooks");
+  mkdirSync(hooksDir, { recursive: true });
+
+  cpSync(join(source, "agents"), join(claudeDir, "agents"), {
+    recursive: true,
+    force: true,
+  });
+  cpSync(join(source, "skills"), join(claudeDir, "skills"), {
+    recursive: true,
+    force: true,
+  });
+
+  for (const script of ["session-start.sh", "session-end.sh"]) {
+    const srcFile = join(source, "hooks", script);
+    if (!existsSync(srcFile)) continue;
+    writeFileSync(join(hooksDir, script), readFileSync(srcFile), {
+      mode: 0o755,
+    });
+  }
+
+  mergeClaudeProjectContextOverflowHooks(projectDir);
+  mergeClaudeProjectMcpConfig(projectDir, token);
+  return { success: true };
 }
 
 function handleCancel(value: unknown): value is symbol {
@@ -53,7 +97,7 @@ function installGlobalCursorPlugin(
     ".cursor",
     "plugins",
     "local",
-    "context-overflow-plugin"
+    "context-overflow-cursor-plugin"
   );
 
   if (!existsSync(source)) {
@@ -145,7 +189,7 @@ export const setupCommand = new Command("setup")
       message: "Which tools do you use?",
       options: [
         { value: "cursor", label: "Cursor" },
-        { value: "claude-code", label: "Claude Code", hint: "coming soon" },
+        { value: "claude-code", label: "Claude Code" },
       ],
       required: true,
     });
@@ -168,8 +212,18 @@ export const setupCommand = new Command("setup")
       installCursor = shouldInstall as boolean;
     }
 
+    let installClaudeCode = false;
     if (hasClaudeCode) {
-      log.info("Claude Code plugin is coming soon — MCP will still be configured.");
+      const shouldInstall = await confirm({
+        message: isGlobal
+          ? "Install the Claude Code plugin?"
+          : "Install Claude Code integration for this project?",
+        active: "Yes",
+        inactive: "No",
+        initialValue: true,
+      });
+      if (handleCancel(shouldInstall)) return;
+      installClaudeCode = shouldInstall as boolean;
     }
 
     const agentName = await text({
@@ -221,6 +275,18 @@ export const setupCommand = new Command("setup")
           s.stop(pc.yellow("Plugin source not found — skipping install"), 1);
         }
       }
+
+      if (installClaudeCode) {
+        s.start("Claude Code: starting…");
+        try {
+          await installGlobalClaudeContextOverflowPlugin(token, (msg) => s.message(msg));
+          s.stop(
+            `Ran ${pc.dim("claude plugin marketplace add")} + ${pc.dim("claude plugin install")}; MCP token in ${pc.dim("~/.claude/settings.json")}`
+          );
+        } catch (e) {
+          s.stop(pc.yellow(`Claude Code setup failed: ${(e as Error).message}`), 1);
+        }
+      }
     } else {
       s.start("Saving config...");
       saveConfig({ token, username }, projectDir);
@@ -230,7 +296,24 @@ export const setupCommand = new Command("setup")
         s.start("Installing Cursor integration...");
         installLocalCursorFiles(projectDir, token);
         s.stop("Cursor agents, rules, skills, hooks, and MCP configured");
-      } else {
+      }
+
+      if (installClaudeCode) {
+        s.start("Installing Claude Code integration...");
+        const claudeResult = installLocalClaudeFiles(projectDir, token);
+        if (claudeResult.success) {
+          s.stop(
+            `Claude Code agents, skills, hooks, and ${pc.dim(".mcp.json")} configured`
+          );
+        } else {
+          s.stop(
+            pc.yellow("Claude plugin source not found — skipping install"),
+            1
+          );
+        }
+      }
+
+      if (!installCursor && !installClaudeCode) {
         s.start("Configuring MCP...");
         mergeProjectMcpConfig(projectDir, token);
         s.stop("MCP configured in .cursor/mcp.json");
@@ -249,8 +332,13 @@ export const setupCommand = new Command("setup")
       );
       if (installCursor) {
         summaryLines.push(
-          `Plugin:       ${pc.dim("~/.cursor/plugins/local/context-overflow-plugin")}`,
+          `Cursor:       ${pc.dim("~/.cursor/plugins/local/context-overflow-cursor-plugin")}`,
           `MCP config:   ${pc.dim("mcp.json (plugin root)")}`,
+        );
+      }
+      if (installClaudeCode) {
+        summaryLines.push(
+          `Claude Code:  ${pc.dim("claude plugin (marketplace + install); token in settings if needed for MCP")}`,
         );
       }
     } else {
@@ -265,12 +353,25 @@ export const setupCommand = new Command("setup")
           `Hooks:        ${pc.dim(".cursor/hooks.json + .cursor/hooks/")}`,
           `MCP config:   ${pc.dim(".cursor/mcp.json")}`,
         );
-      } else {
+      }
+      if (installClaudeCode) {
+        summaryLines.push(
+          `Claude Code:  ${pc.dim(".claude/agents/, .claude/skills/, .claude/settings.local.json (hooks)")}`,
+          `Claude MCP:   ${pc.dim(".mcp.json")}`,
+        );
+      }
+      if (!installCursor && !installClaudeCode) {
         summaryLines.push(`MCP config:   ${pc.dim(".cursor/mcp.json")}`);
       }
     }
 
     note(summaryLines.join("\n"), "Setup complete");
 
-    outro(pc.green("You're all set! Restart Cursor to activate."));
+    const restartHints: string[] = [];
+    if (installCursor) restartHints.push("Cursor");
+    if (installClaudeCode) restartHints.push("Claude Code");
+    const restartMsg = restartHints.length > 0
+      ? `Restart ${restartHints.join(" and ")} to activate.`
+      : "You're all set!";
+    outro(pc.green(restartMsg));
   });
