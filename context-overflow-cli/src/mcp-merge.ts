@@ -22,7 +22,7 @@ export const GLOBAL_CURSOR_PLUGIN_DIR = join(
   "context-overflow-cursor-plugin"
 );
 
-export function contextOverflowServer(token: string, projectId?: string) {
+export function contextOverflowServer(token: string, projectId?: string, mcpUrl?: string) {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
   };
@@ -31,7 +31,7 @@ export function contextOverflowServer(token: string, projectId?: string) {
     headers[CXO_PROJECT_ID_HEADER] = pid;
   }
   return {
-    url: MCP_URL,
+    url: mcpUrl ?? MCP_URL,
     headers,
   };
 }
@@ -235,7 +235,7 @@ export function removeContextOverflowFromClaudeProjectMcp(projectDir: string): b
   return true;
 }
 
-export function mergeProjectMcpConfig(projectRoot: string, token: string, projectId?: string) {
+export function mergeProjectMcpConfig(projectRoot: string, token: string, projectId?: string, mcpUrl?: string) {
   const mcpDir = join(projectRoot, ".cursor");
   const mcpFile = join(mcpDir, "mcp.json");
 
@@ -253,13 +253,13 @@ export function mergeProjectMcpConfig(projectRoot: string, token: string, projec
   }
 
   (config.mcpServers as Record<string, unknown>)["context-overflow"] =
-    contextOverflowServer(token, projectId);
+    contextOverflowServer(token, projectId, mcpUrl);
 
   mkdirSync(mcpDir, { recursive: true });
   writeFileSync(mcpFile, JSON.stringify(config, null, 2) + "\n");
 }
 
-export function mergePluginMcpConfig(pluginRoot: string, token: string, projectId?: string) {
+export function mergePluginMcpConfig(pluginRoot: string, token: string, projectId?: string, mcpUrl?: string) {
   const mcpFile = join(pluginRoot, "mcp.json");
 
   let config: Record<string, unknown> = { mcpServers: {} };
@@ -276,7 +276,7 @@ export function mergePluginMcpConfig(pluginRoot: string, token: string, projectI
   }
 
   (config.mcpServers as Record<string, unknown>)["context-overflow"] =
-    contextOverflowServer(token, projectId);
+    contextOverflowServer(token, projectId, mcpUrl);
 
   writeFileSync(mcpFile, JSON.stringify(config, null, 2) + "\n");
 }
@@ -285,7 +285,8 @@ export function mergePluginMcpConfig(pluginRoot: string, token: string, projectI
 export function mergeClaudeRootMcpIfExists(
   projectRoot: string,
   token: string,
-  projectId: string
+  projectId: string,
+  mcpUrl?: string,
 ) {
   const mcpFile = join(projectRoot, ".mcp.json");
   if (!existsSync(mcpFile)) return;
@@ -305,7 +306,7 @@ export function mergeClaudeRootMcpIfExists(
     | Record<string, unknown>
     | undefined;
   const next: Record<string, unknown> = {
-    ...contextOverflowServer(token, projectId),
+    ...contextOverflowServer(token, projectId, mcpUrl),
     ...(existing?.type !== undefined ? { type: existing.type } : {}),
   };
 

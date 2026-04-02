@@ -88,8 +88,12 @@ function handleCancel(value: unknown): value is symbol {
   return false;
 }
 
+const DEBUG_API_URL = "http://localhost:3000";
+const DEBUG_MCP_URL = "http://localhost:3000/api/mcp";
+
 function installGlobalCursorPlugin(
-  token: string
+  token: string,
+  mcpUrl?: string,
 ): { success: boolean; path: string } {
   const source = getPluginSourcePath();
   const target = join(
@@ -106,11 +110,11 @@ function installGlobalCursorPlugin(
 
   mkdirSync(dirname(target), { recursive: true });
   cpSync(source, target, { recursive: true, force: true });
-  mergePluginMcpConfig(target, token);
+  mergePluginMcpConfig(target, token, undefined, mcpUrl);
   return { success: true, path: target };
 }
 
-function installLocalCursorFiles(projectDir: string, token: string) {
+function installLocalCursorFiles(projectDir: string, token: string, mcpUrl?: string) {
   const source = getPluginSourcePath();
   const cursorDir = join(projectDir, ".cursor");
 
@@ -157,7 +161,7 @@ function installLocalCursorFiles(projectDir: string, token: string) {
     JSON.stringify(hooksJson, null, 2) + "\n"
   );
 
-  mergeProjectMcpConfig(projectDir, token);
+  mergeProjectMcpConfig(projectDir, token, undefined, mcpUrl);
 }
 
 function ensureGitignore(projectDir: string, entry: string) {
@@ -174,8 +178,17 @@ function ensureGitignore(projectDir: string, entry: string) {
 
 export const setupCommand = new Command("setup")
   .description("Interactive setup for Context Overflow")
-  .action(async () => {
+  .option("--debug", "Use localhost:3000 for all API and MCP URLs")
+  .action(async (opts) => {
+    const debug = opts.debug === true;
+    const apiUrl = debug ? DEBUG_API_URL : undefined;
+    const mcpUrl = debug ? DEBUG_MCP_URL : undefined;
+
     intro(pc.bgCyan(pc.black(" Context Overflow ")));
+
+    if (debug) {
+      log.info(pc.yellow("Debug mode: using localhost:3000"));
+    }
 
     const isGlobal = await confirm({
       message: "Set up Context Overflow globally?",
@@ -244,7 +257,7 @@ export const setupCommand = new Command("setup")
     let token: string;
     let username: string;
     try {
-      const client = new ApiClient();
+      const client = new ApiClient(undefined, apiUrl);
       const result = await client.post<{ username: string; token: string }>(
         "/api/registration",
         { username: agentName as string }
@@ -261,12 +274,12 @@ export const setupCommand = new Command("setup")
 
     if (isGlobal) {
       s.start("Saving config...");
-      saveConfig({ token, username });
+      saveConfig({ token, username, ...(apiUrl ? { apiUrl } : {}) });
       s.stop("Config saved");
 
       if (installCursor) {
         s.start("Installing Cursor plugin...");
-        const result = installGlobalCursorPlugin(token);
+        const result = installGlobalCursorPlugin(token, mcpUrl);
         if (result.success) {
           s.stop(
             `Plugin and ${pc.dim("mcp.json")} installed to ${pc.dim(result.path)}`
@@ -289,12 +302,12 @@ export const setupCommand = new Command("setup")
       }
     } else {
       s.start("Saving config...");
-      saveConfig({ token, username }, projectDir);
+      saveConfig({ token, username, ...(apiUrl ? { apiUrl } : {}) }, projectDir);
       s.stop("Config saved to .context-overflow/");
 
       if (installCursor) {
         s.start("Installing Cursor integration...");
-        installLocalCursorFiles(projectDir, token);
+        installLocalCursorFiles(projectDir, token, mcpUrl);
         s.stop("Cursor agents, rules, skills, hooks, and MCP configured");
       }
 
@@ -315,7 +328,7 @@ export const setupCommand = new Command("setup")
 
       if (!installCursor && !installClaudeCode) {
         s.start("Configuring MCP...");
-        mergeProjectMcpConfig(projectDir, token);
+        mergeProjectMcpConfig(projectDir, token, undefined, mcpUrl);
         s.stop("MCP configured in .cursor/mcp.json");
       }
 

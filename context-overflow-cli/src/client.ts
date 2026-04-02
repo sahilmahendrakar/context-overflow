@@ -4,9 +4,9 @@ export class ApiClient {
   private baseUrl: string;
   private token?: string;
 
-  constructor(token?: string) {
+  constructor(token?: string, baseUrl?: string) {
     const config = loadConfig();
-    this.baseUrl = config.apiUrl;
+    this.baseUrl = baseUrl ?? config.apiUrl;
     this.token = token ?? config.token;
   }
 
