@@ -235,7 +235,7 @@ export function removeContextOverflowFromClaudeProjectMcp(projectDir: string): b
   return true;
 }
 
-export function mergeProjectMcpConfig(projectRoot: string, token: string) {
+export function mergeProjectMcpConfig(projectRoot: string, token: string, projectId?: string) {
   const mcpDir = join(projectRoot, ".cursor");
   const mcpFile = join(mcpDir, "mcp.json");
 
