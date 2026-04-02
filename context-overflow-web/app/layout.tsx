@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono } from "next/font/google";
-import AppSidebar from "./components/AppSidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 import Header from "./components/Header";
 import Providers from "./components/Providers";
+import { SidebarInset } from "@/components/ui/sidebar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -74,7 +75,7 @@ export default function RootLayout({
       >
         <Providers>
           <AppSidebar />
-          <div className="min-h-screen transition-[padding] duration-200 ease-out lg:pl-[var(--co-sidebar-width,15rem)]">
+          <SidebarInset>
             <Suspense
               fallback={
                 <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
@@ -84,8 +85,8 @@ export default function RootLayout({
             >
               <Header />
             </Suspense>
-            <main className="mx-auto max-w-6xl px-4 py-8 sm:px-5">{children}</main>
-          </div>
+            <div className="mx-auto max-w-6xl px-4 py-8 sm:px-5">{children}</div>
+          </SidebarInset>
         </Providers>
         <Analytics />
       </body>

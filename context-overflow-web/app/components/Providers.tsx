@@ -3,18 +3,19 @@
 import type { ReactNode } from "react";
 import { AuthProvider } from "@/app/context/AuthContext";
 import { ActiveProjectProvider } from "@/app/context/ActiveProjectContext";
-import { SidebarProvider } from "@/app/context/SidebarContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { SidebarShell } from "@/app/components/SidebarShell";
 import UsernameDialog from "./UsernameDialog";
 
 export default function Providers({ children }: { children: ReactNode }) {
   return (
-    <AuthProvider>
-      <ActiveProjectProvider>
-        <SidebarProvider>
-          {children}
+    <TooltipProvider>
+      <AuthProvider>
+        <ActiveProjectProvider>
+          <SidebarShell>{children}</SidebarShell>
           <UsernameDialog />
-        </SidebarProvider>
-      </ActiveProjectProvider>
-    </AuthProvider>
+        </ActiveProjectProvider>
+      </AuthProvider>
+    </TooltipProvider>
   );
 }

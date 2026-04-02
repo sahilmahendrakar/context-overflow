@@ -5,7 +5,8 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { ProjectProvider } from "./ProjectContext";
 
 interface ProjectInfo {
@@ -84,7 +85,9 @@ export default function ProjectLayout({ children }: { children: ReactNode }) {
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
           The project &ldquo;{slug}&rdquo; doesn&apos;t exist.
         </p>
-        <Button asChild className="mt-6"><Link href="/">Go home</Link></Button>
+        <Link href="/" className={cn(buttonVariants(), "mt-6 inline-flex")}>
+          Go home
+        </Link>
       </div>
     );
   }

@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ChevronDown, ListFilter, Menu, PanelLeft, PanelRight, Plus, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ChevronDown, Github, ListFilter, Plus, X } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import ThemeToggle from "@/app/components/ThemeToggle";
 import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
-import { useSidebar } from "@/app/context/SidebarContext";
+import { cn } from "@/lib/utils";
 
 function browsePath(
   q: string | undefined,
@@ -40,7 +42,6 @@ export default function Header() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { activeProject } = useActiveProject();
-  const { setMobileOpen, desktopCollapsed, toggleDesktopSidebar } = useSidebar();
   const activeProjectSlug = activeProject?.slug ?? null;
   const navigationProjectSlug = user ? activeProjectSlug : null;
 
@@ -103,34 +104,13 @@ export default function Header() {
   }, [filterOpen]);
 
   return (
-    <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
-      <div className="mx-auto grid h-[var(--co-header-height)] w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 sm:gap-3 sm:px-5 lg:mx-0 lg:max-w-none lg:pl-1 lg:pr-5">
-        <div className="flex min-w-0 items-center justify-start gap-1 lg:gap-0">
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-secondary)] transition hover:bg-[var(--surface-strong)] hover:text-[var(--text-primary)] lg:hidden"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" strokeWidth={2} />
-          </button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={toggleDesktopSidebar}
-            className="hidden h-10 w-10 shrink-0 rounded-xl lg:flex [&_svg]:size-5"
-            aria-label={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {desktopCollapsed ? (
-              <PanelRight strokeWidth={2} />
-            ) : (
-              <PanelLeft strokeWidth={2} />
-            )}
-          </Button>
+    <header className="sticky top-0 z-20 flex h-16 w-full shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md transition-[height] duration-200 ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+      <div className="mx-auto flex h-full w-full max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-5 lg:mx-0 lg:max-w-none lg:px-5">
+        <div className="flex min-w-0 shrink-0 items-center">
+          <SidebarTrigger className="-ml-1" />
         </div>
 
-        <div className="flex min-w-0 max-w-full items-center justify-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 max-w-full flex-1 items-center justify-center gap-2 sm:gap-3">
           <form
             onSubmit={handleSearch}
             className="relative hidden min-w-0 w-full max-w-md sm:block sm:w-[min(100vw-12rem,28rem)]"
@@ -217,18 +197,35 @@ export default function Header() {
           </form>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button asChild variant="secondary" className="shrink-0">
-              <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}` : "/browse"}>Browse</Link>
-            </Button>
-            <Button asChild size="icon" title="Create post" aria-label="Create post" className="shrink-0">
-              <Link href={navigationProjectSlug ? `/p/${navigationProjectSlug}/post` : "/post"}>
-                <Plus className="size-5" strokeWidth={2.25} />
-              </Link>
-            </Button>
+            <Link
+              href={navigationProjectSlug ? `/p/${navigationProjectSlug}` : "/browse"}
+              className={cn(buttonVariants({ variant: "secondary" }), "shrink-0")}
+            >
+              Browse
+            </Link>
+            <Link
+              href={navigationProjectSlug ? `/p/${navigationProjectSlug}/post` : "/post"}
+              title="Create post"
+              aria-label="Create post"
+              className={cn(buttonVariants({ size: "icon" }), "shrink-0")}
+            >
+              <Plus className="size-5" strokeWidth={2.25} />
+            </Link>
+            <a
+              href="https://github.com/sahilmahendrakar/context-overflow"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+              title="GitHub"
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "shrink-0 rounded-full")}
+            >
+              <Github size={18} strokeWidth={2} />
+            </a>
+            <div className="shrink-0">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
-
-        <div className="min-w-0" aria-hidden="true" />
       </div>
     </header>
   );

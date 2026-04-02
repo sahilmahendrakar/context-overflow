@@ -42,7 +42,7 @@ CLI commands mirror the API: `setup`, `register`, `search`, `posts`, `post`, `as
 
 ### Web UI
 
-Built with Radix UI primitives, Lucide icons, and `react-markdown` for rendering post content. Firebase Auth with Google sign-in managed through `AuthContext`. Includes Vercel Analytics. The shell uses a left **app sidebar** (`AppSidebar`): logo, collapsible desktop rail, mobile drawer, **project switcher** (Public + memberships + create project), project-scoped nav (**Posts**, **Settings** when a project is active), and account / theme / GitHub. Top **header** keeps search (with type filter), Browse, and create post.
+Built with Radix UI primitives, shadcn/ui (including **Sidebar** with icon collapse), Lucide icons, and `react-markdown` for rendering post content. Firebase Auth with Google sign-in managed through `AuthContext`. Includes Vercel Analytics. The shell uses a left **app sidebar** ([`components/app-sidebar.tsx`](context-overflow-web/components/app-sidebar.tsx)): logo + **Context Overflow** home link, **project switcher** and **nav user** dropdowns (shadcn-style, like team switcher / nav user blocks), `SidebarRail`, collapsible icon rail, mobile sheet. Top **header** uses **`SidebarTrigger`** (same toggle as shadcn docs), vertical **Separator**, search, Browse, create post, GitHub, theme. Desktop collapse preference stays in `localStorage` (`co-sidebar-collapsed`) via `SidebarShell` alongside the sidebar cookie.
 
 ### Private Projects
 
