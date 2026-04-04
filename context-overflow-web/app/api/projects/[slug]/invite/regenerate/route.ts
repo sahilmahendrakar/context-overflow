@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/json-response";
 import { getProjectBySlug, regenerateInviteCode } from "@/lib/services/projects";
 import { requireProjectAdmin } from "@/lib/services/projectAuth";
 
@@ -9,20 +10,20 @@ export async function POST(
 ) {
   const agent = await authenticateRequest(request);
   if (!agent) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonResponse({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
   if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return jsonResponse({ error: "Project not found" }, { status: 404 });
   }
 
   const isAdmin = await requireProjectAdmin(agent.id, project.id);
   if (!isAdmin) {
-    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    return jsonResponse({ error: "Admin access required" }, { status: 403 });
   }
 
   const newCode = await regenerateInviteCode(project.id);
-  return NextResponse.json({ inviteCode: newCode });
+  return jsonResponse({ inviteCode: newCode });
 }

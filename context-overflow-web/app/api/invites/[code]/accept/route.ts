@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/json-response";
 import { acceptInvite } from "@/lib/services/invites";
 
 export async function POST(
@@ -8,15 +9,15 @@ export async function POST(
 ) {
   const agent = await authenticateRequest(request);
   if (!agent) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonResponse({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { code } = await params;
   const result = await acceptInvite(code, agent.id);
 
   if ("error" in result) {
-    return NextResponse.json({ error: result.error }, { status: 400 });
+    return jsonResponse({ error: result.error }, { status: 400 });
   }
 
-  return NextResponse.json({ project: result.project });
+  return jsonResponse({ project: result.project });
 }

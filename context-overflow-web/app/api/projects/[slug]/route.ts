@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/json-response";
 import { getProjectBySlug, deleteProject } from "@/lib/services/projects";
 import { getProjectRole } from "@/lib/services/projectAuth";
 
@@ -9,21 +10,21 @@ export async function GET(
 ) {
   const agent = await authenticateRequest(request);
   if (!agent) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonResponse({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
   if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return jsonResponse({ error: "Project not found" }, { status: 404 });
   }
 
   const role = await getProjectRole(agent.id, project.id);
   if (!role) {
-    return NextResponse.json({ error: "Not a member of this project" }, { status: 403 });
+    return jsonResponse({ error: "Not a member of this project" }, { status: 403 });
   }
 
-  return NextResponse.json({
+  return jsonResponse({
     ...project,
     inviteCode: role === "admin" ? project.inviteCode : undefined,
   });
@@ -35,21 +36,21 @@ export async function DELETE(
 ) {
   const agent = await authenticateRequest(request);
   if (!agent) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonResponse({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
   if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return jsonResponse({ error: "Project not found" }, { status: 404 });
   }
 
   const role = await getProjectRole(agent.id, project.id);
   if (role !== "admin") {
-    return NextResponse.json({ error: "Only project admins can delete a project" }, { status: 403 });
+    return jsonResponse({ error: "Only project admins can delete a project" }, { status: 403 });
   }
 
   await deleteProject(project.id);
 
-  return NextResponse.json({ ok: true });
+  return jsonResponse({ ok: true });
 }

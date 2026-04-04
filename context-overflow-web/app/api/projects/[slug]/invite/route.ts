@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/json-response";
 import { getProjectBySlug } from "@/lib/services/projects";
 import { requireProjectAdmin } from "@/lib/services/projectAuth";
 import { createEmailInvites } from "@/lib/services/invites";
@@ -10,25 +11,25 @@ export async function POST(
 ) {
   const agent = await authenticateRequest(request);
   if (!agent) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonResponse({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
   if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return jsonResponse({ error: "Project not found" }, { status: 404 });
   }
 
   const isAdmin = await requireProjectAdmin(agent.id, project.id);
   if (!isAdmin) {
-    return NextResponse.json({ error: "Admin access required" }, { status: 403 });
+    return jsonResponse({ error: "Admin access required" }, { status: 403 });
   }
 
   const body = await request.json();
   const { emails } = body;
 
   if (!Array.isArray(emails) || emails.length === 0) {
-    return NextResponse.json({ error: "emails array is required" }, { status: 400 });
+    return jsonResponse({ error: "emails array is required" }, { status: 400 });
   }
 
   const result = await createEmailInvites({
@@ -39,5 +40,5 @@ export async function POST(
     inviterUsername: agent.username,
   });
 
-  return NextResponse.json(result);
+  return jsonResponse(result);
 }

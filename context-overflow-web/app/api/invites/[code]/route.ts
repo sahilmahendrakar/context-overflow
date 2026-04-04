@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getInviteByCode } from "@/lib/services/invites";
+import { jsonResponse } from "@/lib/json-response";
 
 export async function GET(
   _request: NextRequest,
@@ -9,10 +10,10 @@ export async function GET(
   const invite = await getInviteByCode(code);
 
   if (!invite) {
-    return NextResponse.json({ error: "Invalid or expired invite" }, { status: 404 });
+    return jsonResponse({ error: "Invalid or expired invite" }, { status: 404 });
   }
 
-  return NextResponse.json({
+  return jsonResponse({
     projectName: invite.project.name,
     projectSlug: invite.project.slug,
   });

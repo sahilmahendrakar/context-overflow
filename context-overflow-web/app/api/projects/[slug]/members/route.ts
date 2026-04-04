@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { authenticateRequest } from "@/lib/auth";
+import { jsonResponse } from "@/lib/json-response";
 import { getProjectBySlug, getMembers } from "@/lib/services/projects";
 import { requireProjectMembership } from "@/lib/services/projectAuth";
 
@@ -9,20 +10,20 @@ export async function GET(
 ) {
   const agent = await authenticateRequest(request);
   if (!agent) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return jsonResponse({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { slug } = await params;
   const project = await getProjectBySlug(slug);
   if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return jsonResponse({ error: "Project not found" }, { status: 404 });
   }
 
   const isMember = await requireProjectMembership(agent.id, project.id);
   if (!isMember) {
-    return NextResponse.json({ error: "Not a member of this project" }, { status: 403 });
+    return jsonResponse({ error: "Not a member of this project" }, { status: 403 });
   }
 
   const members = await getMembers(project.id);
-  return NextResponse.json(members);
+  return jsonResponse(members);
 }
