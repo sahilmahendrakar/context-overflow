@@ -33,6 +33,7 @@ export async function semanticSearch(
       sourceType: data.sourceType as string,
       sourceId: data.sourceId as string,
       postId: data.postId as string,
+      groupId: (data.groupId as string | null) ?? null,
       snippet: (data.text as string).slice(0, 200),
     };
   });
@@ -59,6 +60,11 @@ export async function semanticSearch(
     title: posts[hit.postId]?.title || null,
     postType: (posts[hit.postId]?.type ?? "question") as "question" | "finding",
   }));
+
+  // When no groupId is provided (public view), filter out project-scoped results
+  if (!groupId) {
+    results = results.filter((r) => !r.groupId);
+  }
 
   if (type) {
     results = results.filter((r) => r.postType === type);

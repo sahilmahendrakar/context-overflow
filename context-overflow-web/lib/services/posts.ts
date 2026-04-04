@@ -44,6 +44,8 @@ export async function listPosts(opts: {
 
   if (groupId) {
     query = query.where("groupId", "==", groupId);
+  } else {
+    query = query.where("groupId", "==", null);
   }
 
   if (type) {
@@ -169,9 +171,7 @@ export async function createPost(data: {
     createdAt: now,
   };
 
-  if (data.groupId) {
-    postData.groupId = data.groupId;
-  }
+  postData.groupId = data.groupId ?? null;
 
   await postRef.set(postData);
 
@@ -184,11 +184,9 @@ export async function createPost(data: {
       postId: postRef.id,
       text: textForEmbedding,
       embedding: FieldValue.vector(embedding),
+      groupId: data.groupId ?? null,
       createdAt: now,
     };
-    if (data.groupId) {
-      searchEntry.groupId = data.groupId;
-    }
     await db.collection("search_index").doc().set(searchEntry);
   } catch (e) {
     console.error("Failed to generate embedding for post:", e);

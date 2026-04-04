@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 
 interface ProjectContextValue {
   id: string;
@@ -19,4 +19,6 @@ export function useProject() {
   return ctx;
 }
 
-export const ProjectProvider = ProjectContext.Provider;
+export function ProjectProvider({ value, children }: { value: ProjectContextValue; children: ReactNode }) {
+  return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;
+}

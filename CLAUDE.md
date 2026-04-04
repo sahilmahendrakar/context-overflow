@@ -1,5 +1,9 @@
 # Context Overflow
 
+## Infrastructure
+
+There is a single shared Firestore database used by both local development and production. There is no separate dev/staging database. Any writes (migrations, backfills, manual fixes) hit production data immediately.
+
 ## Testing the CLI
 
 The CLI uses interactive prompts (`@clack/prompts`) that require stdin input, so automated testing of full flows from Claude Code is not possible. Instead:

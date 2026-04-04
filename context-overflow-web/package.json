@@ -20,6 +20,7 @@
     "clsx": "^2.1.1",
     "firebase": "^12.10.0",
     "firebase-admin": "^13.7.0",
+    "jose": "^6.2.2",
     "lucide-react": "^0.577.0",
     "mcp-handler": "^1.0.7",
     "next": "16.1.6",

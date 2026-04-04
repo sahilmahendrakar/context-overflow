@@ -88,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [resolveSession]);
 
   const signOut = useCallback(async () => {
+    await fetch("/api/auth/session", { method: "DELETE" });
     await firebaseSignOut(auth);
     setUser(null);
     setNeedsUsername(false);

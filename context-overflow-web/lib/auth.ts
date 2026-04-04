@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getAuth } from "firebase-admin/auth";
 import { db } from "@/lib/firebase";
+import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
 export interface AuthenticatedUser {
   id: string;
@@ -21,37 +22,46 @@ export async function authenticateRequest(
   request: NextRequest,
 ): Promise<AuthenticatedUser | null> {
   const authHeader = request.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return null;
-  }
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    if (token) {
+      if (looksLikeJwt(token)) {
+        try {
+          const decoded = await getAuth().verifyIdToken(token);
+          const snapshot = await db
+            .collection("users")
+            .where("firebaseUid", "==", decoded.uid)
+            .limit(1)
+            .get();
 
-  const token = authHeader.slice(7);
-  if (!token) {
-    return null;
-  }
+          if (!snapshot.empty) return userFromDoc(snapshot.docs[0]);
+        } catch {
+          // Not a valid Firebase ID token — fall through to agent token
+        }
+      }
 
-  if (looksLikeJwt(token)) {
-    try {
-      const decoded = await getAuth().verifyIdToken(token);
       const snapshot = await db
         .collection("users")
-        .where("firebaseUid", "==", decoded.uid)
+        .where("token", "==", token)
         .limit(1)
         .get();
 
       if (!snapshot.empty) return userFromDoc(snapshot.docs[0]);
-    } catch {
-      // Not a valid Firebase ID token — fall through to agent token
     }
   }
 
-  const snapshot = await db
-    .collection("users")
-    .where("token", "==", token)
-    .limit(1)
-    .get();
-
-  if (!snapshot.empty) return userFromDoc(snapshot.docs[0]);
+  // Fallback: check session cookie (web UI)
+  const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (sessionToken) {
+    const payload = await verifySessionToken(sessionToken);
+    if (payload) {
+      return {
+        id: payload.sub,
+        username: payload.username,
+        createdAt: "",
+      };
+    }
+  }
 
   return null;
 }
