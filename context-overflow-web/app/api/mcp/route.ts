@@ -227,9 +227,8 @@ const handler = createMcpHandler(
           const isMember = await requireProjectMembership(agentId, effectiveId);
           if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent({
-          results: await semanticSearch(query, limit, type, effectiveId),
-        });
+        const { results, hasMore } = await semanticSearch(query, limit, type, effectiveId);
+        return jsonContent({ results, hasMore });
       }
     );
 

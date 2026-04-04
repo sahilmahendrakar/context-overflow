@@ -3,26 +3,42 @@ import { listPosts } from "@/lib/services/posts";
 import { semanticSearch } from "@/lib/services/search";
 import PostCard from "@/app/components/PostCard";
 import Link from "next/link";
+import FeedPagination from "@/components/feed-pagination";
+import {
+  POSTS_PAGE_SIZE,
+  SEARCH_PAGE_SIZE,
+  parsePageParam,
+} from "@/lib/feed-pagination";
 
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; q?: string }>;
+  searchParams: Promise<{ type?: string; q?: string; page?: string }>;
 }) {
-  const { type: typeParam, q: qParam } = await searchParams;
+  const { type: typeParam, q: qParam, page: pageParam } = await searchParams;
   const type = typeParam === "question" || typeParam === "finding" ? typeParam : null;
   const query = typeof qParam === "string" ? qParam.trim() : "";
   const isSearch = query.length > 0;
+  const page = parsePageParam(pageParam);
 
   if (isSearch) {
-    const results = await semanticSearch(query, 10, type);
+    const searchOffset = (page - 1) * SEARCH_PAGE_SIZE;
+    const { results, hasMore } = await semanticSearch(
+      query,
+      SEARCH_PAGE_SIZE,
+      type,
+      null,
+      searchOffset
+    );
 
     return (
       <div className="co-card p-5 sm:p-6">
         <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
           <h1 className="text-xl font-semibold text-[var(--text-primary)]">Search results</h1>
           <span className="text-sm text-[var(--text-secondary)]">
-            {results.length} {results.length === 1 ? "result" : "results"}
+            {results.length > 0
+              ? `Showing ${results.length} ${results.length === 1 ? "result" : "results"}`
+              : "No results"}
           </span>
         </div>
 
@@ -68,16 +84,26 @@ export default async function BrowsePage({
             </div>
           )}
         </div>
+        <FeedPagination
+          basePath="/browse"
+          page={page}
+          hasMore={hasMore}
+          q={query}
+          type={type}
+        />
       </div>
     );
   }
 
-  const posts = (await listPosts({
+  const offset = (page - 1) * POSTS_PAGE_SIZE;
+  const rawPosts = (await listPosts({
     sort: "newest",
-    limit: 20,
-    offset: 0,
+    limit: POSTS_PAGE_SIZE + 1,
+    offset,
     type,
   })) as Post[];
+  const hasMore = rawPosts.length > POSTS_PAGE_SIZE;
+  const posts = hasMore ? rawPosts.slice(0, POSTS_PAGE_SIZE) : rawPosts;
 
   return (
     <div className="co-card p-5 sm:p-6">
@@ -86,11 +112,13 @@ export default async function BrowsePage({
           {type === "question" ? "Questions" : type === "finding" ? "Findings" : "All Posts"}
         </h1>
         <span className="text-sm text-[var(--text-secondary)]">
-          {posts.length} {posts.length === 1 ? "post" : "posts"}
+          {posts.length > 0
+            ? `Showing ${posts.length} ${posts.length === 1 ? "post" : "posts"}`
+            : "No posts"}
         </span>
       </div>
 
-      <div className="divide-y divide-[var(--border)]">
+      <div>
         {posts.map((p) => (
           <PostCard key={p.id} post={p} />
         ))}
@@ -100,6 +128,7 @@ export default async function BrowsePage({
           </p>
         )}
       </div>
+      <FeedPagination basePath="/browse" page={page} hasMore={hasMore} type={type} />
     </div>
   );
 }

@@ -8,7 +8,9 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
-    const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
+    const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50);
+    const offsetRaw = parseInt(searchParams.get("offset") || "0", 10);
+    const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
     const type = searchParams.get("type") as "question" | "finding" | null;
     const groupId = searchParams.get("groupId");
 
@@ -33,8 +35,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const results = await semanticSearch(query, limit, type, groupId);
-    return jsonResponse({ results });
+    const { results, hasMore } = await semanticSearch(query, limit, type, groupId, offset);
+    return jsonResponse({ results, hasMore, offset });
   } catch (error) {
     console.error("Failed to search:", error);
     return jsonResponse({ error: "Failed to perform search" }, { status: 500 });
