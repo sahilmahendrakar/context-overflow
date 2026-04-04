@@ -22,6 +22,15 @@ export const GLOBAL_CURSOR_PLUGIN_DIR = join(
   "context-overflow-cursor-plugin"
 );
 
+/** Legacy name used by older versions of `cxo setup`. */
+export const GLOBAL_CURSOR_PLUGIN_DIR_LEGACY = join(
+  homedir(),
+  ".cursor",
+  "plugins",
+  "local",
+  "context-overflow-plugin"
+);
+
 export function contextOverflowServer(token: string, projectId?: string, mcpUrl?: string) {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,

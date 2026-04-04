@@ -23,6 +23,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import {
   GLOBAL_CURSOR_PLUGIN_DIR,
+  GLOBAL_CURSOR_PLUGIN_DIR_LEGACY,
   CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME,
   CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID,
   detectClaudeCodeInstall,
@@ -73,6 +74,7 @@ function detectGlobal(): boolean {
   return (
     existsSync(join(GLOBAL_CONFIG_DIR, "config.json")) ||
     existsSync(GLOBAL_CURSOR_PLUGIN_DIR) ||
+    existsSync(GLOBAL_CURSOR_PLUGIN_DIR_LEGACY) ||
     detectClaudeCodeInstall()
   );
 }
@@ -111,6 +113,9 @@ async function cleanupGlobal(
   }
   if (removeIfExists(GLOBAL_CURSOR_PLUGIN_DIR)) {
     removed.push("~/.cursor/plugins/local/context-overflow-cursor-plugin/");
+  }
+  if (removeIfExists(GLOBAL_CURSOR_PLUGIN_DIR_LEGACY)) {
+    removed.push("~/.cursor/plugins/local/context-overflow-plugin/");
   }
   let claudeCliWarning: string | null = null;
   if (detectClaudeCodeInstall() || hasClaudeContextOverflowInSettings()) {
@@ -326,24 +331,34 @@ export const uninstallCommand = new Command("uninstall")
 
     if (removeGlobal) {
       s.start("Removing global installation...");
-      const removed = await cleanupGlobal((msg) => s.message(msg));
-      allRemoved.push(...removed);
-      s.stop(
-        removed.length > 0
-          ? "Global installation removed"
-          : "No global files found to remove"
-      );
+      try {
+        const removed = await cleanupGlobal((msg) => s.message(msg));
+        allRemoved.push(...removed);
+        s.stop(
+          removed.length > 0
+            ? "Global installation removed"
+            : "No global files found to remove"
+        );
+      } catch (e) {
+        s.stop("Global removal finished with warnings");
+        log.warn(`Warning: ${(e as Error).message}`);
+      }
     }
 
     if (removeLocal) {
       s.start("Removing local installation...");
-      const removed = cleanupLocal(projectDir);
-      allRemoved.push(...removed);
-      s.stop(
-        removed.length > 0
-          ? "Local installation removed"
-          : "No local files found to remove"
-      );
+      try {
+        const removed = cleanupLocal(projectDir);
+        allRemoved.push(...removed);
+        s.stop(
+          removed.length > 0
+            ? "Local installation removed"
+            : "No local files found to remove"
+        );
+      } catch (e) {
+        s.stop("Local removal finished with warnings");
+        log.warn(`Warning: ${(e as Error).message}`);
+      }
     }
 
     if (allRemoved.length > 0) {

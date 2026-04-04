@@ -47,8 +47,6 @@ yarn-error.log*
 .mcp.json
 
 # context overflow local config (contains auth tokens)
-.context-overflow/
-
 # vercel
 .vercel
 
