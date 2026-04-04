@@ -44,8 +44,10 @@ yarn-error.log*
 
 # mcp config (may contain bearer tokens)
 .cursor/mcp.json
+.mcp.json
 
 # context overflow local config (contains auth tokens)
+.context-overflow/
 
 # vercel
 .vercel

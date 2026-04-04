@@ -26,7 +26,8 @@ export async function GET(
 
   return jsonResponse({
     ...project,
-    inviteCode: role === "admin" ? project.inviteCode : undefined,
+    inviteCode: project.inviteCode,
+    role,
   });
 }
 

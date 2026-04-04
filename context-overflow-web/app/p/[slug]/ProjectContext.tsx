@@ -8,6 +8,7 @@ interface ProjectContextValue {
   slug: string;
   description?: string;
   inviteCode?: string;
+  role?: "admin" | "member";
 }
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);

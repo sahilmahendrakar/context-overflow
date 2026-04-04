@@ -38,7 +38,7 @@ export default function ProjectSettingsPage() {
   const { setActiveProject } = useActiveProject();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const isAdmin = !!project.inviteCode;
+  const isAdmin = project.role === "admin";
   const [inviteCode, setInviteCode] = useState(project.inviteCode);
   const [emails, setEmails] = useState("");
   const [sending, setSending] = useState(false);
@@ -169,11 +169,11 @@ export default function ProjectSettingsPage() {
         </div>
       </div>
 
-      {isAdmin && (
+      {inviteCode && (
         <div className="co-card p-5 sm:p-6">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">Agent Setup</h2>
           <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            Share these instructions with your team to connect their coding agents.
+            Run this command in your project directory to connect your coding agent.
           </p>
           <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
             <p className="text-sm font-medium text-[var(--text-primary)]">Connect your coding agent:</p>
@@ -191,12 +191,14 @@ export default function ProjectSettingsPage() {
               {copied && <span className="text-xs text-emerald-500">Copied!</span>}
             </div>
           </div>
-          <div className="mt-3 flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={handleRegenerateCode}>
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-              Regenerate invite code
-            </Button>
-          </div>
+          {isAdmin && (
+            <div className="mt-3 flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleRegenerateCode}>
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                Regenerate invite code
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -275,71 +277,74 @@ export default function ProjectSettingsPage() {
       </div>
 
       {isAdmin && (
-        <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-5 sm:p-6">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-            <h2 className="text-lg font-semibold text-red-500">Danger Zone</h2>
-          </div>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            Permanently delete this project and all of its data, including posts, replies, and member associations. This action cannot be undone.
-          </p>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="mt-4"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-            Delete Project
-          </Button>
-        </div>
-      )}
-
-      <Dialog open={showDeleteDialog} onOpenChange={(open) => {
-        if (!open) {
-          setShowDeleteDialog(false);
-          setDeleteConfirmSlug("");
-          setDeleteError(null);
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete project</DialogTitle>
-            <DialogDescription>
-              This will permanently delete <strong className="text-[var(--text-primary)]">{project.name}</strong> and all associated data. This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div>
-            <label className="block text-sm text-[var(--text-secondary)]">
-              Type <strong className="font-mono text-[var(--text-primary)]">{project.slug}</strong> to confirm
-            </label>
-            <input
-              type="text"
-              value={deleteConfirmSlug}
-              onChange={(e) => setDeleteConfirmSlug(e.target.value)}
-              placeholder={project.slug}
-              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20"
-              autoComplete="off"
-            />
-            {deleteError && (
-              <p className="mt-2 text-sm text-red-500">{deleteError}</p>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setShowDeleteDialog(false)} disabled={deleting}>
-              Cancel
-            </Button>
+        <>
+          <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-5 sm:p-6">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <h2 className="text-lg font-semibold text-red-500">Danger Zone</h2>
+            </div>
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+              Permanently delete this project and all of its data, including posts, replies, and member associations. This action cannot be undone.
+            </p>
             <Button
               variant="destructive"
               size="sm"
-              disabled={deleteConfirmSlug !== project.slug || deleting}
-              onClick={handleDeleteProject}
+              className="mt-4"
+              onClick={() => setShowDeleteDialog(true)}
             >
-              {deleting ? "Deleting..." : "Delete Project"}
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Delete Project
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+
+          <Dialog open={showDeleteDialog} onOpenChange={(open) => {
+            if (!open) {
+              setShowDeleteDialog(false);
+              setDeleteConfirmSlug("");
+              setDeleteError(null);
+            }
+          }}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Delete project</DialogTitle>
+                <DialogDescription>
+                  This will permanently delete <strong className="text-[var(--text-primary)]">{project.name}</strong> and all associated data. This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <div>
+                <label className="block text-sm text-[var(--text-secondary)]">
+                  Type <strong className="font-mono text-[var(--text-primary)]">{project.slug}</strong> to confirm
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmSlug}
+                  onChange={(e) => setDeleteConfirmSlug(e.target.value)}
+                  placeholder={project.slug}
+                  className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20"
+                  autoComplete="off"
+                />
+                {deleteError && (
+                  <p className="mt-2 text-sm text-red-500">{deleteError}</p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" size="sm" onClick={() => setShowDeleteDialog(false)} disabled={deleting}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={deleteConfirmSlug !== project.slug || deleting}
+                  onClick={handleDeleteProject}
+                >
+                  {deleting ? "Deleting..." : "Delete Project"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+
     </div>
   );
 }

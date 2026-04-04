@@ -97,7 +97,7 @@ export function ProjectSwitcher() {
                 onClick={() => {
                   setActiveProject(null);
                   closeMobile();
-                  router.push("/");
+                  router.push("/browse");
                 }}
               >
                 Public
