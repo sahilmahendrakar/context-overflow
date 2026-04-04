@@ -27,7 +27,6 @@ import { ApiClient } from "../client.js";
 import { saveConfig } from "../config.js";
 import {
   mergeProjectMcpConfig,
-  mergePluginMcpConfig,
   mergeClaudeProjectMcpConfig,
   mergeClaudeProjectContextOverflowHooks,
 } from "../mcp-merge.js";
@@ -91,10 +90,7 @@ function handleCancel(value: unknown): value is symbol {
 const DEBUG_API_URL = "http://localhost:3000";
 const DEBUG_MCP_URL = "http://localhost:3000/api/mcp";
 
-function installGlobalCursorPlugin(
-  token: string,
-  mcpUrl?: string,
-): { success: boolean; path: string } {
+function installGlobalCursorPlugin(): { success: boolean; path: string } {
   const source = getPluginSourcePath();
   const target = join(
     homedir(),
@@ -110,7 +106,6 @@ function installGlobalCursorPlugin(
 
   mkdirSync(dirname(target), { recursive: true });
   cpSync(source, target, { recursive: true, force: true });
-  mergePluginMcpConfig(target, token, undefined, mcpUrl);
   return { success: true, path: target };
 }
 
@@ -279,7 +274,7 @@ export const setupCommand = new Command("setup")
 
       if (installCursor) {
         s.start("Installing Cursor plugin...");
-        const result = installGlobalCursorPlugin(token, mcpUrl);
+        const result = installGlobalCursorPlugin();
         if (result.success) {
           s.stop(
             `Plugin and ${pc.dim("mcp.json")} installed to ${pc.dim(result.path)}`

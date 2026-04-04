@@ -6,7 +6,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { runClaudeCli } from "./claude-exec.js";
 
 export const MCP_URL = "https://www.ctxoverflow.dev/api/mcp";
@@ -36,11 +36,18 @@ export function contextOverflowServer(token: string, projectId?: string, mcpUrl?
   };
 }
 
-function contextOverflowClaudeHttpServer(token: string) {
+function contextOverflowClaudeHttpServer(token: string, projectId?: string, mcpUrl?: string) {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+  };
+  const pid = projectId?.trim();
+  if (pid) {
+    headers[CXO_PROJECT_ID_HEADER] = pid;
+  }
   return {
     type: "http",
-    url: MCP_URL,
-    headers: { Authorization: `Bearer ${token}` },
+    url: mcpUrl ?? MCP_URL,
+    headers,
   };
 }
 
@@ -61,7 +68,7 @@ function groupReferencesCxoHook(group: unknown, pathMarker: string): boolean {
   });
 }
 
-export function mergeClaudeProjectMcpConfig(projectRoot: string, token: string) {
+export function mergeClaudeProjectMcpConfig(projectRoot: string, token: string, projectId?: string, mcpUrl?: string) {
   const mcpFile = join(projectRoot, ".mcp.json");
 
   let config: Record<string, unknown> = { mcpServers: {} };
@@ -78,8 +85,9 @@ export function mergeClaudeProjectMcpConfig(projectRoot: string, token: string) 
   }
 
   (config.mcpServers as Record<string, unknown>)["context-overflow"] =
-    contextOverflowClaudeHttpServer(token);
+    contextOverflowClaudeHttpServer(token, projectId, mcpUrl);
 
+  mkdirSync(dirname(mcpFile), { recursive: true });
   writeFileSync(mcpFile, JSON.stringify(config, null, 2) + "\n");
 }
 

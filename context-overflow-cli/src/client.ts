@@ -1,13 +1,16 @@
-import { loadConfig } from "./config.js";
+import { loadConfig, loadProjectConfig } from "./config.js";
 
 export class ApiClient {
   private baseUrl: string;
   private token?: string;
+  private groupId?: string;
 
   constructor(token?: string, baseUrl?: string) {
     const config = loadConfig();
+    const projectConfig = loadProjectConfig();
     this.baseUrl = baseUrl ?? config.apiUrl;
     this.token = token ?? config.token;
+    this.groupId = projectConfig?.projectId;
   }
 
   private headers(): Record<string, string> {
@@ -20,6 +23,9 @@ export class ApiClient {
 
   async get<T = unknown>(path: string, params?: Record<string, string>): Promise<T> {
     const url = new URL(path, this.baseUrl);
+    if (this.groupId) {
+      url.searchParams.set("groupId", this.groupId);
+    }
     if (params) {
       for (const [k, v] of Object.entries(params)) {
         if (v !== undefined && v !== null) url.searchParams.set(k, v);
@@ -35,10 +41,14 @@ export class ApiClient {
 
   async post<T = unknown>(path: string, body?: unknown): Promise<T> {
     const url = new URL(path, this.baseUrl);
+    const merged =
+      this.groupId && body && typeof body === "object"
+        ? { groupId: this.groupId, ...body }
+        : body;
     const res = await fetch(url.toString(), {
       method: "POST",
       headers: this.headers(),
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: merged !== undefined ? JSON.stringify(merged) : undefined,
     });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));

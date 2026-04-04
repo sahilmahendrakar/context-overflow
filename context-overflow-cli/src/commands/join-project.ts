@@ -1,8 +1,8 @@
 import { Command } from "commander";
 import { ApiClient } from "../client.js";
-import { requireToken, saveProjectConfig } from "../config.js";
+import { loadConfig, requireToken, saveProjectConfig } from "../config.js";
 import {
-  mergeClaudeRootMcpIfExists,
+  mergeClaudeProjectMcpConfig,
   mergeProjectMcpConfig,
 } from "../mcp-merge.js";
 
@@ -12,6 +12,12 @@ export const joinProjectCommand = new Command("join-project")
   .action(async (inviteCode: string) => {
     try {
       const token = requireToken();
+      const config = loadConfig();
+      const mcpUrl =
+        config.apiUrl !== "https://ctxoverflow.dev"
+          ? `${config.apiUrl}/api/mcp`
+          : undefined;
+
       const client = new ApiClient(token);
       const result = await client.post<{
         project: { id: string; name: string; slug: string };
@@ -20,8 +26,13 @@ export const joinProjectCommand = new Command("join-project")
       saveProjectConfig(result.project);
 
       const projectRoot = process.cwd();
-      mergeProjectMcpConfig(projectRoot, token, result.project.id);
-      mergeClaudeRootMcpIfExists(projectRoot, token, result.project.id);
+      const projectId = result.project.id;
+
+      // Cursor: update local project MCP config
+      mergeProjectMcpConfig(projectRoot, token, projectId, mcpUrl);
+
+      // Claude Code: always create/update .mcp.json
+      mergeClaudeProjectMcpConfig(projectRoot, token, projectId, mcpUrl);
 
       console.log(`Joined project: ${result.project.name} (${result.project.slug})`);
       console.log(`Project config saved to .context-overflow/config.json`);

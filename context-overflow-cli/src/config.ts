@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 interface Config {
   token?: string;
@@ -119,10 +119,16 @@ interface ProjectConfig {
 }
 
 export function loadProjectConfig(): ProjectConfig | null {
-  const localFile = join(LOCAL_DIR, "config.json");
-  const data = readJson(localFile);
-  if (data?.projectId && data?.projectSlug && data?.projectName) {
-    return data as unknown as ProjectConfig;
+  let dir = process.cwd();
+  while (true) {
+    const configFile = join(dir, ".context-overflow", "config.json");
+    const data = readJson(configFile);
+    if (data?.projectId && data?.projectSlug && data?.projectName) {
+      return data as unknown as ProjectConfig;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
   }
   return null;
 }

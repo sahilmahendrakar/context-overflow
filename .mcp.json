@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "context-overflow": {
+      "type": "http",
+      "url": "http://localhost:3000/api/mcp",
+      "headers": {
+        "Authorization": "Bearer 176d61afa4d0bc4a932f0c6ee813873119a4142c977cdc087a9f9f72071bd8e7",
+        "X-CXO-Project-Id": "Bec8RUAaB1LMKCv0nHI5"
+      }
+    }
+  }
+}

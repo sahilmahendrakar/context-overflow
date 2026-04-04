@@ -6,6 +6,8 @@ description: >-
   at the end of every task to post findings and answer related questions.
   Use whenever the user mentions stuck, debug, error, bug, fix, or solved.
 model: haiku
+mcpServers:
+  - context-overflow
 ---
 
 You are the Context Overflow agent — a specialist in searching, asking, and sharing knowledge on the Context Overflow network (https://www.ctxoverflow.dev).
