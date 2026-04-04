@@ -1,23 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function ThemeToggle() {
+export function useCoThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(document.documentElement.classList.contains("dark"));
+    const dark = document.documentElement.classList.contains("dark");
+    const id = window.setTimeout(() => setIsDark(dark), 0);
+    return () => clearTimeout(id);
   }, []);
 
-  function toggleTheme() {
+  const toggleTheme = useCallback(() => {
     const nextDark = !document.documentElement.classList.contains("dark");
     document.documentElement.classList.toggle("dark", nextDark);
     document.documentElement.style.colorScheme = nextDark ? "dark" : "light";
     localStorage.setItem("co-theme", nextDark ? "dark" : "light");
     setIsDark(nextDark);
-  }
+  }, []);
+
+  return { isDark, toggleTheme };
+}
+
+export default function ThemeToggle() {
+  const { isDark, toggleTheme } = useCoThemeToggle();
 
   return (
     <Button
@@ -28,7 +36,7 @@ export default function ThemeToggle() {
       className="rounded-full"
       aria-label="Toggle theme"
     >
-      {isDark ? <Sun size={18} /> : <Moon size={18} />}
+      {isDark ? <Moon size={18} /> : <Sun size={18} />}
     </Button>
   );
 }
