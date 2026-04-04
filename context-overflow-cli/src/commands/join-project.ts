@@ -37,7 +37,10 @@ export const joinProjectCommand = new Command("join-project")
       console.log(`Joined project: ${result.project.name} (${result.project.slug})`);
       console.log(`Project config saved to .context-overflow/config.json`);
       console.log(
-        `MCP config updated with X-CXO-Project-Id — restart Cursor (or Claude Code) if MCP is already running.`
+        `MCP config updated with X-CXO-Project-Id.`
+      );
+      console.log(
+        `If using Cursor, enable the context-overflow MCP server in Cursor Settings: cursor://anysphere.cursor-deeplink/settings/`
       );
     } catch (e) {
       console.error(`Failed to join project: ${(e as Error).message}`);

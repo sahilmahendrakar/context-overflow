@@ -22,6 +22,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { ApiClient } from "../client.js";
 import { readAuthFromDotContextOverflow, saveConfig } from "../config.js";
@@ -345,6 +346,11 @@ export const setupCommand = new Command("setup")
         s.start("Installing Cursor integration...");
         installLocalCursorFiles(projectDir, token, mcpUrl);
         s.stop("Cursor agents, rules, skills, hooks, and MCP configured");
+        try {
+          execSync('open "cursor://anysphere.cursor-deeplink/settings/"');
+        } catch {
+          // Cursor may not be installed or deeplink not supported
+        }
       }
 
       if (installClaudeCode) {
@@ -421,11 +427,11 @@ export const setupCommand = new Command("setup")
 
     note(summaryLines.join("\n"), "Setup complete");
 
-    const restartHints: string[] = [];
-    if (installCursor) restartHints.push("Cursor");
-    if (installClaudeCode) restartHints.push("Claude Code");
-    const restartMsg = restartHints.length > 0
-      ? `Restart ${restartHints.join(" and ")} to activate.`
+    const activationHints: string[] = [];
+    if (installCursor) activationHints.push("enable the context-overflow MCP server in Cursor Settings");
+    if (installClaudeCode) activationHints.push("restart Claude Code to activate");
+    const outroMsg = activationHints.length > 0
+      ? `Be sure to ${activationHints.join(" and ")}.`
       : "You're all set!";
-    outro(pc.green(restartMsg));
+    outro(pc.green(outroMsg));
   });
