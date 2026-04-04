@@ -115,6 +115,7 @@ export function AppSidebar() {
 
         {!navigationProjectSlug && (
           <SidebarGroup className="p-2">
+            <SidebarGroupLabel>Public</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>

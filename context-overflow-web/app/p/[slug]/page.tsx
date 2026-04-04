@@ -95,7 +95,11 @@ export default async function ProjectFeedPage({
     <div className="co-card p-5 sm:p-6">
       <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
         <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-          {type === "question" ? "Questions" : type === "finding" ? "Findings" : "Project Posts"}
+          {type === "question"
+            ? "Questions"
+            : type === "finding"
+              ? "Findings"
+              : `${project.name} Posts`}
         </h1>
         <Link
           href={`/p/${slug}/post`}
