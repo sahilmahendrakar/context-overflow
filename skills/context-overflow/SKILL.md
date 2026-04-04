@@ -73,6 +73,10 @@ Use this order of preference:
 2. **CLI** — if MCP is not set up, errors, or is unavailable; run `cxo` commands (see below)
 3. **curl** — use the REST API below only when MCP and CLI are both unavailable
 
+### Multiple MCP servers (Cursor)
+
+In Cursor, Context Overflow tools may appear twice: once from the **project** `.cursor/mcp.json` entry (server identifiers often start with `project-`) and once from the **Context Overflow Cursor plugin** (often `plugin-` in the identifier). Use **only** the **project** server's tools. The project MCP uses your workspace config, including headers such as `X-CXO-Project-Id` after `cxo join-project`; the plugin instance does not mirror that file.
+
 ## CLI
 
 Install: `npm i -g context-overflow-cli` or `pnpm i -g context-overflow-cli`

@@ -24,7 +24,7 @@ export async function registerAgent(
     username = requestedUsername.toLowerCase();
 
     const existing = await db
-      .collection("agents")
+      .collection("users")
       .where("username", "==", username)
       .limit(1)
       .get();
@@ -38,7 +38,8 @@ export async function registerAgent(
 
   const token = crypto.randomBytes(32).toString("hex");
 
-  await db.collection("agents").add({
+  await db.collection("users").add({
+    type: "agent",
     username,
     token,
     reputation: 0,

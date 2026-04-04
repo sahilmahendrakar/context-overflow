@@ -22,9 +22,10 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
+import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { ApiClient } from "../client.js";
-import { saveConfig } from "../config.js";
+import { readAuthFromDotContextOverflow, saveConfig } from "../config.js";
 import {
   mergeProjectMcpConfig,
   mergePluginMcpConfig,
@@ -88,9 +89,10 @@ function handleCancel(value: unknown): value is symbol {
   return false;
 }
 
-function installGlobalCursorPlugin(
-  token: string
-): { success: boolean; path: string } {
+const DEBUG_API_URL = "http://localhost:3000";
+const DEBUG_MCP_URL = "http://localhost:3000/api/mcp";
+
+function installGlobalCursorPlugin(): { success: boolean; path: string } {
   const source = getPluginSourcePath();
   const target = join(
     homedir(),
@@ -106,11 +108,10 @@ function installGlobalCursorPlugin(
 
   mkdirSync(dirname(target), { recursive: true });
   cpSync(source, target, { recursive: true, force: true });
-  mergePluginMcpConfig(target, token);
   return { success: true, path: target };
 }
 
-function installLocalCursorFiles(projectDir: string, token: string) {
+function installLocalCursorFiles(projectDir: string, token: string, mcpUrl?: string) {
   const source = getPluginSourcePath();
   const cursorDir = join(projectDir, ".cursor");
 
@@ -157,7 +158,7 @@ function installLocalCursorFiles(projectDir: string, token: string) {
     JSON.stringify(hooksJson, null, 2) + "\n"
   );
 
-  mergeProjectMcpConfig(projectDir, token);
+  mergeProjectMcpConfig(projectDir, token, undefined, mcpUrl);
 }
 
 function ensureGitignore(projectDir: string, entry: string) {
@@ -174,8 +175,17 @@ function ensureGitignore(projectDir: string, entry: string) {
 
 export const setupCommand = new Command("setup")
   .description("Interactive setup for Context Overflow")
-  .action(async () => {
+  .option("--debug", "Use localhost:3000 for all API and MCP URLs")
+  .action(async (opts) => {
+    const debug = opts.debug === true;
+    const apiUrl = debug ? DEBUG_API_URL : undefined;
+    const mcpUrl = debug ? DEBUG_MCP_URL : undefined;
+
     intro(pc.bgCyan(pc.black(" Context Overflow ")));
+
+    if (debug) {
+      log.info(pc.yellow("Debug mode: using localhost:3000"));
+    }
 
     const isGlobal = await confirm({
       message: "Set up Context Overflow globally?",
@@ -184,6 +194,46 @@ export const setupCommand = new Command("setup")
       initialValue: true,
     });
     if (handleCancel(isGlobal)) return;
+
+    const projectDir = process.cwd();
+    let existing = readAuthFromDotContextOverflow(
+      isGlobal ? homedir() : projectDir
+    );
+    let authFromGlobalFallback = false;
+    if (!isGlobal && !existing) {
+      const globalAuth = readAuthFromDotContextOverflow(homedir());
+      if (globalAuth) {
+        existing = globalAuth;
+        authFromGlobalFallback = true;
+      }
+    }
+
+    let reusedCredentials = false;
+    let auth: { token: string; username: string } | undefined;
+
+    if (existing) {
+      const label =
+        existing.username != null && existing.username !== ""
+          ? pc.bold(existing.username)
+          : "saved credentials";
+      const reuseMessage = authFromGlobalFallback
+        ? `Use your global agent ${label} for this project? (credentials will be saved locally)`
+        : `Reuse existing agent ${label}? (skip registration)`;
+      const shouldReuse = await confirm({
+        message: reuseMessage,
+        active: "Yes",
+        inactive: "No — register a new agent",
+        initialValue: true,
+      });
+      if (handleCancel(shouldReuse)) return;
+      if (shouldReuse) {
+        reusedCredentials = true;
+        auth = {
+          token: existing.token,
+          username: existing.username ?? "agent",
+        };
+      }
+    }
 
     const tools = await multiselect({
       message: "Which tools do you use?",
@@ -226,48 +276,48 @@ export const setupCommand = new Command("setup")
       installClaudeCode = shouldInstall as boolean;
     }
 
-    const agentName = await text({
-      message: "What would you like to name your agent?",
-      placeholder: "my-agent",
-      validate(value) {
-        if (value.length < 3) return "Name must be at least 3 characters.";
-        if (value.length > 30) return "Name must be at most 30 characters.";
-        if (!/^[a-zA-Z0-9-]+$/.test(value))
-          return "Only letters, numbers, and hyphens allowed.";
-      },
-    });
-    if (handleCancel(agentName)) return;
-
     const s = spinner();
 
-    s.start("Registering agent...");
-    let token: string;
-    let username: string;
-    try {
-      const client = new ApiClient();
-      const result = await client.post<{ username: string; token: string }>(
-        "/api/registration",
-        { username: agentName as string }
-      );
-      token = result.token;
-      username = result.username;
-      s.stop(`Registered as ${pc.bold(username)}`);
-    } catch (e) {
-      s.stop(pc.red(`Registration failed: ${(e as Error).message}`), 1);
-      process.exit(1);
+    if (!auth) {
+      const agentName = await text({
+        message: "What would you like to name your agent?",
+        placeholder: "my-agent",
+        validate(value) {
+          if (value.length < 3) return "Name must be at least 3 characters.";
+          if (value.length > 30) return "Name must be at most 30 characters.";
+          if (!/^[a-zA-Z0-9-]+$/.test(value))
+            return "Only letters, numbers, and hyphens allowed.";
+        },
+      });
+      if (handleCancel(agentName)) return;
+
+      s.start("Registering agent...");
+      try {
+        const client = new ApiClient(undefined, apiUrl);
+        const result = await client.post<{ username: string; token: string }>(
+          "/api/registration",
+          { username: agentName as string }
+        );
+        auth = { token: result.token, username: result.username };
+        s.stop(`Registered as ${pc.bold(result.username)}`);
+      } catch (e) {
+        s.stop(pc.red(`Registration failed: ${(e as Error).message}`), 1);
+        process.exit(1);
+      }
     }
 
-    const projectDir = process.cwd();
+    const { token, username } = auth;
 
     if (isGlobal) {
       s.start("Saving config...");
-      saveConfig({ token, username });
+      saveConfig({ token, username, ...(apiUrl ? { apiUrl } : {}) }, homedir());
       s.stop("Config saved");
 
       if (installCursor) {
         s.start("Installing Cursor plugin...");
-        const result = installGlobalCursorPlugin(token);
+        const result = installGlobalCursorPlugin();
         if (result.success) {
+          mergePluginMcpConfig(result.path, token, undefined, mcpUrl);
           s.stop(
             `Plugin and ${pc.dim("mcp.json")} installed to ${pc.dim(result.path)}`
           );
@@ -289,13 +339,18 @@ export const setupCommand = new Command("setup")
       }
     } else {
       s.start("Saving config...");
-      saveConfig({ token, username }, projectDir);
+      saveConfig({ token, username, ...(apiUrl ? { apiUrl } : {}) }, projectDir);
       s.stop("Config saved to .context-overflow/");
 
       if (installCursor) {
         s.start("Installing Cursor integration...");
-        installLocalCursorFiles(projectDir, token);
+        installLocalCursorFiles(projectDir, token, mcpUrl);
         s.stop("Cursor agents, rules, skills, hooks, and MCP configured");
+        try {
+          execSync('open "cursor://anysphere.cursor-deeplink/settings/"');
+        } catch {
+          // Cursor may not be installed or deeplink not supported
+        }
       }
 
       if (installClaudeCode) {
@@ -315,7 +370,7 @@ export const setupCommand = new Command("setup")
 
       if (!installCursor && !installClaudeCode) {
         s.start("Configuring MCP...");
-        mergeProjectMcpConfig(projectDir, token);
+        mergeProjectMcpConfig(projectDir, token, undefined, mcpUrl);
         s.stop("MCP configured in .cursor/mcp.json");
       }
 
@@ -325,6 +380,11 @@ export const setupCommand = new Command("setup")
     const summaryLines: string[] = [
       `Agent:        ${pc.bold(username)}`,
     ];
+    if (reusedCredentials) {
+      summaryLines.push(
+        `Credentials:  ${pc.dim("Reused existing (no new registration)")}`,
+      );
+    }
 
     if (isGlobal) {
       summaryLines.push(
@@ -367,11 +427,11 @@ export const setupCommand = new Command("setup")
 
     note(summaryLines.join("\n"), "Setup complete");
 
-    const restartHints: string[] = [];
-    if (installCursor) restartHints.push("Cursor");
-    if (installClaudeCode) restartHints.push("Claude Code");
-    const restartMsg = restartHints.length > 0
-      ? `Restart ${restartHints.join(" and ")} to activate.`
+    const activationHints: string[] = [];
+    if (installCursor) activationHints.push("enable the context-overflow MCP server in Cursor Settings");
+    if (installClaudeCode) activationHints.push("restart Claude Code to activate");
+    const outroMsg = activationHints.length > 0
+      ? `Be sure to ${activationHints.join(" and ")}.`
       : "You're all set!";
-    outro(pc.green(restartMsg));
+    outro(pc.green(outroMsg));
   });

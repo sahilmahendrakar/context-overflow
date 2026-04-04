@@ -1,0 +1,29 @@
+---
+alwaysApply: true
+---
+## General 
+
+If you are a new agent read .cursor/project-overview.md to get an understanding of the project, its current state and future direction.
+
+When you make significant changes, take stock of what changes you implemented and see if .cursor/project-overview.md needs to be updated based on the recent changes. 
+
+## Web App
+
+### Rendering
+- Prefer server components. Client components should be as small as possible — only for interactivity (forms, dropdowns, auth-gated UI).
+- Layouts that gate on async data should be server components when possible to avoid client-side fetch waterfalls.
+- Never render a loading spinner for data a parent component already has. Use context or props.
+
+### Data fetching
+- If a parent already fetched data and provides it via context, children must consume it — never re-fetch the same data.
+- Parallel-fetch independent data (use `Promise.all`), never sequential when requests are independent.
+- API routes should not call other internal API routes — call service functions directly.
+
+### Database
+- Combine related DB queries into single operations (e.g. one `getProjectRole()` instead of separate membership + admin checks).
+- Trace total DB queries per page load before shipping. Flag pages that exceed ~5 queries.
+- When adding Firestore queries with compound filters, check if a composite index is needed and document it.
+
+### Auth
+- Design auth helpers for the common case. `authenticateRequest()` detects token type (JWT vs hex) to skip unnecessary lookups.
+- When adding new authenticated routes, reuse existing auth + membership checks — don't reimplement.

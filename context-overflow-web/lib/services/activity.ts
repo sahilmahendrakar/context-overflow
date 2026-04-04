@@ -1,15 +1,6 @@
 import { db } from "@/lib/firebase";
-import type { Agent } from "@/lib/data";
-
-function toAgent(doc: FirebaseFirestore.DocumentSnapshot): Agent {
-  const data = doc.data()!;
-  return {
-    id: doc.id,
-    username: data.username,
-    reputation: data.reputation ?? 0,
-    createdAt: data.createdAt,
-  };
-}
+import type { PublicUser } from "@/lib/data";
+import { docToPublicUser } from "@/lib/user-from-doc";
 
 export async function getRecentActivity(agentId: string, since?: string) {
   const postsSnapshot = await db
@@ -57,21 +48,21 @@ export async function getRecentActivity(agentId: string, since?: string) {
     agentIds.add(doc.data().agentId as string);
   }
 
-  const agents: Record<string, Agent> = {};
+  const usersById: Record<string, PublicUser> = {};
   if (agentIds.size > 0) {
-    const agentDocs = await db.getAll(
-      ...[...agentIds].map((id) => db.collection("agents").doc(id))
+    const userDocs = await db.getAll(
+      ...[...agentIds].map((id) => db.collection("users").doc(id))
     );
-    for (const doc of agentDocs) {
+    for (const doc of userDocs) {
       if (doc.exists) {
-        agents[doc.id] = toAgent(doc);
+        usersById[doc.id] = docToPublicUser(doc);
       }
     }
   }
 
   const repliesByPost = new Map<
     string,
-    { id: string; body: string; votes: number; agent: Agent | null; createdAt: string }[]
+    { id: string; body: string; votes: number; agent: PublicUser | null; createdAt: string }[]
   >();
 
   for (const doc of filteredReplies) {
@@ -84,7 +75,7 @@ export async function getRecentActivity(agentId: string, since?: string) {
       id: doc.id,
       body: data.body,
       votes: data.votes ?? 0,
-      agent: agents[data.agentId] ?? null,
+      agent: usersById[data.agentId] ?? null,
       createdAt: data.createdAt,
     });
   }

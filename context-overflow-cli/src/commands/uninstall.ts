@@ -16,6 +16,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -23,6 +24,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import {
   GLOBAL_CURSOR_PLUGIN_DIR,
+  GLOBAL_CURSOR_PLUGIN_DIR_LEGACY,
   CONTEXT_OVERFLOW_CLAUDE_MARKETPLACE_NAME,
   CONTEXT_OVERFLOW_CLAUDE_PLUGIN_ID,
   detectClaudeCodeInstall,
@@ -36,28 +38,26 @@ import { uninstallGlobalClaudeContextOverflowPlugin } from "../claude-plugin-cli
 
 const GLOBAL_CONFIG_DIR = join(homedir(), ".context-overflow");
 
-const LOCAL_CURSOR_FILES = [
+/** Paths under `.cursor/` installed by `installLocalCursorFiles` (mirror plugin layout). */
+const LOCAL_CURSOR_INSTALLED_PATHS = [
   "agents/context-overflow.md",
   "rules/co-when-stuck.mdc",
   "rules/co-task-start.mdc",
   "rules/co-task-end.mdc",
+  "skills/context-overflow/SKILL.md",
   "hooks/session-start.sh",
   "hooks/session-end.sh",
 ];
 
-const LOCAL_CURSOR_DIRS = [
-  "skills/context-overflow",
+/** Paths under `.claude/` installed by `installLocalClaudeFiles`. */
+const LOCAL_CLAUDE_INSTALLED_PATHS = [
+  "agents/context-overflow.md",
+  "skills/context-overflow/SKILL.md",
+  "hooks/session-start.sh",
+  "hooks/session-end.sh",
 ];
 
 const CLEANABLE_CURSOR_DIRS = ["agents", "rules", "skills", "hooks"];
-
-const LOCAL_CLAUDE_FILES = [
-  "agents/context-overflow.md",
-  "hooks/session-start.sh",
-  "hooks/session-end.sh",
-];
-
-const LOCAL_CLAUDE_DIRS = ["skills/context-overflow"];
 
 const CLEANABLE_CLAUDE_DIRS = ["agents", "skills", "hooks"];
 
@@ -73,14 +73,57 @@ function detectGlobal(): boolean {
   return (
     existsSync(join(GLOBAL_CONFIG_DIR, "config.json")) ||
     existsSync(GLOBAL_CURSOR_PLUGIN_DIR) ||
+    existsSync(GLOBAL_CURSOR_PLUGIN_DIR_LEGACY) ||
     detectClaudeCodeInstall()
   );
+}
+
+function detectProjectCursorLocalInstall(projectDir: string): boolean {
+  if (existsSync(join(projectDir, ".cursor", "agents", "context-overflow.md"))) {
+    return true;
+  }
+
+  const hooksPath = join(projectDir, ".cursor", "hooks.json");
+  if (existsSync(hooksPath)) {
+    try {
+      const raw = JSON.parse(readFileSync(hooksPath, "utf-8")) as Record<string, unknown>;
+      const hooks = raw.hooks;
+      if (hooks && typeof hooks === "object") {
+        for (const events of Object.values(hooks as Record<string, unknown>)) {
+          if (!Array.isArray(events)) continue;
+          for (const ev of events) {
+            if (!ev || typeof ev !== "object") continue;
+            const cmd = (ev as Record<string, unknown>).command;
+            if (typeof cmd === "string" && cmd.includes(".cursor/hooks/session-start.sh")) {
+              return true;
+            }
+          }
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const mcpFile = join(projectDir, ".cursor", "mcp.json");
+  if (existsSync(mcpFile)) {
+    try {
+      const config = JSON.parse(readFileSync(mcpFile, "utf-8")) as Record<string, unknown>;
+      const servers = config.mcpServers as Record<string, unknown> | undefined;
+      if (servers && "context-overflow" in servers) return true;
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return false;
 }
 
 function detectLocal(projectDir: string): boolean {
   return (
     existsSync(join(projectDir, ".context-overflow", "config.json")) ||
-    detectProjectClaudeLocalInstall(projectDir)
+    detectProjectClaudeLocalInstall(projectDir) ||
+    detectProjectCursorLocalInstall(projectDir)
   );
 }
 
@@ -90,15 +133,31 @@ function removeIfExists(path: string): boolean {
   return true;
 }
 
-function unlinkIfExists(path: string): boolean {
+/** Remove a single installed file or directory path without throwing on type mismatch. */
+function removeInstalledPathIfExists(path: string): boolean {
   if (!existsSync(path)) return false;
-  unlinkSync(path);
+  try {
+    const st = statSync(path);
+    if (st.isDirectory()) {
+      rmSync(path, { recursive: true, force: true });
+    } else {
+      unlinkSync(path);
+    }
+  } catch {
+    return false;
+  }
   return true;
 }
 
 function isDirEmpty(path: string): boolean {
   if (!existsSync(path)) return false;
-  return readdirSync(path).length === 0;
+  try {
+    const st = statSync(path);
+    if (!st.isDirectory()) return false;
+    return readdirSync(path).length === 0;
+  } catch {
+    return false;
+  }
 }
 
 async function cleanupGlobal(
@@ -111,6 +170,9 @@ async function cleanupGlobal(
   }
   if (removeIfExists(GLOBAL_CURSOR_PLUGIN_DIR)) {
     removed.push("~/.cursor/plugins/local/context-overflow-cursor-plugin/");
+  }
+  if (removeIfExists(GLOBAL_CURSOR_PLUGIN_DIR_LEGACY)) {
+    removed.push("~/.cursor/plugins/local/context-overflow-plugin/");
   }
   let claudeCliWarning: string | null = null;
   if (detectClaudeCodeInstall() || hasClaudeContextOverflowInSettings()) {
@@ -181,24 +243,16 @@ function removeGitignoreEntry(projectDir: string, entry: string): boolean {
 function cleanupLocal(projectDir: string): string[] {
   const removed: string[] = [];
   const cursorDir = join(projectDir, ".cursor");
+  const claudeDir = join(projectDir, ".claude");
 
-  if (removeIfExists(join(projectDir, ".context-overflow"))) {
-    removed.push(".context-overflow/");
-  }
-
-  for (const file of LOCAL_CURSOR_FILES) {
-    if (unlinkIfExists(join(cursorDir, file))) {
-      removed.push(`.cursor/${file}`);
+  for (const rel of LOCAL_CURSOR_INSTALLED_PATHS) {
+    const full = join(cursorDir, rel);
+    if (removeInstalledPathIfExists(full)) {
+      removed.push(`.cursor/${rel}`);
     }
   }
 
-  for (const dir of LOCAL_CURSOR_DIRS) {
-    if (removeIfExists(join(cursorDir, dir))) {
-      removed.push(`.cursor/${dir}/`);
-    }
-  }
-
-  if (unlinkIfExists(join(cursorDir, "hooks.json"))) {
+  if (removeInstalledPathIfExists(join(cursorDir, "hooks.json"))) {
     removed.push(".cursor/hooks.json");
   }
 
@@ -206,17 +260,10 @@ function cleanupLocal(projectDir: string): string[] {
     removed.push(".cursor/mcp.json (context-overflow server removed)");
   }
 
-  const claudeDir = join(projectDir, ".claude");
-
-  for (const file of LOCAL_CLAUDE_FILES) {
-    if (unlinkIfExists(join(claudeDir, file))) {
-      removed.push(`.claude/${file}`);
-    }
-  }
-
-  for (const dir of LOCAL_CLAUDE_DIRS) {
-    if (removeIfExists(join(claudeDir, dir))) {
-      removed.push(`.claude/${dir}/`);
+  for (const rel of LOCAL_CLAUDE_INSTALLED_PATHS) {
+    const full = join(claudeDir, rel);
+    if (removeInstalledPathIfExists(full)) {
+      removed.push(`.claude/${rel}`);
     }
   }
 
@@ -234,25 +281,34 @@ function cleanupLocal(projectDir: string): string[] {
     removed.push(".gitignore (removed .context-overflow/ entry)");
   }
 
+  const rmEmptyDir = (absPath: string, label: string) => {
+    if (!isDirEmpty(absPath)) return;
+    // Node requires recursive (or rmdirSync) to remove a directory path; plain rmSync() is for files only.
+    rmSync(absPath, { recursive: true, force: true });
+    removed.push(label);
+  };
+
+  rmEmptyDir(
+    join(cursorDir, "skills", "context-overflow"),
+    ".cursor/skills/context-overflow/ (empty, removed)"
+  );
+  rmEmptyDir(
+    join(claudeDir, "skills", "context-overflow"),
+    ".claude/skills/context-overflow/ (empty, removed)"
+  );
+
   for (const dir of CLEANABLE_CURSOR_DIRS) {
-    const fullPath = join(cursorDir, dir);
-    if (isDirEmpty(fullPath)) {
-      rmSync(fullPath);
-      removed.push(`.cursor/${dir}/ (empty, removed)`);
-    }
+    rmEmptyDir(join(cursorDir, dir), `.cursor/${dir}/ (empty, removed)`);
   }
 
   for (const dir of CLEANABLE_CLAUDE_DIRS) {
-    const fullPath = join(claudeDir, dir);
-    if (isDirEmpty(fullPath)) {
-      rmSync(fullPath);
-      removed.push(`.claude/${dir}/ (empty, removed)`);
-    }
+    rmEmptyDir(join(claudeDir, dir), `.claude/${dir}/ (empty, removed)`);
   }
 
-  if (isDirEmpty(claudeDir)) {
-    rmSync(claudeDir);
-    removed.push(".claude/ (empty, removed)");
+  rmEmptyDir(claudeDir, ".claude/ (empty, removed)");
+
+  if (removeIfExists(join(projectDir, ".context-overflow"))) {
+    removed.push(".context-overflow/");
   }
 
   return removed;
@@ -324,26 +380,36 @@ export const uninstallCommand = new Command("uninstall")
     const s = spinner();
     const allRemoved: string[] = [];
 
-    if (removeGlobal) {
-      s.start("Removing global installation...");
-      const removed = await cleanupGlobal((msg) => s.message(msg));
-      allRemoved.push(...removed);
-      s.stop(
-        removed.length > 0
-          ? "Global installation removed"
-          : "No global files found to remove"
-      );
-    }
+    try {
+      if (removeGlobal) {
+        s.start("Removing global installation...");
+        const removed = await cleanupGlobal((msg) => s.message(msg));
+        allRemoved.push(...removed);
+        s.stop(
+          removed.length > 0
+            ? "Global installation removed"
+            : "No global files found to remove"
+        );
+      }
 
-    if (removeLocal) {
-      s.start("Removing local installation...");
-      const removed = cleanupLocal(projectDir);
-      allRemoved.push(...removed);
-      s.stop(
-        removed.length > 0
-          ? "Local installation removed"
-          : "No local files found to remove"
-      );
+      if (removeLocal) {
+        s.start("Removing local installation...");
+        const removed = cleanupLocal(projectDir);
+        allRemoved.push(...removed);
+        s.stop(
+          removed.length > 0
+            ? "Local installation removed"
+            : "No local files found to remove"
+        );
+      }
+    } catch (e) {
+      const err = e as Error;
+      s.stop(pc.red("Uninstall failed"), 1);
+      console.error(pc.red(err.message));
+      if (process.env.DEBUG) {
+        console.error(err.stack);
+      }
+      process.exit(1);
     }
 
     if (allRemoved.length > 0) {

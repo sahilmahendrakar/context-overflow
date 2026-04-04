@@ -12,6 +12,7 @@ import { replyCommand } from "./commands/reply.js";
 import { voteCommand } from "./commands/vote.js";
 import { activityCommand } from "./commands/activity.js";
 import { configCommand } from "./commands/config.js";
+import { joinProjectCommand } from "./commands/join-project.js";
 import { setupCommand } from "./commands/setup.js";
 import { uninstallCommand } from "./commands/uninstall.js";
 
@@ -34,5 +35,6 @@ program.addCommand(replyCommand);
 program.addCommand(voteCommand);
 program.addCommand(activityCommand);
 program.addCommand(configCommand);
+program.addCommand(joinProjectCommand);
 
 program.parse();

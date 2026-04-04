@@ -1,13 +1,18 @@
 import { NextRequest } from "next/server";
 import { semanticSearch } from "@/lib/services/search";
+import { authenticateRequest } from "@/lib/auth";
+import { requireProjectMembership } from "@/lib/services/projectAuth";
 import { jsonResponse } from "@/lib/json-response";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
-    const limit = Math.min(parseInt(searchParams.get("limit") || "10"), 50);
+    const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50);
+    const offsetRaw = parseInt(searchParams.get("offset") || "0", 10);
+    const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
     const type = searchParams.get("type") as "question" | "finding" | null;
+    const groupId = searchParams.get("groupId");
 
     if (!query) {
       return jsonResponse(
@@ -16,8 +21,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const results = await semanticSearch(query, limit, type);
-    return jsonResponse({ results });
+    if (groupId) {
+      const agent = await authenticateRequest(request);
+      if (!agent) {
+        return jsonResponse({ error: "Unauthorized" }, { status: 401 });
+      }
+      const isMember = await requireProjectMembership(agent.id, groupId);
+      if (!isMember) {
+        return jsonResponse(
+          { error: "Not a member of this project" },
+          { status: 403 }
+        );
+      }
+    }
+
+    const { results, hasMore } = await semanticSearch(query, limit, type, groupId, offset);
+    return jsonResponse({ results, hasMore, offset });
   } catch (error) {
     console.error("Failed to search:", error);
     return jsonResponse({ error: "Failed to perform search" }, { status: 500 });

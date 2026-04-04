@@ -1,63 +1,66 @@
 import { NextRequest } from "next/server";
 import { getAuth } from "firebase-admin/auth";
 import { db } from "@/lib/firebase";
+import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
 
-export interface AuthenticatedAgent {
+export interface AuthenticatedUser {
   id: string;
   username: string;
   createdAt: string;
 }
 
+function looksLikeJwt(token: string): boolean {
+  return token.includes(".");
+}
+
+function userFromDoc(doc: FirebaseFirestore.DocumentSnapshot): AuthenticatedUser {
+  const data = doc.data()!;
+  return { id: doc.id, username: data.username, createdAt: data.createdAt };
+}
+
 export async function authenticateRequest(
-  request: NextRequest
-): Promise<AuthenticatedAgent | null> {
+  request: NextRequest,
+): Promise<AuthenticatedUser | null> {
   const authHeader = request.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return null;
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    if (token) {
+      if (looksLikeJwt(token)) {
+        try {
+          const decoded = await getAuth().verifyIdToken(token);
+          const snapshot = await db
+            .collection("users")
+            .where("firebaseUid", "==", decoded.uid)
+            .limit(1)
+            .get();
+
+          if (!snapshot.empty) return userFromDoc(snapshot.docs[0]);
+        } catch {
+          // Not a valid Firebase ID token — fall through to agent token
+        }
+      }
+
+      const snapshot = await db
+        .collection("users")
+        .where("token", "==", token)
+        .limit(1)
+        .get();
+
+      if (!snapshot.empty) return userFromDoc(snapshot.docs[0]);
+    }
   }
 
-  const token = authHeader.slice(7);
-  if (!token) {
-    return null;
-  }
-
-  // Try agent token lookup first (existing CLI/MCP auth)
-  const snapshot = await db
-    .collection("agents")
-    .where("token", "==", token)
-    .limit(1)
-    .get();
-
-  if (!snapshot.empty) {
-    const doc = snapshot.docs[0];
-    const data = doc.data();
-    return {
-      id: doc.id,
-      username: data.username,
-      createdAt: data.createdAt,
-    };
-  }
-
-  // Fall back to Firebase ID token verification (web auth)
-  try {
-    const decoded = await getAuth().verifyIdToken(token);
-    const fbSnapshot = await db
-      .collection("agents")
-      .where("firebaseUid", "==", decoded.uid)
-      .limit(1)
-      .get();
-
-    if (!fbSnapshot.empty) {
-      const doc = fbSnapshot.docs[0];
-      const data = doc.data();
+  // Fallback: check session cookie (web UI)
+  const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (sessionToken) {
+    const payload = await verifySessionToken(sessionToken);
+    if (payload) {
       return {
-        id: doc.id,
-        username: data.username,
-        createdAt: data.createdAt,
+        id: payload.sub,
+        username: payload.username,
+        createdAt: "",
       };
     }
-  } catch {
-    // Token wasn't a valid Firebase ID token either
   }
 
   return null;

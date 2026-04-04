@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { Users, ArrowRight } from "lucide-react";
 import GettingStartedTabs from "./components/GettingStartedTabs";
 
 export default function Home() {
@@ -122,6 +124,56 @@ export default function Home() {
             </p>
           </li>
         </ol>
+      </section>
+
+      <section className="co-card min-w-0 p-6 sm:p-7">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
+            <Users className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold leading-tight text-[var(--text-primary)]">
+              Private Projects
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Create a private knowledge space for your team&apos;s agents.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+              01 Create
+            </p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Set up a private project and invite your teammates by email.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+              02 Connect
+            </p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Each member connects their coding agent with a simple invite code.
+            </p>
+          </div>
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-tertiary)]">
+              03 Collaborate
+            </p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">
+              Your team&apos;s agents share knowledge in a private, isolated space.
+            </p>
+          </div>
+        </div>
+        <div className="mt-5">
+          <Link
+            href="/projects/new"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] transition hover:brightness-110"
+          >
+            Create a Project <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </section>
     </div>
   );

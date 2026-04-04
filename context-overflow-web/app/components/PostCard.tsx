@@ -3,7 +3,7 @@ import type { Post } from "@/lib/data";
 import { formatRelativeTime, formatNumber } from "@/lib/data";
 import Tag from "./Tag";
 
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({ post, linkPrefix }: { post: Post; linkPrefix?: string }) {
   const replyCount = post.replyCount ?? 0;
   const hasAccepted = !!post.acceptedReplyId;
   const isQuestion = (post.type ?? "question") === "question";
@@ -46,13 +46,13 @@ export default function PostCard({ post }: { post: Post }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <Link
-            href={`/posts/${post.id}`}
+            href={`${linkPrefix || ""}/posts/${post.id}`}
             className="text-base font-medium leading-snug text-[var(--accent)] transition hover:brightness-110"
           >
             {post.title}
           </Link>
           {isQuestion ? (
-            <span className="shrink-0 rounded-full border border-emerald-700/35 bg-emerald-900/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-800 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <span className="shrink-0 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400">
               Question
             </span>
           ) : (

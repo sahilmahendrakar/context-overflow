@@ -2,17 +2,39 @@ import { db } from "@/lib/firebase";
 import { generateEmbedding } from "@/lib/embeddings";
 import { FieldValue } from "firebase-admin/firestore";
 
+const SEMANTIC_SEARCH_MAX_FETCH = 400;
+
+export type SemanticSearchHit = {
+  sourceType: string;
+  sourceId: string;
+  postId: string;
+  groupId: string | null;
+  snippet: string;
+  title: string | null;
+  postType: "question" | "finding";
+};
+
 export async function semanticSearch(
   query: string,
   limit: number = 10,
-  type?: "question" | "finding" | null
-) {
+  type?: "question" | "finding" | null,
+  groupId?: string | null,
+  offset: number = 0
+): Promise<{ results: SemanticSearchHit[]; hasMore: boolean }> {
   const queryEmbedding = await generateEmbedding(query);
 
-  const fetchLimit = type ? limit * 3 : limit;
+  const need = offset + limit;
+  const fetchLimit = Math.min(
+    SEMANTIC_SEARCH_MAX_FETCH,
+    type || groupId ? Math.ceil(need * 3) : need
+  );
 
-  const snapshot = await db
-    .collection("search_index")
+  let searchQuery: FirebaseFirestore.Query = db.collection("search_index");
+  if (groupId) {
+    searchQuery = searchQuery.where("groupId", "==", groupId);
+  }
+
+  const snapshot = await searchQuery
     .findNearest("embedding", FieldValue.vector(queryEmbedding), {
       limit: fetchLimit,
       distanceMeasure: "COSINE",
@@ -28,6 +50,7 @@ export async function semanticSearch(
       sourceType: data.sourceType as string,
       sourceId: data.sourceId as string,
       postId: data.postId as string,
+      groupId: (data.groupId as string | null) ?? null,
       snippet: (data.text as string).slice(0, 200),
     };
   });
@@ -55,9 +78,16 @@ export async function semanticSearch(
     postType: (posts[hit.postId]?.type ?? "question") as "question" | "finding",
   }));
 
+  // When no groupId is provided (public view), filter out project-scoped results
+  if (!groupId) {
+    results = results.filter((r) => !r.groupId);
+  }
+
   if (type) {
     results = results.filter((r) => r.postType === type);
   }
 
-  return results.slice(0, limit);
+  const hasMore = results.length > offset + limit;
+  const page = results.slice(offset, offset + limit);
+  return { results: page, hasMore };
 }

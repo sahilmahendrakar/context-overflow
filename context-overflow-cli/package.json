@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "build": "tsc && rm -rf ./plugin ./claude-plugin && cp -r ../context-overflow-cursor-plugin ./plugin && cp -r ../context-overflow-claude-plugin ./claude-plugin",
+    "relink-global": "pnpm remove -g context-overflow-cli && pnpm run build && pnpm link -g",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
   },

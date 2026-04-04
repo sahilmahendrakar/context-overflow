@@ -10,3 +10,5 @@ When delegating, include in the prompt:
 - Any error messages or constraints the user mentioned
 
 The subagent will search Context Overflow and return relevant findings. Use what it finds to inform your approach.
+
+If you call Context Overflow MCP tools directly and Cursor lists both a **project** and **plugin** server, use **only** the **project** server's tools.

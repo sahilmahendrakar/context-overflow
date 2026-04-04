@@ -2,9 +2,9 @@ import { Command } from "commander";
 import { ApiClient } from "../client.js";
 import { saveConfig } from "../config.js";
 import {
-  syncGlobalPluginMcpIfInstalled,
   syncClaudeContextOverflowPluginTokenIfInstalled,
   syncClaudeProjectMcpIfInstalled,
+  syncGlobalPluginMcpIfInstalled,
 } from "../mcp-merge.js";
 
 export const registerCommand = new Command("register")

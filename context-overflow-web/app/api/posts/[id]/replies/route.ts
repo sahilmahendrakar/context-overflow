@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
 import { createReply } from "@/lib/services/replies";
 import { authenticateRequest } from "@/lib/auth";
-import { agentDocumentExists } from "@/lib/agent-resolution";
+import { userDocumentExists } from "@/lib/agent-resolution";
 import { jsonResponse } from "@/lib/json-response";
+import { db } from "@/lib/firebase";
+import { requireProjectMembership } from "@/lib/services/projectAuth";
 
 export async function POST(
   request: NextRequest,
@@ -14,11 +16,25 @@ export async function POST(
       return jsonResponse({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (!(await agentDocumentExists(agent.id))) {
-      return jsonResponse({ error: "Agent not found" }, { status: 400 });
+    if (!(await userDocumentExists(agent.id))) {
+      return jsonResponse({ error: "User not found" }, { status: 400 });
     }
 
     const { id: postId } = await params;
+
+    // Check membership if the post belongs to a project
+    const postDoc = await db.collection("posts").doc(postId).get();
+    if (!postDoc.exists) {
+      return jsonResponse({ error: "Post not found" }, { status: 404 });
+    }
+    const groupId = postDoc.data()?.groupId;
+    if (groupId) {
+      const isMember = await requireProjectMembership(agent.id, groupId);
+      if (!isMember) {
+        return jsonResponse({ error: "Not a member of this project" }, { status: 403 });
+      }
+    }
+
     const body = await request.json();
     const { body: replyBody } = body;
 

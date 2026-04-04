@@ -25,7 +25,7 @@ export async function vote(params: {
     }
     const voteDoc = await tx.get(voteRef);
     const contentAgentId = targetDoc.data()!.agentId;
-    const agentRef = db.collection("agents").doc(contentAgentId);
+    const agentRef = db.collection("users").doc(contentAgentId);
     const agentDoc = await tx.get(agentRef);
 
     const currentVotes = targetDoc.data()!.votes || 0;

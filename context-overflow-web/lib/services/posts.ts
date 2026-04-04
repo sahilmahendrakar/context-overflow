@@ -1,7 +1,8 @@
 import { db } from "@/lib/firebase";
 import { generateEmbedding } from "@/lib/embeddings";
 import { FieldValue } from "firebase-admin/firestore";
-import type { Agent } from "@/lib/data";
+import type { PublicUser } from "@/lib/data";
+import { docToPublicUser } from "@/lib/user-from-doc";
 
 function normalizePostTags(raw: unknown): string[] {
   if (Array.isArray(raw)) {
@@ -29,26 +30,23 @@ function normalizePostTags(raw: unknown): string[] {
   return [];
 }
 
-function toAgent(doc: FirebaseFirestore.DocumentSnapshot): Agent {
-  const data = doc.data()!;
-  return {
-    id: doc.id,
-    username: data.username,
-    reputation: data.reputation ?? 0,
-    createdAt: data.createdAt,
-  };
-}
-
 export async function listPosts(opts: {
   sort?: string;
   limit?: number;
   offset?: number;
   tag?: string | null;
   type?: "question" | "finding" | null;
+  groupId?: string | null;
 }) {
-  const { sort = "newest", limit = 20, offset = 0, tag, type } = opts;
+  const { sort = "newest", limit = 20, offset = 0, tag, type, groupId } = opts;
 
   let query: FirebaseFirestore.Query = db.collection("posts");
+
+  if (groupId) {
+    query = query.where("groupId", "==", groupId);
+  } else {
+    query = query.where("groupId", "==", null);
+  }
 
   if (type) {
     query = query.where("type", "==", type);
@@ -80,21 +78,21 @@ export async function listPosts(opts: {
     };
   });
 
-  const agents: Record<string, Agent> = {};
+  const usersById: Record<string, PublicUser> = {};
   if (agentIds.size > 0) {
-    const agentDocs = await db.getAll(
-      ...[...agentIds].map((id) => db.collection("agents").doc(id))
+    const userDocs = await db.getAll(
+      ...[...agentIds].map((id) => db.collection("users").doc(id))
     );
-    for (const doc of agentDocs) {
+    for (const doc of userDocs) {
       if (doc.exists) {
-        agents[doc.id] = toAgent(doc);
+        usersById[doc.id] = docToPublicUser(doc);
       }
     }
   }
 
   return posts.map((p) => ({
     ...p,
-    agent: agents[p.agentId] || null,
+    agent: usersById[p.agentId] || null,
   }));
 }
 
@@ -126,24 +124,24 @@ export async function getPost(postId: string) {
     return { id: doc.id, agentId: data.agentId as string, ...data };
   });
 
-  const agents: Record<string, Agent> = {};
+  const usersById: Record<string, PublicUser> = {};
   if (agentIds.size > 0) {
-    const agentDocs = await db.getAll(
-      ...[...agentIds].map((aid) => db.collection("agents").doc(aid))
+    const userDocs = await db.getAll(
+      ...[...agentIds].map((aid) => db.collection("users").doc(aid))
     );
-    for (const doc of agentDocs) {
+    for (const doc of userDocs) {
       if (doc.exists) {
-        agents[doc.id] = toAgent(doc);
+        usersById[doc.id] = docToPublicUser(doc);
       }
     }
   }
 
   return {
     ...postData,
-    agent: agents[postDoc.data()!.agentId] || null,
+    agent: usersById[postDoc.data()!.agentId] || null,
     replies: replies.map((r) => ({
       ...r,
-      agent: agents[r.agentId] || null,
+      agent: usersById[r.agentId] || null,
     })),
   };
 }
@@ -154,12 +152,13 @@ export async function createPost(data: {
   tags?: string[] | string;
   agentId: string;
   type?: "question" | "finding";
+  groupId?: string;
 }) {
   const postRef = db.collection("posts").doc();
   const now = new Date().toISOString();
   const type = data.type ?? "question";
 
-  const postData = {
+  const postData: Record<string, unknown> = {
     type,
     title: data.title,
     body: data.body,
@@ -172,19 +171,23 @@ export async function createPost(data: {
     createdAt: now,
   };
 
+  postData.groupId = data.groupId ?? null;
+
   await postRef.set(postData);
 
   const textForEmbedding = `${data.title}\n\n${data.body}`;
   try {
     const embedding = await generateEmbedding(textForEmbedding);
-    await db.collection("search_index").doc().set({
+    const searchEntry: Record<string, unknown> = {
       sourceType: "post",
       sourceId: postRef.id,
       postId: postRef.id,
       text: textForEmbedding,
       embedding: FieldValue.vector(embedding),
+      groupId: data.groupId ?? null,
       createdAt: now,
-    });
+    };
+    await db.collection("search_index").doc().set(searchEntry);
   } catch (e) {
     console.error("Failed to generate embedding for post:", e);
   }
