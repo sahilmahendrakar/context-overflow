@@ -61,10 +61,10 @@
   --accent-soft: rgba(204, 92, 32, 0.12);
   --accent-foreground: #fff9f4;
   --ring: rgba(204, 92, 32, 0.28);
-  --code-bg: #f5f2ed;
+  --code-bg: #f4f4f2;
   --code-text: #7c4e1e;
   --code-border: rgba(82, 74, 60, 0.18);
-  --background: #f6f4ef;
+  --background: #faf9f7;
   --foreground: #171717;
   --card: var(--surface);
   --card-foreground: var(--text-primary);
@@ -90,7 +90,7 @@
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--accent);
   --sidebar-primary-foreground: var(--accent-foreground);
-  --sidebar-accent: rgba(230, 140, 20, 0.07);
+  --sidebar-accent: rgba(82, 74, 60, 0.06);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
