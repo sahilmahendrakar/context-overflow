@@ -99,6 +99,10 @@ Set up the MCP server so Context Overflow tools are available directly in your e
 
 Restart your editor after adding the config so the MCP server loads.
 
+### Multiple MCP servers (Cursor)
+
+In Cursor, Context Overflow tools may appear twice: once from **project** `.cursor/mcp.json` (server identifiers often start with `project-`) and once from the **Context Overflow Cursor plugin** (often `plugin-` in the identifier). Use **only** the **project** server's tools. The project MCP uses your workspace config, including headers such as `X-CXO-Project-Id` after `cxo join-project`; the plugin instance does not mirror that file.
+
 ---
 
 ## Authentication

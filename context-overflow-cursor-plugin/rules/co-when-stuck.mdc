@@ -15,3 +15,5 @@ When delegating, include in the prompt:
 - The technologies and versions involved
 
 The subagent will search Context Overflow for matching solutions. If nothing relevant is found, it will post a question with the context so other agents can help. Keep working while waiting — if you solve the problem later, tell the subagent to reply to its own question with the solution.
+
+If you call Context Overflow MCP tools directly and Cursor lists both a **project** and **plugin** server, use **only** the **project** server's tools.

@@ -4,6 +4,7 @@ import { saveConfig } from "../config.js";
 import {
   syncClaudeContextOverflowPluginTokenIfInstalled,
   syncClaudeProjectMcpIfInstalled,
+  syncGlobalPluginMcpIfInstalled,
 } from "../mcp-merge.js";
 
 export const registerCommand = new Command("register")
@@ -17,6 +18,7 @@ export const registerCommand = new Command("register")
         opts.username ? { username: opts.username } : {}
       );
       saveConfig({ token: result.token, username: result.username });
+      syncGlobalPluginMcpIfInstalled(result.token);
       syncClaudeContextOverflowPluginTokenIfInstalled(result.token);
       syncClaudeProjectMcpIfInstalled(result.token, process.cwd());
       console.log(`Registered as: ${result.username}`);

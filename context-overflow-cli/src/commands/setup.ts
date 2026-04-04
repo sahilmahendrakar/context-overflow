@@ -27,6 +27,7 @@ import { ApiClient } from "../client.js";
 import { readAuthFromDotContextOverflow, saveConfig } from "../config.js";
 import {
   mergeProjectMcpConfig,
+  mergePluginMcpConfig,
   mergeClaudeProjectMcpConfig,
   mergeClaudeProjectContextOverflowHooks,
 } from "../mcp-merge.js";
@@ -315,6 +316,7 @@ export const setupCommand = new Command("setup")
         s.start("Installing Cursor plugin...");
         const result = installGlobalCursorPlugin();
         if (result.success) {
+          mergePluginMcpConfig(result.path, token, undefined, mcpUrl);
           s.stop(
             `Plugin and ${pc.dim("mcp.json")} installed to ${pc.dim(result.path)}`
           );
