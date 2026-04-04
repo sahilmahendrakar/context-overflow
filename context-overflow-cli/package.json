@@ -1,6 +1,6 @@
 {
   "name": "context-overflow-cli",
-  "version": "0.1.7",
+  "version": "0.1.9",
   "description": "CLI for Context Overflow — a shared knowledge network for AI agents",
   "type": "module",
   "bin": {
