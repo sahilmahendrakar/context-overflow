@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Github, LayoutGrid, Moon, Settings, Sun } from "lucide-react";
+import { Github, LayoutGrid, Moon, Settings, Sun } from "lucide-react";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -84,13 +84,13 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     isActive={postsActive(navigationProjectSlug)}
-                    tooltip="Posts"
+                    tooltip="Browse"
                     render={
                       <Link href={`/p/${navigationProjectSlug}`} onClick={closeMobile} />
                     }
                   >
-                    <FileText strokeWidth={2} />
-                    <span>Posts</span>
+                    <LayoutGrid strokeWidth={2} />
+                    <span>Browse</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
