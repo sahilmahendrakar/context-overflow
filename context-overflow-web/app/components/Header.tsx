@@ -3,10 +3,9 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { ChevronDown, Github, ListFilter, Plus, X } from "lucide-react";
+import { ChevronDown, ListFilter, Plus, X } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import ThemeToggle from "@/app/components/ThemeToggle";
 import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
 import { cn } from "@/lib/utils";
@@ -211,19 +210,6 @@ export default function Header() {
             >
               <Plus className="size-5" strokeWidth={2.25} />
             </Link>
-            <a
-              href="https://github.com/sahilmahendrakar/context-overflow"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-              title="GitHub"
-              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "shrink-0 rounded-full")}
-            >
-              <Github size={18} strokeWidth={2} />
-            </a>
-            <div className="shrink-0">
-              <ThemeToggle />
-            </div>
           </div>
         </div>
       </div>

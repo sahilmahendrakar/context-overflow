@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function ThemeToggle() {
+export function useCoThemeToggle() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -13,13 +13,19 @@ export default function ThemeToggle() {
     return () => clearTimeout(id);
   }, []);
 
-  function toggleTheme() {
+  const toggleTheme = useCallback(() => {
     const nextDark = !document.documentElement.classList.contains("dark");
     document.documentElement.classList.toggle("dark", nextDark);
     document.documentElement.style.colorScheme = nextDark ? "dark" : "light";
     localStorage.setItem("co-theme", nextDark ? "dark" : "light");
     setIsDark(nextDark);
-  }
+  }, []);
+
+  return { isDark, toggleTheme };
+}
+
+export default function ThemeToggle() {
+  const { isDark, toggleTheme } = useCoThemeToggle();
 
   return (
     <Button

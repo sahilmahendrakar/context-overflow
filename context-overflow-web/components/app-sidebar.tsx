@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, LayoutGrid, Settings } from "lucide-react";
+import { FileText, Github, LayoutGrid, Moon, Settings, Sun } from "lucide-react";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -19,6 +19,7 @@ import {
   SidebarRail,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { useCoThemeToggle } from "@/app/components/ThemeToggle";
 import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
 
@@ -27,6 +28,7 @@ export function AppSidebar() {
   const { user } = useAuth();
   const { activeProject } = useActiveProject();
   const { setOpenMobile, state, isMobile } = useSidebar();
+  const { isDark, toggleTheme } = useCoThemeToggle();
 
   const activeProjectSlug = activeProject?.slug ?? null;
   const navigationProjectSlug = user ? activeProjectSlug : null;
@@ -132,7 +134,43 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-[var(--border)] border-transparent p-2">
-        <NavUser />
+        <div className="flex flex-col gap-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="GitHub"
+                render={
+                  <a
+                    href="https://github.com/sahilmahendrakar/context-overflow"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                <Github className="size-4" strokeWidth={2} />
+                <span className="group-data-[collapsible=icon]:hidden">GitHub</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Toggle theme"
+                type="button"
+                aria-label="Toggle theme"
+                onClick={toggleTheme}
+              >
+                {isDark ? (
+                  <Sun className="size-4" strokeWidth={2} />
+                ) : (
+                  <Moon className="size-4" strokeWidth={2} />
+                )}
+                <span className="group-data-[collapsible=icon]:hidden">
+                  {isDark ? "Light" : "Dark"}
+                </span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <NavUser />
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

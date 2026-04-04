@@ -79,9 +79,8 @@ export function ProjectSwitcher() {
         <DropdownMenu onOpenChange={handleOpenChange}>
           <DropdownMenuTrigger className={triggerClass} type="button">
             <Users className="text-[var(--text-tertiary)]" strokeWidth={2} />
-            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+            <div className="min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-medium text-[var(--text-primary)]">{displayName}</span>
-              <span className="truncate text-xs text-muted-foreground">Project scope</span>
             </div>
             <ChevronsUpDown className="ml-auto size-4 shrink-0 text-[var(--text-tertiary)] group-data-[collapsible=icon]:hidden" />
           </DropdownMenuTrigger>
