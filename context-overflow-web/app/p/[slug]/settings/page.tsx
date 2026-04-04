@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
@@ -29,6 +29,60 @@ interface Member {
     createdAt: string;
     photoURL?: string | null;
   } | null;
+}
+
+function MemberRow({
+  m,
+  isAdmin,
+  currentUsername,
+  onRemove,
+}: {
+  m: Member;
+  isAdmin: boolean;
+  currentUsername: string | undefined;
+  onRemove: (agentId: string) => void;
+}) {
+  const label = m.agent?.username || m.agentId;
+  return (
+    <div className="flex items-center justify-between py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)]">
+          {m.agent?.photoURL ? (
+            <img
+              src={m.agent.photoURL}
+              alt={label}
+              referrerPolicy="no-referrer"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-xs font-semibold uppercase text-[var(--text-secondary)]">
+              {label[0] ?? "?"}
+            </span>
+          )}
+        </div>
+        <span className="text-sm font-medium text-[var(--text-primary)]">{label}</span>
+        <span
+          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+            m.role === "admin"
+              ? "bg-[var(--accent)]/10 text-[var(--accent)]"
+              : "bg-[var(--surface-muted)] text-[var(--text-secondary)]"
+          }`}
+        >
+          {m.role}
+        </span>
+      </div>
+      {isAdmin && m.agent?.username !== currentUsername && (
+        <button
+          type="button"
+          onClick={() => onRemove(m.agentId)}
+          className="rounded-md p-1.5 text-[var(--text-tertiary)] transition hover:bg-red-500/10 hover:text-red-500"
+          title="Remove member"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default function ProjectSettingsPage() {
@@ -68,6 +122,22 @@ export default function ProjectSettingsPage() {
     }, 0);
     return () => clearTimeout(id);
   }, [fetchMembers]);
+
+  const { humanMembers, agentMembers, otherMembers } = useMemo(() => {
+    const humanMembers: Member[] = [];
+    const agentMembers: Member[] = [];
+    const otherMembers: Member[] = [];
+    for (const m of members) {
+      if (!m.agent) {
+        otherMembers.push(m);
+      } else if (m.agent.type === "human") {
+        humanMembers.push(m);
+      } else {
+        agentMembers.push(m);
+      }
+    }
+    return { humanMembers, agentMembers, otherMembers };
+  }, [members]);
 
   async function handleRegenerateCode() {
     const token = await getIdToken();
@@ -230,49 +300,60 @@ export default function ProjectSettingsPage() {
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">
           Members ({members.length})
         </h2>
-        <div className="mt-4 divide-y divide-[var(--border)]">
-          {members.map((m) => {
-            const label = m.agent?.username || m.agentId;
-            return (
-            <div key={m.id} className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)]">
-                  {m.agent?.photoURL ? (
-                    <img
-                      src={m.agent.photoURL}
-                      alt={label}
-                      referrerPolicy="no-referrer"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs font-semibold uppercase text-[var(--text-secondary)]">
-                      {label[0] ?? "?"}
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-medium text-[var(--text-primary)]">
-                  {label}
-                </span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  m.role === "admin"
-                    ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                    : "bg-[var(--surface-muted)] text-[var(--text-secondary)]"
-                }`}>
-                  {m.role}
-                </span>
-              </div>
-              {isAdmin && m.agent?.username !== user?.username && (
-                <button
-                  onClick={() => handleRemoveMember(m.agentId)}
-                  className="rounded-md p-1.5 text-[var(--text-tertiary)] transition hover:bg-red-500/10 hover:text-red-500"
-                  title="Remove member"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
+        <div className="mt-4">
+          <div>
+            <h3 className="text-sm font-medium text-[var(--text-secondary)]">
+              People ({humanMembers.length})
+            </h3>
+            <div className="mt-2 divide-y divide-[var(--border)]">
+              {humanMembers.map((m) => (
+                <MemberRow
+                  key={m.id}
+                  m={m}
+                  isAdmin={isAdmin}
+                  currentUsername={user?.username}
+                  onRemove={handleRemoveMember}
+                />
+              ))}
             </div>
-          );
-          })}
+          </div>
+          <div className="mt-6">
+            <h3 className="text-sm font-medium text-[var(--text-secondary)]">
+              Agents ({agentMembers.length})
+            </h3>
+            <div className="mt-2 divide-y divide-[var(--border)]">
+              {agentMembers.map((m) => (
+                <MemberRow
+                  key={m.id}
+                  m={m}
+                  isAdmin={isAdmin}
+                  currentUsername={user?.username}
+                  onRemove={handleRemoveMember}
+                />
+              ))}
+            </div>
+          </div>
+          {otherMembers.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-medium text-[var(--text-secondary)]">
+                Other ({otherMembers.length})
+              </h3>
+              <p className="mt-1 text-xs text-[var(--text-tertiary)]">
+                Member records without a linked user profile.
+              </p>
+              <div className="mt-2 divide-y divide-[var(--border)]">
+                {otherMembers.map((m) => (
+                  <MemberRow
+                    key={m.id}
+                    m={m}
+                    isAdmin={isAdmin}
+                    currentUsername={user?.username}
+                    onRemove={handleRemoveMember}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
