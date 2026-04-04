@@ -24,7 +24,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ApiClient } from "../client.js";
-import { saveConfig } from "../config.js";
+import { readAuthFromDotContextOverflow, saveConfig } from "../config.js";
 import {
   mergeProjectMcpConfig,
   mergeClaudeProjectMcpConfig,
@@ -193,6 +193,46 @@ export const setupCommand = new Command("setup")
     });
     if (handleCancel(isGlobal)) return;
 
+    const projectDir = process.cwd();
+    let existing = readAuthFromDotContextOverflow(
+      isGlobal ? homedir() : projectDir
+    );
+    let authFromGlobalFallback = false;
+    if (!isGlobal && !existing) {
+      const globalAuth = readAuthFromDotContextOverflow(homedir());
+      if (globalAuth) {
+        existing = globalAuth;
+        authFromGlobalFallback = true;
+      }
+    }
+
+    let reusedCredentials = false;
+    let auth: { token: string; username: string } | undefined;
+
+    if (existing) {
+      const label =
+        existing.username != null && existing.username !== ""
+          ? pc.bold(existing.username)
+          : "saved credentials";
+      const reuseMessage = authFromGlobalFallback
+        ? `Use your global agent ${label} for this project? (credentials will be saved locally)`
+        : `Reuse existing agent ${label}? (skip registration)`;
+      const shouldReuse = await confirm({
+        message: reuseMessage,
+        active: "Yes",
+        inactive: "No — register a new agent",
+        initialValue: true,
+      });
+      if (handleCancel(shouldReuse)) return;
+      if (shouldReuse) {
+        reusedCredentials = true;
+        auth = {
+          token: existing.token,
+          username: existing.username ?? "agent",
+        };
+      }
+    }
+
     const tools = await multiselect({
       message: "Which tools do you use?",
       options: [
@@ -234,42 +274,41 @@ export const setupCommand = new Command("setup")
       installClaudeCode = shouldInstall as boolean;
     }
 
-    const agentName = await text({
-      message: "What would you like to name your agent?",
-      placeholder: "my-agent",
-      validate(value) {
-        if (value.length < 3) return "Name must be at least 3 characters.";
-        if (value.length > 30) return "Name must be at most 30 characters.";
-        if (!/^[a-zA-Z0-9-]+$/.test(value))
-          return "Only letters, numbers, and hyphens allowed.";
-      },
-    });
-    if (handleCancel(agentName)) return;
-
     const s = spinner();
 
-    s.start("Registering agent...");
-    let token: string;
-    let username: string;
-    try {
-      const client = new ApiClient(undefined, apiUrl);
-      const result = await client.post<{ username: string; token: string }>(
-        "/api/registration",
-        { username: agentName as string }
-      );
-      token = result.token;
-      username = result.username;
-      s.stop(`Registered as ${pc.bold(username)}`);
-    } catch (e) {
-      s.stop(pc.red(`Registration failed: ${(e as Error).message}`), 1);
-      process.exit(1);
+    if (!auth) {
+      const agentName = await text({
+        message: "What would you like to name your agent?",
+        placeholder: "my-agent",
+        validate(value) {
+          if (value.length < 3) return "Name must be at least 3 characters.";
+          if (value.length > 30) return "Name must be at most 30 characters.";
+          if (!/^[a-zA-Z0-9-]+$/.test(value))
+            return "Only letters, numbers, and hyphens allowed.";
+        },
+      });
+      if (handleCancel(agentName)) return;
+
+      s.start("Registering agent...");
+      try {
+        const client = new ApiClient(undefined, apiUrl);
+        const result = await client.post<{ username: string; token: string }>(
+          "/api/registration",
+          { username: agentName as string }
+        );
+        auth = { token: result.token, username: result.username };
+        s.stop(`Registered as ${pc.bold(result.username)}`);
+      } catch (e) {
+        s.stop(pc.red(`Registration failed: ${(e as Error).message}`), 1);
+        process.exit(1);
+      }
     }
 
-    const projectDir = process.cwd();
+    const { token, username } = auth;
 
     if (isGlobal) {
       s.start("Saving config...");
-      saveConfig({ token, username, ...(apiUrl ? { apiUrl } : {}) });
+      saveConfig({ token, username, ...(apiUrl ? { apiUrl } : {}) }, homedir());
       s.stop("Config saved");
 
       if (installCursor) {
@@ -333,6 +372,11 @@ export const setupCommand = new Command("setup")
     const summaryLines: string[] = [
       `Agent:        ${pc.bold(username)}`,
     ];
+    if (reusedCredentials) {
+      summaryLines.push(
+        `Credentials:  ${pc.dim("Reused existing (no new registration)")}`,
+      );
+    }
 
     if (isGlobal) {
       summaryLines.push(

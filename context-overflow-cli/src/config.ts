@@ -31,6 +31,38 @@ function readJson(path: string): Record<string, unknown> | null {
   }
 }
 
+export interface StoredAuth {
+  token: string;
+  username?: string;
+  apiUrl?: string;
+}
+
+export function readAuthFromDotContextOverflow(
+  baseDir: string
+): StoredAuth | null {
+  const coDir = join(baseDir, ".context-overflow");
+  const configFile = join(coDir, "config.json");
+  const credentialsFile = join(coDir, "credentials.json");
+
+  for (const file of [configFile, credentialsFile]) {
+    const data = readJson(file);
+    if (!data) continue;
+    const token = data.token;
+    if (typeof token !== "string" || !token) continue;
+    const username =
+      typeof data.username === "string" && data.username.trim()
+        ? data.username.trim()
+        : undefined;
+    const rawUrl = data.apiUrl;
+    const apiUrl =
+      typeof rawUrl === "string" && rawUrl.trim()
+        ? normalizeBaseUrl(rawUrl.trim())
+        : undefined;
+    return { token, username, apiUrl };
+  }
+  return null;
+}
+
 export function loadConfig(): Config {
   const localFile = join(LOCAL_DIR, "config.json");
   const globalFile = join(GLOBAL_CONFIG_DIR, "config.json");
