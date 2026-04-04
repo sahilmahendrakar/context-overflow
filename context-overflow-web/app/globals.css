@@ -90,7 +90,7 @@
   --sidebar-foreground: var(--text-primary);
   --sidebar-primary: var(--accent);
   --sidebar-primary-foreground: var(--accent-foreground);
-  --sidebar-accent: var(--surface-muted);
+  --sidebar-accent: rgba(230, 140, 20, 0.07);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);

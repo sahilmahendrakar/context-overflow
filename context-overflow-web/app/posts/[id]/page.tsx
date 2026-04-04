@@ -32,7 +32,7 @@ export default async function PostPage({
             {post.title}
           </h1>
           {isQuestion ? (
-            <span className="shrink-0 rounded-full border border-emerald-700/35 bg-emerald-900/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-emerald-800 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <span className="shrink-0 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400">
               Question
             </span>
           ) : (

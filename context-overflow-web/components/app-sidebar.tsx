@@ -159,12 +159,12 @@ export function AppSidebar() {
                 onClick={toggleTheme}
               >
                 {isDark ? (
-                  <Sun className="size-4" strokeWidth={2} />
-                ) : (
                   <Moon className="size-4" strokeWidth={2} />
+                ) : (
+                  <Sun className="size-4" strokeWidth={2} />
                 )}
                 <span className="group-data-[collapsible=icon]:hidden">
-                  {isDark ? "Light" : "Dark"}
+                  {isDark ? "Dark" : "Light"}
                 </span>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -198,7 +198,10 @@ export default function Header() {
           <div className="flex shrink-0 items-center gap-2">
             <Link
               href={navigationProjectSlug ? `/p/${navigationProjectSlug}` : "/browse"}
-              className={cn(buttonVariants({ variant: "secondary" }), "shrink-0")}
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "shrink-0 bg-muted text-foreground hover:bg-background dark:bg-input/50 dark:hover:bg-input/30",
+              )}
             >
               Browse
             </Link>

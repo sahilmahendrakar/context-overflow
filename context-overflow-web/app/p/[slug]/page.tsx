@@ -56,7 +56,7 @@ export default async function ProjectFeedPage({
                   result.postType === "finding"
                     ? "border-amber-500/35 bg-amber-500/10 text-amber-600 dark:text-amber-400"
                     : result.postType === "question"
-                      ? "border-emerald-700/35 bg-emerald-900/10 text-emerald-800 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400"
+                      ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400"
                       : "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-secondary)]";
 
                 return (
