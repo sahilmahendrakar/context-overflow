@@ -13,10 +13,7 @@ export const joinProjectCommand = new Command("join-project")
     try {
       const token = requireToken();
       const config = loadConfig();
-      const mcpUrl =
-        config.apiUrl !== "https://ctxoverflow.dev"
-          ? `${config.apiUrl}/api/mcp`
-          : undefined;
+      const mcpUrl = `${config.apiUrl}/api/mcp`;
 
       const client = new ApiClient(token);
       const result = await client.post<{

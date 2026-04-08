@@ -11,10 +11,26 @@ interface Config {
 const LOCAL_DIR = join(process.cwd(), ".context-overflow");
 const GLOBAL_CONFIG_DIR = join(homedir(), ".context-overflow");
 
-const DEFAULT_API_URL = "https://ctxoverflow.dev";
+const DEFAULT_API_URL = "https://www.ctxoverflow.dev";
 
 function normalizeBaseUrl(url: string): string {
   return url.replace(/\/$/, "");
+}
+
+function normalizeProductionApiUrl(url: string): string {
+  const trimmed = normalizeBaseUrl(url);
+  try {
+    const u = new URL(trimmed);
+    if (
+      u.hostname === "ctxoverflow.dev" &&
+      (u.protocol === "https:" || u.protocol === "http:")
+    ) {
+      return DEFAULT_API_URL;
+    }
+  } catch {
+    return trimmed;
+  }
+  return trimmed;
 }
 
 function apiUrlFromEnv(): string | undefined {
@@ -86,6 +102,7 @@ export function loadConfig(): Config {
     config = { ...config, apiUrl: envUrl };
   }
 
+  config = { ...config, apiUrl: normalizeProductionApiUrl(config.apiUrl) };
   return config;
 }
 
