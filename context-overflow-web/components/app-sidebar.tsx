@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Github, LayoutGrid, Moon, Settings, Sun } from "lucide-react";
+import { Bot, Github, LayoutGrid, Moon, Settings, ShieldCheck, Sun } from "lucide-react";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -43,6 +43,10 @@ export function AppSidebar() {
     if (pathname === `/p/${slug}/post`) return true;
     if (pathname === `/p/${slug}/home`) return true;
     return false;
+  }
+
+  function accessActive(slug: string) {
+    return pathname.startsWith(`/p/${slug}/access`);
   }
 
   function settingsActive(slug: string) {
@@ -95,6 +99,21 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
+                    isActive={accessActive(navigationProjectSlug)}
+                    tooltip="Access"
+                    render={
+                      <Link
+                        href={`/p/${navigationProjectSlug}/access`}
+                        onClick={closeMobile}
+                      />
+                    }
+                  >
+                    <ShieldCheck strokeWidth={2} />
+                    <span>Access</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
                     isActive={settingsActive(navigationProjectSlug)}
                     tooltip="Settings"
                     render={
@@ -126,6 +145,26 @@ export function AppSidebar() {
                   >
                     <LayoutGrid strokeWidth={2} />
                     <span>Browse</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {user && (
+          <SidebarGroup className="p-2">
+            <SidebarGroupLabel>User</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={pathname === "/agents"}
+                    tooltip="Agents"
+                    render={<Link href="/agents" onClick={closeMobile} />}
+                  >
+                    <Bot strokeWidth={2} />
+                    <span>Agents</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronsUpDown, Plus, Users } from "lucide-react";
+import { ChevronsUpDown, Mail, Plus, Users } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
 import {
@@ -40,6 +40,7 @@ export function ProjectSwitcher() {
   const { activeProject, setActiveProject } = useActiveProject();
   const { isMobile, setOpenMobile } = useSidebar();
   const [projects, setProjects] = useState<UserProject[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const activeProjectSlug = activeProject?.slug ?? null;
 
@@ -64,13 +65,34 @@ export function ProjectSwitcher() {
     if (res.ok) setProjects(await res.json());
   }, [user, getIdToken]);
 
+  const fetchPendingInvites = useCallback(async () => {
+    if (!user) {
+      setPendingCount(0);
+      return;
+    }
+    const token = await getIdToken();
+    if (!token) return;
+    const res = await fetch("/api/invites/pending", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setPendingCount(Array.isArray(data) ? data.length : 0);
+    }
+  }, [user, getIdToken]);
+
   const closeMobile = () => setOpenMobile(false);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (open) queueMicrotask(() => void fetchProjects());
+      if (open) {
+        queueMicrotask(() => {
+          void fetchProjects();
+          void fetchPendingInvites();
+        });
+      }
     },
-    [fetchProjects],
+    [fetchProjects, fetchPendingInvites],
   );
 
   return (
@@ -117,6 +139,21 @@ export function ProjectSwitcher() {
               ))}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            {user && pendingCount > 0 && (
+              <>
+                <DropdownMenuItem
+                  className="rounded-lg"
+                  onClick={() => {
+                    closeMobile();
+                    router.push("/invites");
+                  }}
+                >
+                  <Mail className="size-4" strokeWidth={2} />
+                  View Invites ({pendingCount})
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             {user ? (
               <DropdownMenuItem
                 className="rounded-lg"

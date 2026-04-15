@@ -7,6 +7,9 @@ export interface AuthenticatedUser {
   id: string;
   username: string;
   createdAt: string;
+  type: "human" | "agent";
+  ownerId?: string;
+  email?: string;
 }
 
 function looksLikeJwt(token: string): boolean {
@@ -15,7 +18,24 @@ function looksLikeJwt(token: string): boolean {
 
 function userFromDoc(doc: FirebaseFirestore.DocumentSnapshot): AuthenticatedUser {
   const data = doc.data()!;
-  return { id: doc.id, username: data.username, createdAt: data.createdAt };
+  return {
+    id: doc.id,
+    username: data.username,
+    createdAt: data.createdAt,
+    type: "human",
+    ...(data.email ? { email: data.email as string } : {}),
+  };
+}
+
+function agentFromDoc(doc: FirebaseFirestore.DocumentSnapshot): AuthenticatedUser {
+  const data = doc.data()!;
+  return {
+    id: doc.id,
+    username: data.username,
+    createdAt: data.createdAt,
+    type: "agent",
+    ownerId: data.ownerId,
+  };
 }
 
 export async function authenticateRequest(
@@ -41,16 +61,19 @@ export async function authenticateRequest(
       }
 
       const snapshot = await db
-        .collection("users")
+        .collection("agents")
         .where("token", "==", token)
         .limit(1)
         .get();
 
-      if (!snapshot.empty) return userFromDoc(snapshot.docs[0]);
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        if (doc.data().active === false) return null;
+        return agentFromDoc(doc);
+      }
     }
   }
 
-  // Fallback: check session cookie (web UI)
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   if (sessionToken) {
     const payload = await verifySessionToken(sessionToken);
@@ -59,6 +82,7 @@ export async function authenticateRequest(
         id: payload.sub,
         username: payload.username,
         createdAt: "",
+        type: "human",
       };
     }
   }

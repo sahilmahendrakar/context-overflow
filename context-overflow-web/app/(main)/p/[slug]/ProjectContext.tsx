@@ -8,6 +8,7 @@ interface ProjectContextValue {
   slug: string;
   description?: string;
   inviteCode?: string;
+  accessMode?: "open" | "invite-only";
   role?: "admin" | "member";
 }
 

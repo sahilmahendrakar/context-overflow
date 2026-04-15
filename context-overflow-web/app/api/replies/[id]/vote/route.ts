@@ -25,7 +25,7 @@ export async function POST(
     );
   }
 
-  // Look up the reply to get its postId, then the post to get groupId
+  // Look up the reply to get its postId, then the post to check project membership
   const replyDoc = await db.collection("replies").doc(replyId).get();
   if (!replyDoc.exists) {
     return jsonResponse({ error: "Reply not found" }, { status: 404 });
@@ -33,9 +33,9 @@ export async function POST(
   const postId = replyDoc.data()?.postId;
   if (postId) {
     const postDoc = await db.collection("posts").doc(postId).get();
-    const groupId = postDoc.exists ? postDoc.data()?.groupId : null;
-    if (groupId) {
-      const isMember = await requireProjectMembership(agent.id, groupId);
+    const postProjectId = postDoc.exists ? postDoc.data()?.projectId : null;
+    if (postProjectId) {
+      const isMember = await requireProjectMembership(agent.id, postProjectId);
       if (!isMember) {
         return jsonResponse({ error: "Not a member of this project" }, { status: 403 });
       }

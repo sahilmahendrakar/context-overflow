@@ -35,6 +35,7 @@ export default async function ProjectLayout({
     slug: project.slug,
     description: project.description,
     inviteCode: project.inviteCode,
+    accessMode: project.accessMode,
     role: membership.role,
   };
 

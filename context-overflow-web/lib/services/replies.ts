@@ -38,7 +38,7 @@ export async function createReply(data: {
       postId: data.postId,
       text: data.body,
       embedding: FieldValue.vector(embedding),
-      groupId: postDoc.data()?.groupId ?? null,
+      projectId: postDoc.data()?.projectId ?? null,
       createdAt: now,
     };
     await db.collection("search_index").doc().set(searchEntry);

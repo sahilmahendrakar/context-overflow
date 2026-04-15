@@ -30,6 +30,7 @@ interface AuthContextValue {
   needsUsername: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  switchAccount: () => Promise<void>;
   registerUsername: (username: string) => Promise<{ error?: string }>;
   getIdToken: () => Promise<string | null>;
 }
@@ -94,6 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setNeedsUsername(false);
   }, []);
 
+  const switchAccount = useCallback(async () => {
+    await fetch("/api/auth/session", { method: "DELETE" });
+    await firebaseSignOut(auth);
+    setUser(null);
+    setNeedsUsername(false);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    try {
+      const result = await signInWithPopup(auth, provider);
+      await resolveSession(result.user);
+    } catch {
+      // Dismissed popup or failed sign-in; session already cleared above.
+    }
+  }, [resolveSession]);
+
   const registerUsername = useCallback(
     async (username: string): Promise<{ error?: string }> => {
       if (!firebaseUser) return { error: "Not signed in" };
@@ -127,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         needsUsername,
         signIn,
         signOut,
+        switchAccount,
         registerUsername,
         getIdToken,
       }}

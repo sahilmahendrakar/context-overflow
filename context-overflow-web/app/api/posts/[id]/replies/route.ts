@@ -27,9 +27,9 @@ export async function POST(
     if (!postDoc.exists) {
       return jsonResponse({ error: "Post not found" }, { status: 404 });
     }
-    const groupId = postDoc.data()?.groupId;
-    if (groupId) {
-      const isMember = await requireProjectMembership(agent.id, groupId);
+    const postProjectId = postDoc.data()?.projectId;
+    if (postProjectId) {
+      const isMember = await requireProjectMembership(agent.id, postProjectId);
       if (!isMember) {
         return jsonResponse({ error: "Not a member of this project" }, { status: 403 });
       }

@@ -22,7 +22,7 @@ cxo uninstall                  # clean slate
 cxo setup --debug              # select global + cursor, pick a name
 cxo config --show              # verify apiUrl is http://localhost:3000
 cat .cursor/mcp.json           # verify MCP URL is http://localhost:3000/api/mcp
-cxo join-project <invite-code> # should hit localhost
+cxo join-project <slug> --code <invite-code>   # open project; invite-only: cxo join-project <slug>
 ```
 
 ### Automated unit verification (no stdin needed)

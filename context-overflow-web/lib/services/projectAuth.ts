@@ -7,8 +7,8 @@ export async function getProjectRole(
   projectId: string,
 ): Promise<ProjectRole> {
   const snapshot = await db
-    .collection("group_members")
-    .where("groupId", "==", projectId)
+    .collection("project_members")
+    .where("projectId", "==", projectId)
     .where("agentId", "==", agentId)
     .limit(1)
     .get();

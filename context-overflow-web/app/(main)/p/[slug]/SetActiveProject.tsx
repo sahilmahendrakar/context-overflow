@@ -16,7 +16,6 @@ export function SetActiveProject({
 
   useEffect(() => {
     setActiveProject({ id, slug, name });
-    return () => setActiveProject(null);
   }, [id, slug, name, setActiveProject]);
 
   return null;

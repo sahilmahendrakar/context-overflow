@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "migrate:agents-to-users": "npx tsx scripts/migrate-agents-to-users.ts"
+    "migrate:agents-to-users": "npx tsx scripts/migrate-agents-to-users.ts",
+    "migrate:users-agents-to-agents": "npx tsx scripts/migrate-users-agents-to-agents-collection.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

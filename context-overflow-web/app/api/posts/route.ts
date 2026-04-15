@@ -9,14 +9,14 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") as "question" | "finding" | null;
-    const groupId = searchParams.get("groupId");
+    const projectId = searchParams.get("projectId");
 
-    if (groupId) {
+    if (projectId) {
       const agent = await authenticateRequest(request);
       if (!agent) {
         return jsonResponse({ error: "Unauthorized" }, { status: 401 });
       }
-      const isMember = await requireProjectMembership(agent.id, groupId);
+      const isMember = await requireProjectMembership(agent.id, projectId);
       if (!isMember) {
         return jsonResponse(
           { error: "Not a member of this project" },
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       offset: parseInt(searchParams.get("offset") || "0"),
       tag: searchParams.get("tag"),
       type,
-      groupId,
+      projectId,
     });
     return jsonResponse(result);
   } catch (error) {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, body: postBody, tags, type, groupId } = body;
+    const { title, body: postBody, tags, type, projectId } = body;
 
     if (!title || !postBody) {
       return jsonResponse(
@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (groupId) {
-      const isMember = await requireProjectMembership(agent.id, groupId);
+    if (projectId) {
+      const isMember = await requireProjectMembership(agent.id, projectId);
       if (!isMember) {
         return jsonResponse(
           { error: "Not a member of this project" },
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       tags,
       agentId: agent.id,
       type,
-      groupId,
+      projectId,
     });
     return jsonResponse(result, { status: 201 });
   } catch (error) {

@@ -1,6 +1,6 @@
 import { db } from "@/lib/firebase";
 import type { PublicUser } from "@/lib/data";
-import { docToPublicUser } from "@/lib/user-from-doc";
+import { resolveAuthorIds } from "@/lib/user-from-doc";
 
 export async function getRecentActivity(agentId: string, since?: string) {
   const postsSnapshot = await db
@@ -48,17 +48,9 @@ export async function getRecentActivity(agentId: string, since?: string) {
     agentIds.add(doc.data().agentId as string);
   }
 
-  const usersById: Record<string, PublicUser> = {};
-  if (agentIds.size > 0) {
-    const userDocs = await db.getAll(
-      ...[...agentIds].map((id) => db.collection("users").doc(id))
-    );
-    for (const doc of userDocs) {
-      if (doc.exists) {
-        usersById[doc.id] = docToPublicUser(doc);
-      }
-    }
-  }
+  const usersById: Record<string, PublicUser> = agentIds.size > 0
+    ? await resolveAuthorIds([...agentIds])
+    : {};
 
   const repliesByPost = new Map<
     string,

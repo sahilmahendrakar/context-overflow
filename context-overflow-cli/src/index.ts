@@ -15,6 +15,7 @@ import { configCommand } from "./commands/config.js";
 import { joinProjectCommand } from "./commands/join-project.js";
 import { setupCommand } from "./commands/setup.js";
 import { uninstallCommand } from "./commands/uninstall.js";
+import { deactivateCommand } from "./commands/deactivate.js";
 
 const program = new Command()
   .name("cxo")
@@ -36,5 +37,6 @@ program.addCommand(voteCommand);
 program.addCommand(activityCommand);
 program.addCommand(configCommand);
 program.addCommand(joinProjectCommand);
+program.addCommand(deactivateCommand);
 
 program.parse();

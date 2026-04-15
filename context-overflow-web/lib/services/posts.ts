@@ -1,8 +1,7 @@
 import { db } from "@/lib/firebase";
 import { generateEmbedding } from "@/lib/embeddings";
 import { FieldValue } from "firebase-admin/firestore";
-import type { PublicUser } from "@/lib/data";
-import { docToPublicUser } from "@/lib/user-from-doc";
+import { resolveAuthorIds } from "@/lib/user-from-doc";
 
 function normalizePostTags(raw: unknown): string[] {
   if (Array.isArray(raw)) {
@@ -36,16 +35,16 @@ export async function listPosts(opts: {
   offset?: number;
   tag?: string | null;
   type?: "question" | "finding" | null;
-  groupId?: string | null;
+  projectId?: string | null;
 }) {
-  const { sort = "newest", limit = 20, offset = 0, tag, type, groupId } = opts;
+  const { sort = "newest", limit = 20, offset = 0, tag, type, projectId } = opts;
 
   let query: FirebaseFirestore.Query = db.collection("posts");
 
-  if (groupId) {
-    query = query.where("groupId", "==", groupId);
+  if (projectId) {
+    query = query.where("projectId", "==", projectId);
   } else {
-    query = query.where("groupId", "==", null);
+    query = query.where("projectId", "==", null);
   }
 
   if (type) {
@@ -78,17 +77,7 @@ export async function listPosts(opts: {
     };
   });
 
-  const usersById: Record<string, PublicUser> = {};
-  if (agentIds.size > 0) {
-    const userDocs = await db.getAll(
-      ...[...agentIds].map((id) => db.collection("users").doc(id))
-    );
-    for (const doc of userDocs) {
-      if (doc.exists) {
-        usersById[doc.id] = docToPublicUser(doc);
-      }
-    }
-  }
+  const usersById = await resolveAuthorIds([...agentIds]);
 
   return posts.map((p) => ({
     ...p,
@@ -124,17 +113,7 @@ export async function getPost(postId: string) {
     return { id: doc.id, agentId: data.agentId as string, ...data };
   });
 
-  const usersById: Record<string, PublicUser> = {};
-  if (agentIds.size > 0) {
-    const userDocs = await db.getAll(
-      ...[...agentIds].map((aid) => db.collection("users").doc(aid))
-    );
-    for (const doc of userDocs) {
-      if (doc.exists) {
-        usersById[doc.id] = docToPublicUser(doc);
-      }
-    }
-  }
+  const usersById = await resolveAuthorIds([...agentIds]);
 
   return {
     ...postData,
@@ -152,7 +131,7 @@ export async function createPost(data: {
   tags?: string[] | string;
   agentId: string;
   type?: "question" | "finding";
-  groupId?: string;
+  projectId?: string;
 }) {
   const postRef = db.collection("posts").doc();
   const now = new Date().toISOString();
@@ -171,7 +150,7 @@ export async function createPost(data: {
     createdAt: now,
   };
 
-  postData.groupId = data.groupId ?? null;
+  postData.projectId = data.projectId ?? null;
 
   await postRef.set(postData);
 
@@ -184,7 +163,7 @@ export async function createPost(data: {
       postId: postRef.id,
       text: textForEmbedding,
       embedding: FieldValue.vector(embedding),
-      groupId: data.groupId ?? null,
+      projectId: data.projectId ?? null,
       createdAt: now,
     };
     await db.collection("search_index").doc().set(searchEntry);

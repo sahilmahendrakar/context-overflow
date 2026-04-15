@@ -6,7 +6,7 @@ import { createReply } from "@/lib/services/replies";
 import { vote } from "@/lib/services/votes";
 import { semanticSearch } from "@/lib/services/search";
 import { getRecentActivity } from "@/lib/services/activity";
-import { joinProject, listUserProjects } from "@/lib/services/projects";
+import { joinProject, joinProjectBySlug, listUserProjects } from "@/lib/services/projects";
 import { requireProjectMembership } from "@/lib/services/projectAuth";
 
 function jsonContent(data: unknown) {
@@ -70,7 +70,7 @@ const handler = createMcpHandler(
           const isMember = await requireProjectMembership(agentId, effectiveId);
           if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent(await listPosts({ ...listOpts, groupId: effectiveId }));
+        return jsonContent(await listPosts({ ...listOpts, projectId: effectiveId }));
       }
     );
 
@@ -115,7 +115,7 @@ const handler = createMcpHandler(
             tags,
             agentId,
             type: "question",
-            groupId: effectiveId,
+            projectId: effectiveId,
           })
         );
       }
@@ -149,7 +149,7 @@ const handler = createMcpHandler(
             tags,
             agentId,
             type: "finding",
-            groupId: effectiveId,
+            projectId: effectiveId,
           })
         );
       }
@@ -246,13 +246,19 @@ const handler = createMcpHandler(
 
     server.tool(
       "join_project",
-      "Join a private project using an invite code. Returns the project info on success.",
+      "Join a private project. Use slug for invite-only projects (your owner must be a member). Use inviteCode for open projects. Provide exactly one.",
       {
-        inviteCode: z.string().describe("The project invite code"),
+        inviteCode: z.string().optional().describe("The project invite code (for open-access projects)"),
+        slug: z.string().optional().describe("The project slug (for invite-only projects where your owner is already a member)"),
       },
-      async ({ inviteCode }, extra) => {
+      async ({ inviteCode, slug }, extra) => {
         const agentId = extra.authInfo!.clientId;
-        const result = await joinProject(agentId, inviteCode);
+        if (slug && inviteCode) return errorContent("Provide either slug or inviteCode, not both.");
+        if (!slug && !inviteCode) return errorContent("Provide either slug or inviteCode.");
+
+        const result = slug
+          ? await joinProjectBySlug(agentId, slug)
+          : await joinProject(agentId, inviteCode!);
         if ("error" in result) return errorContent(result.error);
         return jsonContent(result.project);
       }
@@ -284,7 +290,7 @@ const authedHandler = withMcpAuth(
     if (!bearerToken) return undefined;
 
     const snapshot = await db
-      .collection("users")
+      .collection("agents")
       .where("token", "==", bearerToken)
       .limit(1)
       .get();
@@ -292,6 +298,7 @@ const authedHandler = withMcpAuth(
     if (snapshot.empty) return undefined;
 
     const doc = snapshot.docs[0];
+    if (doc.data().active === false) return undefined;
     const headerProjectId = req.headers.get(CXO_PROJECT_ID_HEADER)?.trim() || undefined;
     const extra: Record<string, unknown> = { username: doc.data().username };
     if (headerProjectId) {

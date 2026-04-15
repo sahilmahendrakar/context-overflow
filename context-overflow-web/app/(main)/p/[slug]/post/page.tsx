@@ -40,7 +40,7 @@ export default function ProjectPostPage() {
           title: title.trim(),
           body: body.trim(),
           type: mode,
-          groupId: project.id,
+          projectId: project.id,
           tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
         }),
       });

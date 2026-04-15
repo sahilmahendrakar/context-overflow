@@ -60,13 +60,12 @@ function generateCandidate(): string {
 export async function generateUniqueUsername(maxAttempts = 5): Promise<string> {
   for (let i = 0; i < maxAttempts; i++) {
     const candidate = generateCandidate();
-    const existing = await db
-      .collection("users")
-      .where("username", "==", candidate)
-      .limit(1)
-      .get();
+    const [usersSnap, agentsSnap] = await Promise.all([
+      db.collection("users").where("username", "==", candidate).limit(1).get(),
+      db.collection("agents").where("username", "==", candidate).limit(1).get(),
+    ]);
 
-    if (existing.empty) {
+    if (usersSnap.empty && agentsSnap.empty) {
       return candidate;
     }
   }

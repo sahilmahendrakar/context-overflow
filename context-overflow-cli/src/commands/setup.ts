@@ -4,6 +4,7 @@ import {
   outro,
   confirm,
   multiselect,
+  select,
   text,
   spinner,
   note,
@@ -24,8 +25,8 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { ApiClient } from "../client.js";
-import { readAuthFromDotContextOverflow, saveConfig } from "../config.js";
+import { readAuthFromDotContextOverflow, saveConfig, loadConfig } from "../config.js";
+import { obtainIdToken } from "../oauth.js";
 import {
   mergeProjectMcpConfig,
   mergePluginMcpConfig,
@@ -279,27 +280,88 @@ export const setupCommand = new Command("setup")
     const s = spinner();
 
     if (!auth) {
-      const agentName = await text({
-        message: "What would you like to name your agent?",
-        placeholder: "my-agent",
-        validate(value) {
-          if (value.length < 3) return "Name must be at least 3 characters.";
-          if (value.length > 30) return "Name must be at most 30 characters.";
-          if (!/^[a-zA-Z0-9-]+$/.test(value))
-            return "Only letters, numbers, and hyphens allowed.";
-        },
-      });
-      if (handleCancel(agentName)) return;
+      const effectiveApiUrl = apiUrl ?? loadConfig().apiUrl;
 
-      s.start("Registering agent...");
+      s.start("Opening browser for authentication...");
+      let idToken: string;
       try {
-        const client = new ApiClient(undefined, apiUrl);
-        const result = await client.post<{ username: string; token: string }>(
-          "/api/registration",
-          { username: agentName as string }
+        idToken = await obtainIdToken(effectiveApiUrl);
+        s.stop("Authenticated");
+      } catch (e) {
+        s.stop(pc.red(`Authentication failed: ${(e as Error).message}`), 1);
+        process.exit(1);
+      }
+
+      try {
+        s.start("Checking for existing agents...");
+        const agentsUrl = new URL("/api/agents", effectiveApiUrl);
+        const agentsRes = await fetch(agentsUrl.toString(), {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        const { agents = [] } = agentsRes.ok
+          ? ((await agentsRes.json()) as { agents: { id: string; username: string; token: string; createdAt: string }[] })
+          : { agents: [] as { id: string; username: string; token: string; createdAt: string }[] };
+        s.stop(
+          agents.length > 0
+            ? `Found ${agents.length} existing agent${agents.length === 1 ? "" : "s"}`
+            : "No existing agents found"
         );
-        auth = { token: result.token, username: result.username };
-        s.stop(`Registered as ${pc.bold(result.username)}`);
+
+        if (agents.length > 0) {
+          const action = await select({
+            message: "You have existing agents. What would you like to do?",
+            options: [
+              { value: "existing" as const, label: "Use an existing agent" },
+              { value: "new" as const, label: "Create a new agent" },
+            ],
+          });
+          if (handleCancel(action)) return;
+
+          if (action === "existing") {
+            const selected = await select({
+              message: "Select an agent",
+              options: agents.map((a) => ({
+                value: a,
+                label: a.username,
+              })),
+            });
+            if (handleCancel(selected)) return;
+            const agent = selected as { username: string; token: string };
+            auth = { token: agent.token, username: agent.username };
+          }
+        }
+
+        if (!auth) {
+          const agentName = await text({
+            message: "What would you like to name your agent?",
+            placeholder: "my-agent",
+            validate(value) {
+              if (value.length < 3) return "Name must be at least 3 characters.";
+              if (value.length > 30) return "Name must be at most 30 characters.";
+              if (!/^[a-zA-Z0-9-]+$/.test(value))
+                return "Only letters, numbers, and hyphens allowed.";
+            },
+          });
+          if (handleCancel(agentName)) return;
+
+          s.start("Registering agent...");
+          const regUrl = new URL("/api/registration", effectiveApiUrl);
+          const res = await fetch(regUrl.toString(), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify({ username: agentName as string }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body.error || `HTTP ${res.status}`);
+          }
+          const result = (await res.json()) as { username: string; token: string };
+          auth = { token: result.token, username: result.username };
+          s.stop(`Registered as ${pc.bold(result.username)}`);
+        }
       } catch (e) {
         s.stop(pc.red(`Registration failed: ${(e as Error).message}`), 1);
         process.exit(1);

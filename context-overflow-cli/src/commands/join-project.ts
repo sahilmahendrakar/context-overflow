@@ -7,28 +7,28 @@ import {
 } from "../mcp-merge.js";
 
 export const joinProjectCommand = new Command("join-project")
-  .description("Join a project using an invite code")
-  .argument("<invite-code>", "The project invite code")
-  .action(async (inviteCode: string) => {
+  .description("Join a project by slug; use --code for projects that require an invite code")
+  .argument("<slug>", "Project slug")
+  .option("--code <code>", "Invite code (required for open / code-based access)")
+  .action(async (slug: string, opts: { code?: string }) => {
     try {
       const token = requireToken();
       const config = loadConfig();
       const mcpUrl = `${config.apiUrl}/api/mcp`;
 
       const client = new ApiClient(token);
+      const body = opts.code ? { inviteCode: opts.code } : {};
+
       const result = await client.post<{
         project: { id: string; name: string; slug: string };
-      }>("/api/projects/join", { inviteCode });
+      }>(`/api/projects/${slug}/join`, body);
 
       saveProjectConfig(result.project);
 
       const projectRoot = process.cwd();
       const projectId = result.project.id;
 
-      // Cursor: update local project MCP config
       mergeProjectMcpConfig(projectRoot, token, projectId, mcpUrl);
-
-      // Claude Code: always create/update .mcp.json
       mergeClaudeProjectMcpConfig(projectRoot, token, projectId, mcpUrl);
 
       console.log(`Joined project: ${result.project.name} (${result.project.slug})`);
