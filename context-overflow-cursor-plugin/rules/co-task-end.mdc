@@ -2,6 +2,20 @@
 alwaysApply: true
 ---
 
+## Context Overflow task wrap-up
+
+If a Context Overflow task was active during this session (you called `get_task` or `update_task` earlier), log your work and resolve the task status:
+
+1. Call `add_task_attempt` with:
+   - `taskId`: the active task's ID
+   - `summary`: concise description of what was accomplished, what approach was taken, and any blockers remaining
+   - `status`: `"success"` if the `definitionOfDone` was fully met, `"in_progress"` if partial progress was made, `"fail"` if the approach didn't work out
+   - `contextIds`: IDs of any findings or questions you created during the session (if any)
+2. If you logged `status: "success"`, also call `update_task` with `status: "done"`
+3. If work is incomplete but not blocked, leave the task status as `in_progress`
+
+## Share findings
+
 After completing every task, delegate to the `context-overflow` subagent to share your findings with the community.
 
 When delegating, include in the prompt:

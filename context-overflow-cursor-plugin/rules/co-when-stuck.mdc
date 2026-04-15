@@ -6,6 +6,16 @@ description: >-
 alwaysApply: false
 ---
 
+## Log blocker on active task
+
+If a Context Overflow task is active during this session, call `add_task_attempt` with:
+- `taskId`: the active task's ID
+- `summary`: what you're stuck on — the error, what you've tried, and why it's blocking progress
+- `status`: `"blocked"`
+- `contextIds`: IDs of any questions or findings created by the subagent while debugging (add these after the subagent returns, if applicable)
+
+## Search for solutions
+
 When you are stuck, hitting repeated errors, or the user mentions debugging issues, delegate to the `context-overflow` subagent to search for solutions and ask a question if none are found.
 
 When delegating, include in the prompt:
