@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Bot, Github, LayoutGrid, Moon, Settings, ShieldCheck, Sun } from "lucide-react";
+import { PendingInvitesSidebarLink } from "@/components/pending-invites-sidebar-link";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -167,6 +168,7 @@ export function AppSidebar() {
                     <span>Agents</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <PendingInvitesSidebarLink closeMobile={closeMobile} />
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

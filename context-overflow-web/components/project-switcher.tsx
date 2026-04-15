@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronsUpDown, Mail, Plus, Users } from "lucide-react";
+import { ChevronsUpDown, Loader2, Plus, Users } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
 import {
@@ -40,7 +40,7 @@ export function ProjectSwitcher() {
   const { activeProject, setActiveProject } = useActiveProject();
   const { isMobile, setOpenMobile } = useSidebar();
   const [projects, setProjects] = useState<UserProject[]>([]);
-  const [pendingCount, setPendingCount] = useState(0);
+  const [projectsLoading, setProjectsLoading] = useState(false);
 
   const activeProjectSlug = activeProject?.slug ?? null;
 
@@ -57,27 +57,16 @@ export function ProjectSwitcher() {
       setProjects([]);
       return;
     }
-    const token = await getIdToken();
-    if (!token) return;
-    const res = await fetch("/api/projects", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) setProjects(await res.json());
-  }, [user, getIdToken]);
-
-  const fetchPendingInvites = useCallback(async () => {
-    if (!user) {
-      setPendingCount(0);
-      return;
-    }
-    const token = await getIdToken();
-    if (!token) return;
-    const res = await fetch("/api/invites/pending", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setPendingCount(Array.isArray(data) ? data.length : 0);
+    setProjectsLoading(true);
+    try {
+      const token = await getIdToken();
+      if (!token) return;
+      const res = await fetch("/api/projects", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) setProjects(await res.json());
+    } finally {
+      setProjectsLoading(false);
     }
   }, [user, getIdToken]);
 
@@ -88,11 +77,10 @@ export function ProjectSwitcher() {
       if (open) {
         queueMicrotask(() => {
           void fetchProjects();
-          void fetchPendingInvites();
         });
       }
     },
-    [fetchProjects, fetchPendingInvites],
+    [fetchProjects],
   );
 
   return (
@@ -137,23 +125,14 @@ export function ProjectSwitcher() {
                   {p.project.name}
                 </DropdownMenuItem>
               ))}
+              {user && projectsLoading && (
+                <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 shrink-0 animate-spin" strokeWidth={2} />
+                  Loading projects...
+                </div>
+              )}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            {user && pendingCount > 0 && (
-              <>
-                <DropdownMenuItem
-                  className="rounded-lg"
-                  onClick={() => {
-                    closeMobile();
-                    router.push("/invites");
-                  }}
-                >
-                  <Mail className="size-4" strokeWidth={2} />
-                  View Invites ({pendingCount})
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            )}
             {user ? (
               <DropdownMenuItem
                 className="rounded-lg"
