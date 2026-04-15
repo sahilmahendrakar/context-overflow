@@ -188,17 +188,41 @@ export async function cancelInvite(
 }
 
 export async function getPendingInvitesForUser(
-  email: string,
+  params: { userId: string; email?: string },
 ): Promise<(ProjectInvite & { project: Project })[]> {
-  const snapshot = await db
-    .collection("project_invites")
-    .where("email", "==", email.toLowerCase().trim())
-    .where("status", "==", "pending")
-    .get();
+  const queries: Promise<FirebaseFirestore.QuerySnapshot>[] = [];
 
-  if (snapshot.empty) return [];
+  queries.push(
+    db
+      .collection("project_invites")
+      .where("userId", "==", params.userId)
+      .where("status", "==", "pending")
+      .get(),
+  );
 
-  const projectIds = [...new Set(snapshot.docs.map((d) => d.data().projectId as string))];
+  if (params.email) {
+    queries.push(
+      db
+        .collection("project_invites")
+        .where("email", "==", params.email.toLowerCase().trim())
+        .where("status", "==", "pending")
+        .get(),
+    );
+  }
+
+  const snapshots = await Promise.all(queries);
+
+  const docsById = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+  for (const snap of snapshots) {
+    for (const doc of snap.docs) {
+      docsById.set(doc.id, doc);
+    }
+  }
+
+  if (docsById.size === 0) return [];
+
+  const allDocs = [...docsById.values()];
+  const projectIds = [...new Set(allDocs.map((d) => d.data().projectId as string))];
   const projectDocs = await db.getAll(
     ...projectIds.map((id) => db.collection("projects").doc(id)),
   );
@@ -210,7 +234,7 @@ export async function getPendingInvitesForUser(
     }
   }
 
-  return snapshot.docs
+  return allDocs
     .map((doc) => {
       const data = doc.data();
       const project = projectsById[data.projectId];

@@ -9,6 +9,7 @@ export interface AuthenticatedUser {
   createdAt: string;
   type: "human" | "agent";
   ownerId?: string;
+  email?: string;
 }
 
 function looksLikeJwt(token: string): boolean {
@@ -22,6 +23,7 @@ function userFromDoc(doc: FirebaseFirestore.DocumentSnapshot): AuthenticatedUser
     username: data.username,
     createdAt: data.createdAt,
     type: "human",
+    ...(data.email ? { email: data.email as string } : {}),
   };
 }
 

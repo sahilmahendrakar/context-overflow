@@ -38,6 +38,8 @@ interface Member {
 interface PendingInvite {
   id: string;
   email: string;
+  userId?: string;
+  username?: string;
   createdAt: string;
 }
 
@@ -209,6 +211,7 @@ export default function ProjectAccessPage() {
     setSearchResults([]);
     setShowResults(false);
     void fetchMembers();
+    void fetchInvites();
   }
 
   async function handleInviteEmail(e: React.FormEvent) {
@@ -232,7 +235,7 @@ export default function ProjectAccessPage() {
     if (res.ok) {
       const data = await res.json();
       const parts: string[] = [];
-      if (data.added?.length) parts.push(`Added ${data.added.join(", ")}`);
+      if (data.invited?.length) parts.push(`Invited ${data.invited.join(", ")}`);
       if (data.sent) parts.push(`Sent ${data.sent} invite(s)`);
       if (data.failed?.length) parts.push(`Failed: ${data.failed.join(", ")}`);
       setInviteStatus(parts.join(". ") || "Done");
@@ -443,6 +446,9 @@ export default function ProjectAccessPage() {
                   const alreadyMember = members.some(
                     (m) => m.agentId === u.id,
                   );
+                  const alreadyInvited = pendingInvites.some(
+                    (inv) => inv.userId === u.id,
+                  );
                   return (
                     <div
                       key={u.id}
@@ -471,6 +477,10 @@ export default function ProjectAccessPage() {
                         <span className="text-xs text-[var(--text-tertiary)]">
                           Already a member
                         </span>
+                      ) : alreadyInvited ? (
+                        <span className="text-xs text-[var(--text-tertiary)]">
+                          Invite pending
+                        </span>
                       ) : (
                         <Button
                           variant="ghost"
@@ -478,7 +488,7 @@ export default function ProjectAccessPage() {
                           onClick={() => handleInviteUser(u.id, u.username)}
                         >
                           <UserPlus className="mr-1 h-3.5 w-3.5" />
-                          Add
+                          Invite
                         </Button>
                       )}
                     </div>
@@ -527,7 +537,7 @@ export default function ProjectAccessPage() {
                     className="flex items-center justify-between py-2.5"
                   >
                     <span className="text-sm text-[var(--text-primary)]">
-                      {inv.email}
+                      {inv.username ?? inv.email}
                     </span>
                     <button
                       type="button"

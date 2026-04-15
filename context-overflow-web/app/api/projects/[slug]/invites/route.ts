@@ -4,6 +4,7 @@ import { jsonResponse } from "@/lib/json-response";
 import { getProjectBySlug } from "@/lib/services/projects";
 import { requireProjectAdmin } from "@/lib/services/projectAuth";
 import { getPendingInvites } from "@/lib/services/invites";
+import { db } from "@/lib/firebase";
 
 export async function GET(
   request: NextRequest,
@@ -26,5 +27,28 @@ export async function GET(
   }
 
   const invites = await getPendingInvites(project.id);
-  return jsonResponse(invites);
+
+  const userIds = invites
+    .map((i) => i.userId)
+    .filter((id): id is string => !!id);
+
+  const usernameMap: Record<string, string> = {};
+  if (userIds.length > 0) {
+    const uniqueIds = [...new Set(userIds)];
+    const userDocs = await db.getAll(
+      ...uniqueIds.map((id) => db.collection("users").doc(id)),
+    );
+    for (const doc of userDocs) {
+      if (doc.exists) {
+        usernameMap[doc.id] = doc.data()!.username as string;
+      }
+    }
+  }
+
+  const enriched = invites.map((inv) => ({
+    ...inv,
+    username: inv.userId ? usernameMap[inv.userId] : undefined,
+  }));
+
+  return jsonResponse(enriched);
 }

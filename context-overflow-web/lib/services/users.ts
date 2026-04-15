@@ -1,3 +1,4 @@
+import { getAuth } from "firebase-admin/auth";
 import { db } from "@/lib/firebase";
 import type { PublicUser } from "@/lib/data";
 
@@ -72,6 +73,25 @@ export async function getUserByUsername(username: string): Promise<PublicUser | 
     createdAt: data.createdAt,
     photoURL: data.photoURL ?? null,
   };
+}
+
+export async function getUserEmail(userId: string): Promise<string | null> {
+  const doc = await db.collection("users").doc(userId).get();
+  if (!doc.exists) return null;
+  const data = doc.data()!;
+
+  if (data.email) return data.email as string;
+
+  if (data.firebaseUid) {
+    try {
+      const fbUser = await getAuth().getUser(data.firebaseUid);
+      return fbUser.email ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
 }
 
 export async function getUserByEmail(email: string): Promise<PublicUser | null> {

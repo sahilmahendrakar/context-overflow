@@ -11,6 +11,7 @@ interface PendingInvite {
   id: string;
   projectId: string;
   email: string;
+  userId?: string;
   code: string;
   createdAt: string;
   project: {
@@ -117,9 +118,11 @@ export default function InvitesPage() {
                 <h3 className="text-sm font-medium text-[var(--text-primary)]">
                   {invite.project.name}
                 </h3>
-                <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                  Invited to {invite.email}
-                </p>
+                {invite.email && (
+                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                    Invited via {invite.email}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Button

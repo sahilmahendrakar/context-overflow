@@ -102,6 +102,7 @@ export interface ProjectInvite {
   id: string;
   projectId: string;
   email: string;
+  userId?: string;
   invitedBy: string;
   code: string;
   status: "pending" | "accepted" | "expired";

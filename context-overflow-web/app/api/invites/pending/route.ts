@@ -9,11 +9,9 @@ export async function GET(request: NextRequest) {
     return jsonResponse({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const email = (agent as { email?: string }).email;
-  if (!email) {
-    return jsonResponse([]);
-  }
-
-  const invites = await getPendingInvitesForUser(email);
+  const invites = await getPendingInvitesForUser({
+    userId: agent.id,
+    email: agent.email,
+  });
   return jsonResponse(invites);
 }

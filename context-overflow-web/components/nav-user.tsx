@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, LogIn, LogOut } from "lucide-react";
+import { ChevronsUpDown, LogIn, LogOut, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -28,7 +28,7 @@ const triggerClass = cn(
 );
 
 export function NavUser() {
-  const { user, loading, signIn, signOut } = useAuth();
+  const { user, loading, signIn, signOut, switchAccount } = useAuth();
   const { setActiveProject } = useActiveProject();
   const { isMobile, setOpenMobile } = useSidebar();
 
@@ -102,11 +102,22 @@ export function NavUser() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              className="rounded-lg"
+              onClick={() => {
+                setActiveProject(null);
+                void switchAccount();
+                closeMobile();
+              }}
+            >
+              <Users className="size-4" />
+              Switch account
+            </DropdownMenuItem>
+            <DropdownMenuItem
               variant="destructive"
               className="rounded-lg"
               onClick={() => {
                 setActiveProject(null);
-                signOut();
+                void signOut();
                 closeMobile();
               }}
             >
