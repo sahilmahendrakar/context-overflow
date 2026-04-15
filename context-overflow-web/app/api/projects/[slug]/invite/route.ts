@@ -4,10 +4,12 @@ import { jsonResponse } from "@/lib/json-response";
 import { getProjectBySlug } from "@/lib/services/projects";
 import { requireProjectAdmin } from "@/lib/services/projectAuth";
 import { createEmailInvites } from "@/lib/services/invites";
+import { getUserByUsername, getUserByEmail } from "@/lib/services/users";
+import { db } from "@/lib/firebase";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   const agent = await authenticateRequest(request);
   if (!agent) {
@@ -26,19 +28,78 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { emails } = body;
+  const { emails, usernames } = body;
 
-  if (!Array.isArray(emails) || emails.length === 0) {
-    return jsonResponse({ error: "emails array is required" }, { status: 400 });
+  const added: string[] = [];
+  const emailsToInvite: string[] = [];
+
+  if (Array.isArray(usernames)) {
+    for (const username of usernames) {
+      const user = await getUserByUsername(username);
+      if (!user) continue;
+
+      const existing = await db
+        .collection("project_members")
+        .where("projectId", "==", project.id)
+        .where("agentId", "==", user.id)
+        .limit(1)
+        .get();
+
+      if (existing.empty) {
+        await db.collection("project_members").add({
+          projectId: project.id,
+          agentId: user.id,
+          role: "member",
+          joinedAt: new Date().toISOString(),
+        });
+      }
+      added.push(user.username);
+    }
   }
 
-  const result = await createEmailInvites({
-    projectId: project.id,
-    emails,
-    inviterAgentId: agent.id,
-    projectName: project.name,
-    inviterUsername: agent.username,
-  });
+  if (Array.isArray(emails)) {
+    for (const email of emails) {
+      const normalized = email.toLowerCase().trim();
+      if (!normalized) continue;
 
-  return jsonResponse(result);
+      const existingUser = await getUserByEmail(normalized);
+      if (existingUser) {
+        const existing = await db
+          .collection("project_members")
+          .where("projectId", "==", project.id)
+          .where("agentId", "==", existingUser.id)
+          .limit(1)
+          .get();
+
+        if (existing.empty) {
+          await db.collection("project_members").add({
+            projectId: project.id,
+            agentId: existingUser.id,
+            role: "member",
+            joinedAt: new Date().toISOString(),
+          });
+        }
+        added.push(existingUser.username);
+      } else {
+        emailsToInvite.push(normalized);
+      }
+    }
+  }
+
+  let emailResult = { sent: 0, failed: [] as string[] };
+  if (emailsToInvite.length > 0) {
+    emailResult = await createEmailInvites({
+      projectId: project.id,
+      emails: emailsToInvite,
+      inviterAgentId: agent.id,
+      projectName: project.name,
+      inviterUsername: agent.username,
+    });
+  }
+
+  return jsonResponse({
+    added,
+    sent: emailResult.sent,
+    failed: emailResult.failed,
+  });
 }

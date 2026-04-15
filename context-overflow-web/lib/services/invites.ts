@@ -31,8 +31,8 @@ export async function createEmailInvites(params: {
     if (!normalizedEmail) continue;
 
     const existing = await db
-      .collection("group_invites")
-      .where("groupId", "==", projectId)
+      .collection("project_invites")
+      .where("projectId", "==", projectId)
       .where("email", "==", normalizedEmail)
       .where("status", "==", "pending")
       .limit(1)
@@ -58,8 +58,8 @@ export async function createEmailInvites(params: {
       });
     } else {
       code = generateInviteCode();
-      await db.collection("group_invites").add({
-        groupId: projectId,
+      await db.collection("project_invites").add({
+        projectId,
         email: normalizedEmail,
         invitedBy: inviterAgentId,
         code,
@@ -101,7 +101,7 @@ export async function getInviteByCode(
   code: string
 ): Promise<(ProjectInvite & { project: Project }) | null> {
   const snapshot = await db
-    .collection("group_invites")
+    .collection("project_invites")
     .where("code", "==", code)
     .where("status", "==", "pending")
     .limit(1)
@@ -112,7 +112,7 @@ export async function getInviteByCode(
   const doc = snapshot.docs[0];
   const data = doc.data();
 
-  const projectDoc = await db.collection("groups").doc(data.groupId).get();
+  const projectDoc = await db.collection("projects").doc(data.projectId).get();
   if (!projectDoc.exists) return null;
 
   return {
@@ -132,8 +132,8 @@ export async function acceptInvite(
   }
 
   const existing = await db
-    .collection("group_members")
-    .where("groupId", "==", invite.groupId)
+    .collection("project_members")
+    .where("projectId", "==", invite.projectId)
     .where("agentId", "==", agentId)
     .limit(1)
     .get();
@@ -141,19 +141,81 @@ export async function acceptInvite(
   const batch = db.batch();
 
   if (existing.empty) {
-    const memberRef = db.collection("group_members").doc();
+    const memberRef = db.collection("project_members").doc();
     batch.set(memberRef, {
-      groupId: invite.groupId,
+      projectId: invite.projectId,
       agentId,
       role: "member",
       joinedAt: new Date().toISOString(),
     });
   }
 
-  const inviteRef = db.collection("group_invites").doc(invite.id);
+  const inviteRef = db.collection("project_invites").doc(invite.id);
   batch.update(inviteRef, { status: "accepted" });
 
   await batch.commit();
 
   return { project: invite.project };
+}
+
+export async function getPendingInvites(
+  projectId: string,
+): Promise<ProjectInvite[]> {
+  const snapshot = await db
+    .collection("project_invites")
+    .where("projectId", "==", projectId)
+    .where("status", "==", "pending")
+    .get();
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as ProjectInvite[];
+}
+
+export async function cancelInvite(
+  inviteId: string,
+  projectId: string,
+): Promise<boolean> {
+  const doc = await db.collection("project_invites").doc(inviteId).get();
+  if (!doc.exists) return false;
+
+  const data = doc.data()!;
+  if (data.projectId !== projectId || data.status !== "pending") return false;
+
+  await doc.ref.delete();
+  return true;
+}
+
+export async function getPendingInvitesForUser(
+  email: string,
+): Promise<(ProjectInvite & { project: Project })[]> {
+  const snapshot = await db
+    .collection("project_invites")
+    .where("email", "==", email.toLowerCase().trim())
+    .where("status", "==", "pending")
+    .get();
+
+  if (snapshot.empty) return [];
+
+  const projectIds = [...new Set(snapshot.docs.map((d) => d.data().projectId as string))];
+  const projectDocs = await db.getAll(
+    ...projectIds.map((id) => db.collection("projects").doc(id)),
+  );
+
+  const projectsById: Record<string, Project> = {};
+  for (const doc of projectDocs) {
+    if (doc.exists) {
+      projectsById[doc.id] = { id: doc.id, ...doc.data() } as Project;
+    }
+  }
+
+  return snapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+      const project = projectsById[data.projectId];
+      if (!project) return null;
+      return { id: doc.id, ...data, project } as ProjectInvite & { project: Project };
+    })
+    .filter((i): i is ProjectInvite & { project: Project } => i !== null);
 }

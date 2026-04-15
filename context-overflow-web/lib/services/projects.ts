@@ -1,9 +1,18 @@
 import crypto from "crypto";
 import { db } from "@/lib/firebase";
-import type { Project, ProjectMember, PublicUser } from "@/lib/data";
+import type { Project, ProjectAccessMode, ProjectMember, PublicUser } from "@/lib/data";
 import { resolveAuthorIds } from "@/lib/user-from-doc";
 
 const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
+
+function projectFromDoc(doc: FirebaseFirestore.DocumentSnapshot): Project {
+  const data = doc.data()!;
+  return {
+    id: doc.id,
+    ...data,
+    accessMode: data.accessMode ?? "open",
+  } as Project;
+}
 
 function generateInviteCode(): string {
   return crypto.randomBytes(16).toString("hex");
@@ -22,7 +31,7 @@ export async function createProject(params: {
   }
 
   const existing = await db
-    .collection("groups")
+    .collection("projects")
     .where("slug", "==", slug)
     .limit(1)
     .get();
@@ -34,8 +43,8 @@ export async function createProject(params: {
   const now = new Date().toISOString();
   const inviteCode = generateInviteCode();
 
-  const projectRef = db.collection("groups").doc();
-  const memberRef = db.collection("group_members").doc();
+  const projectRef = db.collection("projects").doc();
+  const memberRef = db.collection("project_members").doc();
 
   const batch = db.batch();
 
@@ -45,12 +54,13 @@ export async function createProject(params: {
     description: params.description || "",
     createdBy: params.creatorAgentId,
     inviteCode,
+    accessMode: "open" as const,
     createdAt: now,
   };
 
   batch.set(projectRef, projectData);
   batch.set(memberRef, {
-    groupId: projectRef.id,
+    projectId: projectRef.id,
     agentId: params.creatorAgentId,
     role: "admin",
     joinedAt: now,
@@ -65,58 +75,54 @@ export async function createProject(params: {
 
 export async function getProjectBySlug(slug: string): Promise<Project | null> {
   const snapshot = await db
-    .collection("groups")
+    .collection("projects")
     .where("slug", "==", slug.toLowerCase())
     .limit(1)
     .get();
 
   if (snapshot.empty) return null;
-
-  const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() } as Project;
+  return projectFromDoc(snapshot.docs[0]);
 }
 
 export async function getProjectByInviteCode(inviteCode: string): Promise<Project | null> {
   const snapshot = await db
-    .collection("groups")
+    .collection("projects")
     .where("inviteCode", "==", inviteCode)
     .limit(1)
     .get();
 
   if (snapshot.empty) return null;
-
-  const doc = snapshot.docs[0];
-  return { id: doc.id, ...doc.data() } as Project;
+  return projectFromDoc(snapshot.docs[0]);
 }
 
 export async function listUserProjects(agentId: string): Promise<(ProjectMember & { project: Project })[]> {
   const memberships = await db
-    .collection("group_members")
+    .collection("project_members")
     .where("agentId", "==", agentId)
     .get();
 
   if (memberships.empty) return [];
 
-  const projectIds = memberships.docs.map((doc) => doc.data().groupId as string);
+  const projectIds = memberships.docs.map((doc) => doc.data().projectId as string);
   const projectDocs = await db.getAll(
-    ...projectIds.map((id) => db.collection("groups").doc(id))
+    ...projectIds.map((id) => db.collection("projects").doc(id))
   );
 
   const projects: Record<string, Project> = {};
   for (const doc of projectDocs) {
     if (doc.exists) {
-      projects[doc.id] = { id: doc.id, ...doc.data() } as Project;
+      projects[doc.id] = projectFromDoc(doc);
     }
   }
 
   return memberships.docs
     .map((doc) => {
       const data = doc.data();
-      const project = projects[data.groupId];
+      const project = projects[data.projectId];
       if (!project) return null;
       return {
         id: doc.id,
-        groupId: data.groupId,
+        projectId: data.projectId,
         agentId: data.agentId,
         role: data.role,
         joinedAt: data.joinedAt,
@@ -135,9 +141,13 @@ export async function joinProject(
     return { error: "Invalid invite code." };
   }
 
+  if (project.accessMode === "invite-only") {
+    return { error: "This project is invite-only. Ask a project admin to invite your account, then join with: cxo join-project " + project.slug };
+  }
+
   const existing = await db
-    .collection("group_members")
-    .where("groupId", "==", project.id)
+    .collection("project_members")
+    .where("projectId", "==", project.id)
     .where("agentId", "==", agentId)
     .limit(1)
     .get();
@@ -146,8 +156,8 @@ export async function joinProject(
     return { project };
   }
 
-  await db.collection("group_members").add({
-    groupId: project.id,
+  await db.collection("project_members").add({
+    projectId: project.id,
     agentId,
     role: "member",
     joinedAt: new Date().toISOString(),
@@ -158,7 +168,7 @@ export async function joinProject(
 
 export async function regenerateInviteCode(projectId: string): Promise<string> {
   const newCode = generateInviteCode();
-  await db.collection("groups").doc(projectId).update({ inviteCode: newCode });
+  await db.collection("projects").doc(projectId).update({ inviteCode: newCode });
   return newCode;
 }
 
@@ -166,8 +176,8 @@ export async function getMembers(
   projectId: string
 ): Promise<(ProjectMember & { agent: PublicUser | null })[]> {
   const snapshot = await db
-    .collection("group_members")
-    .where("groupId", "==", projectId)
+    .collection("project_members")
+    .where("projectId", "==", projectId)
     .get();
 
   if (snapshot.empty) return [];
@@ -179,7 +189,7 @@ export async function getMembers(
     const data = doc.data();
     return {
       id: doc.id,
-      groupId: data.groupId,
+      projectId: data.projectId,
       agentId: data.agentId,
       role: data.role,
       joinedAt: data.joinedAt,
@@ -193,8 +203,8 @@ export async function removeMember(
   agentId: string
 ): Promise<boolean> {
   const snapshot = await db
-    .collection("group_members")
-    .where("groupId", "==", projectId)
+    .collection("project_members")
+    .where("projectId", "==", projectId)
     .where("agentId", "==", agentId)
     .limit(1)
     .get();
@@ -227,7 +237,7 @@ async function deleteQueryInBatches(
 export async function deleteProject(projectId: string): Promise<void> {
   const postsSnapshot = await db
     .collection("posts")
-    .where("groupId", "==", projectId)
+    .where("projectId", "==", projectId)
     .get();
 
   const postIds = postsSnapshot.docs.map((doc) => doc.id);
@@ -257,21 +267,83 @@ export async function deleteProject(projectId: string): Promise<void> {
 
   if (postIds.length > 0) {
     await deleteQueryInBatches(
-      db.collection("posts").where("groupId", "==", projectId)
+      db.collection("posts").where("projectId", "==", projectId)
     );
   }
 
   await deleteQueryInBatches(
-    db.collection("search_index").where("groupId", "==", projectId)
+    db.collection("search_index").where("projectId", "==", projectId)
   );
 
   await deleteQueryInBatches(
-    db.collection("group_members").where("groupId", "==", projectId)
+    db.collection("project_members").where("projectId", "==", projectId)
   );
 
   await deleteQueryInBatches(
-    db.collection("group_invites").where("groupId", "==", projectId)
+    db.collection("project_invites").where("projectId", "==", projectId)
   );
 
-  await db.collection("groups").doc(projectId).delete();
+  await db.collection("projects").doc(projectId).delete();
+}
+
+export async function updateAccessMode(
+  projectId: string,
+  mode: ProjectAccessMode,
+): Promise<void> {
+  await db.collection("projects").doc(projectId).update({ accessMode: mode });
+}
+
+export async function joinProjectBySlug(
+  agentId: string,
+  slug: string,
+): Promise<{ project: Project } | { error: string }> {
+  const project = await getProjectBySlug(slug);
+  if (!project) {
+    return { error: "Project not found." };
+  }
+
+  if (project.accessMode !== "invite-only") {
+    return { error: "This project uses invite codes. Use the invite code to join." };
+  }
+
+  const agentDoc = await db.collection("agents").doc(agentId).get();
+  if (!agentDoc.exists) {
+    return { error: "Agent not found." };
+  }
+
+  const ownerId = agentDoc.data()!.ownerId as string | undefined;
+  if (!ownerId) {
+    return { error: "Agent has no linked owner." };
+  }
+
+  const ownerMembership = await db
+    .collection("project_members")
+    .where("projectId", "==", project.id)
+    .where("agentId", "==", ownerId)
+    .limit(1)
+    .get();
+
+  if (ownerMembership.empty) {
+    return { error: "Your owner account does not have access to this project." };
+  }
+
+  const existing = await db
+    .collection("project_members")
+    .where("projectId", "==", project.id)
+    .where("agentId", "==", agentId)
+    .limit(1)
+    .get();
+
+  if (!existing.empty) {
+    return { project };
+  }
+
+  await db.collection("project_members").add({
+    projectId: project.id,
+    agentId,
+    role: "member",
+    joinedAt: new Date().toISOString(),
+  });
+
+  return { project };
 }

@@ -3,14 +3,14 @@ import { loadConfig, loadProjectConfig } from "./config.js";
 export class ApiClient {
   private baseUrl: string;
   private token?: string;
-  private groupId?: string;
+  private projectId?: string;
 
   constructor(token?: string, baseUrl?: string) {
     const config = loadConfig();
     const projectConfig = loadProjectConfig();
     this.baseUrl = baseUrl ?? config.apiUrl;
     this.token = token ?? config.token;
-    this.groupId = projectConfig?.projectId;
+    this.projectId = projectConfig?.projectId;
   }
 
   private headers(): Record<string, string> {
@@ -23,8 +23,8 @@ export class ApiClient {
 
   async get<T = unknown>(path: string, params?: Record<string, string>): Promise<T> {
     const url = new URL(path, this.baseUrl);
-    if (this.groupId) {
-      url.searchParams.set("groupId", this.groupId);
+    if (this.projectId) {
+      url.searchParams.set("projectId", this.projectId);
     }
     if (params) {
       for (const [k, v] of Object.entries(params)) {
@@ -42,8 +42,8 @@ export class ApiClient {
   async post<T = unknown>(path: string, body?: unknown): Promise<T> {
     const url = new URL(path, this.baseUrl);
     const merged =
-      this.groupId && body && typeof body === "object"
-        ? { groupId: this.groupId, ...body }
+      this.projectId && body && typeof body === "object"
+        ? { projectId: this.projectId, ...body }
         : body;
     const res = await fetch(url.toString(), {
       method: "POST",

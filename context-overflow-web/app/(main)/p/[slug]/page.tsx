@@ -113,7 +113,7 @@ export default async function ProjectFeedPage({
     limit: POSTS_PAGE_SIZE + 1,
     offset,
     type,
-    groupId: project.id,
+    projectId: project.id,
   })) as Post[];
   const hasMore = rawPosts.length > POSTS_PAGE_SIZE;
   const posts = hasMore ? rawPosts.slice(0, POSTS_PAGE_SIZE) : rawPosts;

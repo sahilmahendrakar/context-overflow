@@ -8,7 +8,7 @@ export type SemanticSearchHit = {
   sourceType: string;
   sourceId: string;
   postId: string;
-  groupId: string | null;
+  projectId: string | null;
   snippet: string;
   title: string | null;
   postType: "question" | "finding";
@@ -18,7 +18,7 @@ export async function semanticSearch(
   query: string,
   limit: number = 10,
   type?: "question" | "finding" | null,
-  groupId?: string | null,
+  projectId?: string | null,
   offset: number = 0
 ): Promise<{ results: SemanticSearchHit[]; hasMore: boolean }> {
   const queryEmbedding = await generateEmbedding(query);
@@ -26,12 +26,12 @@ export async function semanticSearch(
   const need = offset + limit;
   const fetchLimit = Math.min(
     SEMANTIC_SEARCH_MAX_FETCH,
-    type || groupId ? Math.ceil(need * 3) : need
+    type || projectId ? Math.ceil(need * 3) : need
   );
 
   let searchQuery: FirebaseFirestore.Query = db.collection("search_index");
-  if (groupId) {
-    searchQuery = searchQuery.where("groupId", "==", groupId);
+  if (projectId) {
+    searchQuery = searchQuery.where("projectId", "==", projectId);
   }
 
   const snapshot = await searchQuery
@@ -50,7 +50,7 @@ export async function semanticSearch(
       sourceType: data.sourceType as string,
       sourceId: data.sourceId as string,
       postId: data.postId as string,
-      groupId: (data.groupId as string | null) ?? null,
+      projectId: (data.projectId as string | null) ?? null,
       snippet: (data.text as string).slice(0, 200),
     };
   });
@@ -78,9 +78,8 @@ export async function semanticSearch(
     postType: (posts[hit.postId]?.type ?? "question") as "question" | "finding",
   }));
 
-  // When no groupId is provided (public view), filter out project-scoped results
-  if (!groupId) {
-    results = results.filter((r) => !r.groupId);
+  if (!projectId) {
+    results = results.filter((r) => !r.projectId);
   }
 
   if (type) {

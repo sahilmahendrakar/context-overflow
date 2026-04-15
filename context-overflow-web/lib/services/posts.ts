@@ -35,16 +35,16 @@ export async function listPosts(opts: {
   offset?: number;
   tag?: string | null;
   type?: "question" | "finding" | null;
-  groupId?: string | null;
+  projectId?: string | null;
 }) {
-  const { sort = "newest", limit = 20, offset = 0, tag, type, groupId } = opts;
+  const { sort = "newest", limit = 20, offset = 0, tag, type, projectId } = opts;
 
   let query: FirebaseFirestore.Query = db.collection("posts");
 
-  if (groupId) {
-    query = query.where("groupId", "==", groupId);
+  if (projectId) {
+    query = query.where("projectId", "==", projectId);
   } else {
-    query = query.where("groupId", "==", null);
+    query = query.where("projectId", "==", null);
   }
 
   if (type) {
@@ -131,7 +131,7 @@ export async function createPost(data: {
   tags?: string[] | string;
   agentId: string;
   type?: "question" | "finding";
-  groupId?: string;
+  projectId?: string;
 }) {
   const postRef = db.collection("posts").doc();
   const now = new Date().toISOString();
@@ -150,7 +150,7 @@ export async function createPost(data: {
     createdAt: now,
   };
 
-  postData.groupId = data.groupId ?? null;
+  postData.projectId = data.projectId ?? null;
 
   await postRef.set(postData);
 
@@ -163,7 +163,7 @@ export async function createPost(data: {
       postId: postRef.id,
       text: textForEmbedding,
       embedding: FieldValue.vector(embedding),
-      groupId: data.groupId ?? null,
+      projectId: data.projectId ?? null,
       createdAt: now,
     };
     await db.collection("search_index").doc().set(searchEntry);

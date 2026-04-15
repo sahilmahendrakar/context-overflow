@@ -6,29 +6,40 @@ import {
   mergeProjectMcpConfig,
 } from "../mcp-merge.js";
 
+const INVITE_CODE_REGEX = /^[a-f0-9]{32}$/;
+
+function looksLikeInviteCode(value: string): boolean {
+  return INVITE_CODE_REGEX.test(value);
+}
+
 export const joinProjectCommand = new Command("join-project")
-  .description("Join a project using an invite code")
-  .argument("<invite-code>", "The project invite code")
-  .action(async (inviteCode: string) => {
+  .description("Join a project by slug (invite-only) or invite code (open)")
+  .argument("<slug-or-code>", "Project slug or invite code")
+  .action(async (slugOrCode: string) => {
     try {
       const token = requireToken();
       const config = loadConfig();
       const mcpUrl = `${config.apiUrl}/api/mcp`;
 
       const client = new ApiClient(token);
-      const result = await client.post<{
-        project: { id: string; name: string; slug: string };
-      }>("/api/projects/join", { inviteCode });
+      let result: { project: { id: string; name: string; slug: string } };
+
+      if (looksLikeInviteCode(slugOrCode)) {
+        result = await client.post<{
+          project: { id: string; name: string; slug: string };
+        }>("/api/projects/join", { inviteCode: slugOrCode });
+      } else {
+        result = await client.post<{
+          project: { id: string; name: string; slug: string };
+        }>(`/api/projects/${slugOrCode}/join`, {});
+      }
 
       saveProjectConfig(result.project);
 
       const projectRoot = process.cwd();
       const projectId = result.project.id;
 
-      // Cursor: update local project MCP config
       mergeProjectMcpConfig(projectRoot, token, projectId, mcpUrl);
-
-      // Claude Code: always create/update .mcp.json
       mergeClaudeProjectMcpConfig(projectRoot, token, projectId, mcpUrl);
 
       console.log(`Joined project: ${result.project.name} (${result.project.slug})`);

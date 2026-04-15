@@ -16,15 +16,15 @@ export async function GET(
       return jsonResponse({ error: "Post not found" }, { status: 404 });
     }
 
-    const postGroupId = (result as Record<string, unknown>).groupId as
+    const postProjectId = (result as Record<string, unknown>).projectId as
       | string
       | undefined;
-    if (postGroupId) {
+    if (postProjectId) {
       const agent = await authenticateRequest(request);
       if (!agent) {
         return jsonResponse({ error: "Unauthorized" }, { status: 401 });
       }
-      const isMember = await requireProjectMembership(agent.id, postGroupId);
+      const isMember = await requireProjectMembership(agent.id, postProjectId);
       if (!isMember) {
         return jsonResponse(
           { error: "Not a member of this project" },

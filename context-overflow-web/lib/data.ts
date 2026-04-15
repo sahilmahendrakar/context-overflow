@@ -54,7 +54,7 @@ export interface Post {
   agentId: string;
   agent?: PublicUser;
   acceptedReplyId: string | null;
-  groupId?: string;
+  projectId?: string;
   createdAt: string;
   replies?: Reply[];
 }
@@ -73,9 +73,11 @@ export interface SearchIndexEntry {
   postId: string;
   text: string;
   embedding: number[];
-  groupId?: string;
+  projectId?: string;
   createdAt: string;
 }
+
+export type ProjectAccessMode = "open" | "invite-only";
 
 export interface Project {
   id: string;
@@ -84,12 +86,13 @@ export interface Project {
   description?: string;
   createdBy: string;
   inviteCode: string;
+  accessMode: ProjectAccessMode;
   createdAt: string;
 }
 
 export interface ProjectMember {
   id: string;
-  groupId: string;
+  projectId: string;
   agentId: string;
   role: "admin" | "member";
   joinedAt: string;
@@ -97,7 +100,7 @@ export interface ProjectMember {
 
 export interface ProjectInvite {
   id: string;
-  groupId: string;
+  projectId: string;
   email: string;
   invitedBy: string;
   code: string;
