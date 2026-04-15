@@ -176,7 +176,7 @@ export default function ProjectAccessPage() {
     const cmd =
       accessMode === "invite-only"
         ? `cxo join-project ${project.slug}`
-        : `cxo join-project ${inviteCode}`;
+        : `cxo join-project ${project.slug} --code ${inviteCode}`;
     navigator.clipboard.writeText(cmd);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -353,7 +353,9 @@ export default function ProjectAccessPage() {
             <div className="mt-3 flex items-center gap-2">
               <code className="rounded-lg bg-[var(--background)] px-3 py-1.5 font-mono text-xs text-[var(--text-primary)]">
                 cxo join-project{" "}
-                {accessMode === "invite-only" ? project.slug : inviteCode}
+                {accessMode === "invite-only"
+                  ? project.slug
+                  : `${project.slug} --code ${inviteCode}`}
               </code>
               <button
                 onClick={copyJoinCommand}
@@ -397,7 +399,9 @@ export default function ProjectAccessPage() {
             <div className="flex items-center gap-2">
               <code className="rounded-lg bg-[var(--background)] px-3 py-1.5 font-mono text-xs text-[var(--text-primary)]">
                 cxo join-project{" "}
-                {accessMode === "invite-only" ? project.slug : inviteCode}
+                {accessMode === "invite-only"
+                  ? project.slug
+                  : `${project.slug} --code ${inviteCode}`}
               </code>
               <button
                 onClick={copyJoinCommand}
@@ -449,17 +453,16 @@ export default function ProjectAccessPage() {
                   const alreadyInvited = pendingInvites.some(
                     (inv) => inv.userId === u.id,
                   );
-                  return (
-                    <div
-                      key={u.id}
-                      className="flex items-center justify-between px-4 py-2.5 hover:bg-[var(--surface-muted)]"
-                    >
-                      <div className="flex items-center gap-2">
+                  const canInvite = !alreadyMember && !alreadyInvited;
+
+                  const rowInner = (
+                    <>
+                      <div className="flex min-w-0 items-center gap-2">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface-muted)]">
                           {u.photoURL ? (
                             <img
                               src={u.photoURL}
-                              alt={u.username}
+                              alt=""
                               referrerPolicy="no-referrer"
                               className="h-full w-full object-cover"
                             />
@@ -469,28 +472,47 @@ export default function ProjectAccessPage() {
                             </span>
                           )}
                         </div>
-                        <span className="text-sm text-[var(--text-primary)]">
+                        <span className="truncate text-sm text-[var(--text-primary)]">
                           {u.username}
                         </span>
                       </div>
                       {alreadyMember ? (
-                        <span className="text-xs text-[var(--text-tertiary)]">
+                        <span className="shrink-0 text-xs text-[var(--text-tertiary)]">
                           Already a member
                         </span>
                       ) : alreadyInvited ? (
-                        <span className="text-xs text-[var(--text-tertiary)]">
+                        <span className="shrink-0 text-xs text-[var(--text-tertiary)]">
                           Invite pending
                         </span>
                       ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleInviteUser(u.id, u.username)}
-                        >
-                          <UserPlus className="mr-1 h-3.5 w-3.5" />
-                          Invite
-                        </Button>
+                        <UserPlus
+                          className="h-3.5 w-3.5 shrink-0 text-[var(--text-secondary)]"
+                          aria-hidden
+                        />
                       )}
+                    </>
+                  );
+
+                  if (canInvite) {
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        aria-label={`Invite ${u.username}`}
+                        className="flex w-full items-center justify-between px-4 py-2.5 text-left outline-none transition hover:bg-[var(--surface-muted)] focus-visible:bg-[var(--surface-muted)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-inset"
+                        onClick={() => handleInviteUser(u.id, u.username)}
+                      >
+                        {rowInner}
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between px-4 py-2.5"
+                    >
+                      {rowInner}
                     </div>
                   );
                 })}

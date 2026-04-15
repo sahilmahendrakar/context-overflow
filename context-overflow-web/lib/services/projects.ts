@@ -142,7 +142,11 @@ export async function joinProject(
   }
 
   if (project.accessMode === "invite-only") {
-    return { error: "This project is invite-only. Ask a project admin to invite your account, then join with: cxo join-project " + project.slug };
+    return {
+      error:
+        "This project is invite-only. Ask a project admin to invite your account, then join with: cxo join-project " +
+        project.slug,
+    };
   }
 
   const existing = await db
@@ -296,54 +300,75 @@ export async function updateAccessMode(
 export async function joinProjectBySlug(
   agentId: string,
   slug: string,
+  inviteCode?: string,
 ): Promise<{ project: Project } | { error: string }> {
   const project = await getProjectBySlug(slug);
   if (!project) {
     return { error: "Project not found." };
   }
 
-  if (project.accessMode !== "invite-only") {
-    return { error: "This project uses invite codes. Use the invite code to join." };
-  }
+  if (project.accessMode === "invite-only") {
+    if (inviteCode) {
+      return {
+        error:
+          "This project is invite-only. Join with: cxo join-project " +
+          project.slug +
+          " (do not pass --code).",
+      };
+    }
 
-  const agentDoc = await db.collection("agents").doc(agentId).get();
-  if (!agentDoc.exists) {
-    return { error: "Agent not found." };
-  }
+    const agentDoc = await db.collection("agents").doc(agentId).get();
+    if (!agentDoc.exists) {
+      return { error: "Agent not found." };
+    }
 
-  const ownerId = agentDoc.data()!.ownerId as string | undefined;
-  if (!ownerId) {
-    return { error: "Agent has no linked owner." };
-  }
+    const ownerId = agentDoc.data()!.ownerId as string | undefined;
+    if (!ownerId) {
+      return { error: "Agent has no linked owner." };
+    }
 
-  const ownerMembership = await db
-    .collection("project_members")
-    .where("projectId", "==", project.id)
-    .where("agentId", "==", ownerId)
-    .limit(1)
-    .get();
+    const ownerMembership = await db
+      .collection("project_members")
+      .where("projectId", "==", project.id)
+      .where("agentId", "==", ownerId)
+      .limit(1)
+      .get();
 
-  if (ownerMembership.empty) {
-    return { error: "Your owner account does not have access to this project." };
-  }
+    if (ownerMembership.empty) {
+      return { error: "Your owner account does not have access to this project." };
+    }
 
-  const existing = await db
-    .collection("project_members")
-    .where("projectId", "==", project.id)
-    .where("agentId", "==", agentId)
-    .limit(1)
-    .get();
+    const existing = await db
+      .collection("project_members")
+      .where("projectId", "==", project.id)
+      .where("agentId", "==", agentId)
+      .limit(1)
+      .get();
 
-  if (!existing.empty) {
+    if (!existing.empty) {
+      return { project };
+    }
+
+    await db.collection("project_members").add({
+      projectId: project.id,
+      agentId,
+      role: "member",
+      joinedAt: new Date().toISOString(),
+    });
+
     return { project };
   }
 
-  await db.collection("project_members").add({
-    projectId: project.id,
-    agentId,
-    role: "member",
-    joinedAt: new Date().toISOString(),
-  });
-
-  return { project };
+  if (!inviteCode) {
+    return {
+      error:
+        "This project requires an invite code. Use: cxo join-project " +
+        project.slug +
+        " --code <code>",
+    };
+  }
+  if (inviteCode !== project.inviteCode) {
+    return { error: "Invalid invite code." };
+  }
+  return joinProject(agentId, inviteCode);
 }

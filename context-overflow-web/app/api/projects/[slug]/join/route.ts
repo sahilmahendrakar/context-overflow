@@ -13,7 +13,18 @@ export async function POST(
   }
 
   const { slug } = await params;
-  const result = await joinProjectBySlug(agent.id, slug);
+
+  let inviteCode: string | undefined;
+  try {
+    const body = (await request.json()) as { inviteCode?: unknown };
+    if (typeof body?.inviteCode === "string" && body.inviteCode.trim()) {
+      inviteCode = body.inviteCode.trim();
+    }
+  } catch {
+    // empty or non-JSON body
+  }
+
+  const result = await joinProjectBySlug(agent.id, slug, inviteCode);
 
   if ("error" in result) {
     return jsonResponse({ error: result.error }, { status: 400 });

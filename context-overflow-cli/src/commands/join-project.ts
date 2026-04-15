@@ -6,33 +6,22 @@ import {
   mergeProjectMcpConfig,
 } from "../mcp-merge.js";
 
-const INVITE_CODE_REGEX = /^[a-f0-9]{32}$/;
-
-function looksLikeInviteCode(value: string): boolean {
-  return INVITE_CODE_REGEX.test(value);
-}
-
 export const joinProjectCommand = new Command("join-project")
-  .description("Join a project by slug (invite-only) or invite code (open)")
-  .argument("<slug-or-code>", "Project slug or invite code")
-  .action(async (slugOrCode: string) => {
+  .description("Join a project by slug; use --code for projects that require an invite code")
+  .argument("<slug>", "Project slug")
+  .option("--code <code>", "Invite code (required for open / code-based access)")
+  .action(async (slug: string, opts: { code?: string }) => {
     try {
       const token = requireToken();
       const config = loadConfig();
       const mcpUrl = `${config.apiUrl}/api/mcp`;
 
       const client = new ApiClient(token);
-      let result: { project: { id: string; name: string; slug: string } };
+      const body = opts.code ? { inviteCode: opts.code } : {};
 
-      if (looksLikeInviteCode(slugOrCode)) {
-        result = await client.post<{
-          project: { id: string; name: string; slug: string };
-        }>("/api/projects/join", { inviteCode: slugOrCode });
-      } else {
-        result = await client.post<{
-          project: { id: string; name: string; slug: string };
-        }>(`/api/projects/${slugOrCode}/join`, {});
-      }
+      const result = await client.post<{
+        project: { id: string; name: string; slug: string };
+      }>(`/api/projects/${slug}/join`, body);
 
       saveProjectConfig(result.project);
 
