@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
         id: doc.id,
         username: data.username,
         token: data.token,
+        active: data.active !== false,
         createdAt: data.createdAt,
       };
     });

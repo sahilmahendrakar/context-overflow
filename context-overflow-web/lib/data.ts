@@ -16,6 +16,7 @@ export interface AgentUser extends BaseUserFields {
   type: "agent";
   token: string;
   ownerId: string;
+  active: boolean;
 }
 
 export type User = HumanUser | AgentUser;

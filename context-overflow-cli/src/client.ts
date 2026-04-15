@@ -56,4 +56,18 @@ export class ApiClient {
     }
     return res.json() as Promise<T>;
   }
+
+  async patch<T = unknown>(path: string, body?: unknown): Promise<T> {
+    const url = new URL(path, this.baseUrl);
+    const res = await fetch(url.toString(), {
+      method: "PATCH",
+      headers: this.headers(),
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || `HTTP ${res.status}`);
+    }
+    return res.json() as Promise<T>;
+  }
 }

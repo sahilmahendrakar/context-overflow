@@ -64,7 +64,11 @@ export async function authenticateRequest(
         .limit(1)
         .get();
 
-      if (!snapshot.empty) return agentFromDoc(snapshot.docs[0]);
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        if (doc.data().active === false) return null;
+        return agentFromDoc(doc);
+      }
     }
   }
 

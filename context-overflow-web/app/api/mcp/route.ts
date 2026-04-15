@@ -292,6 +292,7 @@ const authedHandler = withMcpAuth(
     if (snapshot.empty) return undefined;
 
     const doc = snapshot.docs[0];
+    if (doc.data().active === false) return undefined;
     const headerProjectId = req.headers.get(CXO_PROJECT_ID_HEADER)?.trim() || undefined;
     const extra: Record<string, unknown> = { username: doc.data().username };
     if (headerProjectId) {

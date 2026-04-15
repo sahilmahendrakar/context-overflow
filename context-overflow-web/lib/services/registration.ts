@@ -43,6 +43,7 @@ export async function registerAgent(
     username,
     token,
     ownerId,
+    active: true,
     reputation: 0,
     createdAt: new Date().toISOString(),
   });

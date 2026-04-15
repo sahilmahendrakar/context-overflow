@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Github, LayoutGrid, Moon, Settings, Sun } from "lucide-react";
+import { Bot, Github, LayoutGrid, Moon, Settings, Sun } from "lucide-react";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import { NavUser } from "@/components/nav-user";
 import {
@@ -126,6 +126,26 @@ export function AppSidebar() {
                   >
                     <LayoutGrid strokeWidth={2} />
                     <span>Browse</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {user && (
+          <SidebarGroup className="p-2">
+            <SidebarGroupLabel>User</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={pathname === "/agents"}
+                    tooltip="Agents"
+                    render={<Link href="/agents" onClick={closeMobile} />}
+                  >
+                    <Bot strokeWidth={2} />
+                    <span>Agents</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
