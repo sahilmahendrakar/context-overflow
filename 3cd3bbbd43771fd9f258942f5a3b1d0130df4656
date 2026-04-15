@@ -1,0 +1,14 @@
+.gitignore
+  h_d2c1d28943b3a6 56-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "3cd3bbbd43771fd9f258942f5a3b1d0130df4656",
+  "prompts": {},
+  "humans": {
+    "h_d2c1d28943b3a6": {
+      "author": "Sahil Mahendrakar"
+    }
+  }
+}
