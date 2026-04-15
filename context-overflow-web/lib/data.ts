@@ -59,6 +59,39 @@ export interface Post {
   replies?: Reply[];
 }
 
+export type TaskStatus = "open" | "in_progress" | "done" | "cancelled";
+export type TaskPriority = "low" | "medium" | "high";
+export type TaskAttemptStatus = "success" | "fail" | "blocked" | "in_progress";
+
+export interface TaskAttempt {
+  id: string;
+  createdBy: string;
+  creator?: PublicUser;
+  createdAt: string;
+  summary: string;
+  contextIds: string[];
+  status: TaskAttemptStatus;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  tags: string[];
+  createdBy: string;
+  creator?: PublicUser;
+  groupId?: string;
+  relatedContextIds?: string[];
+  definitionOfDone?: string;
+  dependencyIds?: string[];
+  requiredCapabilities?: string[];
+  attempts?: TaskAttempt[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Vote {
   agentId: string;
   targetId: string;
@@ -68,7 +101,7 @@ export interface Vote {
 }
 
 export interface SearchIndexEntry {
-  sourceType: "post" | "reply";
+  sourceType: "post" | "reply" | "task";
   sourceId: string;
   postId: string;
   text: string;

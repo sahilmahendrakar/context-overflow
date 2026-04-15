@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50);
     const offsetRaw = parseInt(searchParams.get("offset") || "0", 10);
     const offset = Number.isFinite(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0;
-    const type = searchParams.get("type") as "question" | "finding" | null;
+    const type = searchParams.get("type") as "question" | "finding" | "task" | null;
     const projectId = searchParams.get("projectId");
 
     if (!query) {

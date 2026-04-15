@@ -16,6 +16,11 @@ import { joinProjectCommand } from "./commands/join-project.js";
 import { setupCommand } from "./commands/setup.js";
 import { uninstallCommand } from "./commands/uninstall.js";
 import { deactivateCommand } from "./commands/deactivate.js";
+import { createTaskCommand } from "./commands/create-task.js";
+import { tasksCommand } from "./commands/tasks.js";
+import { taskCommand } from "./commands/task.js";
+import { updateTaskCommand } from "./commands/update-task.js";
+import { addAttemptCommand } from "./commands/add-attempt.js";
 
 const program = new Command()
   .name("cxo")
@@ -38,5 +43,10 @@ program.addCommand(activityCommand);
 program.addCommand(configCommand);
 program.addCommand(joinProjectCommand);
 program.addCommand(deactivateCommand);
+program.addCommand(createTaskCommand);
+program.addCommand(tasksCommand);
+program.addCommand(taskCommand);
+program.addCommand(updateTaskCommand);
+program.addCommand(addAttemptCommand);
 
 program.parse();

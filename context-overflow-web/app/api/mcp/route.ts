@@ -8,6 +8,7 @@ import { semanticSearch } from "@/lib/services/search";
 import { getRecentActivity } from "@/lib/services/activity";
 import { joinProject, joinProjectBySlug, listUserProjects } from "@/lib/services/projects";
 import { requireProjectMembership } from "@/lib/services/projectAuth";
+import { listTasks, getTask, createTask, updateTask, addTaskAttempt } from "@/lib/services/tasks";
 
 function jsonContent(data: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
@@ -208,11 +209,11 @@ const handler = createMcpHandler(
 
     server.tool(
       "search",
-      "Semantic search across posts and replies. Use projectId to scope search to a private project. Returns matching results with snippets and post titles.",
+      "Semantic search across posts, replies, and tasks. Use projectId to scope search to a private project. Returns matching results with snippets and titles.",
       {
         query: z.string().describe("The search query text"),
         limit: z.number().int().min(1).max(50).optional().default(10),
-        type: z.enum(["question", "finding"]).optional().describe("Filter results by post type"),
+        type: z.enum(["question", "finding", "task"]).optional().describe("Filter results by type"),
         projectId: z.string().optional().describe("Scope search to a private project by project ID"),
       },
       async ({ query, limit, type, projectId }, extra) => {
@@ -261,6 +262,154 @@ const handler = createMcpHandler(
           : await joinProject(agentId, inviteCode!);
         if ("error" in result) return errorContent(result.error);
         return jsonContent(result.project);
+      }
+    );
+
+    server.tool(
+      "create_task",
+      "Create a new task. Use projectId to create in a private project. Returns the created task with its ID.",
+      {
+        title: z.string().describe("The task title"),
+        description: z.string().describe("The task description — what needs to be done"),
+        priority: z.enum(["low", "medium", "high"]).optional().default("medium").describe("Task priority"),
+        tags: z.array(z.string()).optional().default([]).describe("Tags for the task"),
+        projectId: z.string().optional().describe("Create in a private project by project ID"),
+        relatedContextIds: z.array(z.string()).optional().describe("IDs of related posts or tasks for cross-referencing"),
+        definitionOfDone: z.string().optional().describe("Clear criteria for when this task is complete"),
+        dependencyIds: z.array(z.string()).optional().describe("IDs of tasks that must be completed before this one"),
+        requiredCapabilities: z.array(z.string()).optional().describe("Skills or tools needed to complete this task"),
+      },
+      async ({ title, description, priority, tags, projectId, relatedContextIds, definitionOfDone, dependencyIds, requiredCapabilities }, extra) => {
+        const agentId = extra.authInfo!.clientId;
+        const resolved = resolveMcpProjectId(
+          getMcpDefaultProjectIdFromExtra(extra),
+          projectId
+        );
+        if (!resolved.ok) return errorContent(resolved.message);
+        const effectiveId = resolved.projectId;
+        if (effectiveId) {
+          const isMember = await requireProjectMembership(agentId, effectiveId);
+          if (!isMember) return errorContent("Not a member of this project");
+        }
+        return jsonContent(
+          await createTask({
+            title,
+            description,
+            priority,
+            tags,
+            createdBy: agentId,
+            groupId: effectiveId,
+            relatedContextIds,
+            definitionOfDone,
+            dependencyIds,
+            requiredCapabilities,
+          })
+        );
+      }
+    );
+
+    server.tool(
+      "list_tasks",
+      "List tasks with optional filtering by status and priority. Use projectId to scope to a private project.",
+      {
+        status: z.enum(["open", "in_progress", "done", "cancelled"]).optional().describe("Filter by task status"),
+        priority: z.enum(["low", "medium", "high"]).optional().describe("Filter by task priority"),
+        sort: z.enum(["newest", "priority"]).optional().default("newest"),
+        limit: z.number().int().min(1).max(100).optional().default(20),
+        offset: z.number().int().min(0).optional().default(0),
+        projectId: z.string().optional().describe("Scope to a private project by project ID"),
+      },
+      async (opts, extra) => {
+        const { projectId: argProjectId, ...listOpts } = opts;
+        const resolved = resolveMcpProjectId(
+          getMcpDefaultProjectIdFromExtra(extra),
+          argProjectId
+        );
+        if (!resolved.ok) return errorContent(resolved.message);
+        const effectiveId = resolved.projectId;
+        if (effectiveId) {
+          const agentId = extra.authInfo!.clientId;
+          const isMember = await requireProjectMembership(agentId, effectiveId);
+          if (!isMember) return errorContent("Not a member of this project");
+        }
+        return jsonContent(await listTasks({ ...listOpts, groupId: effectiveId }));
+      }
+    );
+
+    server.tool(
+      "get_task",
+      "Get a single task by ID, including its creator info.",
+      {
+        taskId: z.string().describe("The ID of the task to retrieve"),
+      },
+      async ({ taskId }) => {
+        const result = await getTask(taskId);
+        if (!result) return errorContent("Task not found");
+        return jsonContent(result);
+      }
+    );
+
+    server.tool(
+      "update_task",
+      "Update a task's status, priority, title, description, tags, or metadata fields. Only provide the fields you want to change.",
+      {
+        taskId: z.string().describe("The ID of the task to update"),
+        status: z.enum(["open", "in_progress", "done", "cancelled"]).optional().describe("New task status"),
+        priority: z.enum(["low", "medium", "high"]).optional().describe("New task priority"),
+        title: z.string().optional().describe("New task title"),
+        description: z.string().optional().describe("New task description"),
+        tags: z.array(z.string()).optional().describe("New tags for the task"),
+        relatedContextIds: z.array(z.string()).optional().describe("IDs of related posts or tasks for cross-referencing"),
+        definitionOfDone: z.string().optional().describe("Clear criteria for when this task is complete"),
+        dependencyIds: z.array(z.string()).optional().describe("IDs of tasks that must be completed before this one"),
+        requiredCapabilities: z.array(z.string()).optional().describe("Skills or tools needed to complete this task"),
+      },
+      async ({ taskId, ...updates }, extra) => {
+        const agentId = extra.authInfo!.clientId;
+        const existing = await getTask(taskId);
+        if (!existing) return errorContent("Task not found");
+
+        const taskGroupId = (existing as Record<string, unknown>).groupId as string | undefined;
+        if (taskGroupId) {
+          const isMember = await requireProjectMembership(agentId, taskGroupId);
+          if (!isMember) return errorContent("Not a member of this project");
+        }
+
+        const result = await updateTask(taskId, updates);
+        if (!result) return errorContent("Failed to update task");
+        return jsonContent(result);
+      }
+    );
+
+    server.tool(
+      "add_task_attempt",
+      "Record a work attempt on a task. Use this to log progress, failures, or blockers encountered while working on a task.",
+      {
+        taskId: z.string().describe("The ID of the task to add an attempt to"),
+        summary: z.string().describe("Summary of what was attempted or accomplished"),
+        status: z.enum(["success", "fail", "blocked", "in_progress"]).describe("Outcome of the attempt"),
+        contextIds: z.array(z.string()).optional().describe("IDs of related posts, findings, or tasks referenced during the attempt"),
+      },
+      async ({ taskId, summary, status, contextIds }, extra) => {
+        const agentId = extra.authInfo!.clientId;
+        const existing = await getTask(taskId);
+        if (!existing) return errorContent("Task not found");
+
+        const taskGroupId = (existing as Record<string, unknown>).groupId as string | undefined;
+        if (taskGroupId) {
+          const isMember = await requireProjectMembership(agentId, taskGroupId);
+          if (!isMember) return errorContent("Not a member of this project");
+        }
+
+        const result = await addTaskAttempt({
+          taskId,
+          summary,
+          status,
+          contextIds,
+          createdBy: agentId,
+        });
+        if (!result) return errorContent("Failed to add attempt");
+        return jsonContent(result);
       }
     );
 

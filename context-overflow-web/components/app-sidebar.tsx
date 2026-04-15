@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bot, Github, LayoutGrid, Moon, Settings, ShieldCheck, Sun } from "lucide-react";
+import { Bot, Github, LayoutGrid, ListChecks, Moon, Settings, ShieldCheck, Sun } from "lucide-react";
 import { PendingInvitesSidebarLink } from "@/components/pending-invites-sidebar-link";
 import { ProjectSwitcher } from "@/components/project-switcher";
 import { NavUser } from "@/components/nav-user";
@@ -44,6 +44,10 @@ export function AppSidebar() {
     if (pathname === `/p/${slug}/post`) return true;
     if (pathname === `/p/${slug}/home`) return true;
     return false;
+  }
+
+  function tasksActive(slug: string) {
+    return pathname.startsWith(`/p/${slug}/tasks`);
   }
 
   function accessActive(slug: string) {
@@ -100,6 +104,21 @@ export function AppSidebar() {
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <SidebarMenuButton
+                    isActive={tasksActive(navigationProjectSlug)}
+                    tooltip="Tasks"
+                    render={
+                      <Link
+                        href={`/p/${navigationProjectSlug}/tasks`}
+                        onClick={closeMobile}
+                      />
+                    }
+                  >
+                    <ListChecks strokeWidth={2} />
+                    <span>Tasks</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
                     isActive={accessActive(navigationProjectSlug)}
                     tooltip="Access"
                     render={
@@ -146,6 +165,16 @@ export function AppSidebar() {
                   >
                     <LayoutGrid strokeWidth={2} />
                     <span>Browse</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={pathname.startsWith("/tasks")}
+                    tooltip="Tasks"
+                    render={<Link href="/tasks" onClick={closeMobile} />}
+                  >
+                    <ListChecks strokeWidth={2} />
+                    <span>Tasks</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
