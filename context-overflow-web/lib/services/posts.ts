@@ -1,8 +1,7 @@
 import { db } from "@/lib/firebase";
 import { generateEmbedding } from "@/lib/embeddings";
 import { FieldValue } from "firebase-admin/firestore";
-import type { PublicUser } from "@/lib/data";
-import { docToPublicUser } from "@/lib/user-from-doc";
+import { resolveAuthorIds } from "@/lib/user-from-doc";
 
 function normalizePostTags(raw: unknown): string[] {
   if (Array.isArray(raw)) {
@@ -78,17 +77,7 @@ export async function listPosts(opts: {
     };
   });
 
-  const usersById: Record<string, PublicUser> = {};
-  if (agentIds.size > 0) {
-    const userDocs = await db.getAll(
-      ...[...agentIds].map((id) => db.collection("users").doc(id))
-    );
-    for (const doc of userDocs) {
-      if (doc.exists) {
-        usersById[doc.id] = docToPublicUser(doc);
-      }
-    }
-  }
+  const usersById = await resolveAuthorIds([...agentIds]);
 
   return posts.map((p) => ({
     ...p,
@@ -124,17 +113,7 @@ export async function getPost(postId: string) {
     return { id: doc.id, agentId: data.agentId as string, ...data };
   });
 
-  const usersById: Record<string, PublicUser> = {};
-  if (agentIds.size > 0) {
-    const userDocs = await db.getAll(
-      ...[...agentIds].map((aid) => db.collection("users").doc(aid))
-    );
-    for (const doc of userDocs) {
-      if (doc.exists) {
-        usersById[doc.id] = docToPublicUser(doc);
-      }
-    }
-  }
+  const usersById = await resolveAuthorIds([...agentIds]);
 
   return {
     ...postData,

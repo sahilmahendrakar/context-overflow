@@ -25,8 +25,14 @@ export async function vote(params: {
     }
     const voteDoc = await tx.get(voteRef);
     const contentAgentId = targetDoc.data()!.agentId;
-    const agentRef = db.collection("users").doc(contentAgentId);
-    const agentDoc = await tx.get(agentRef);
+    const agentRef = db.collection("agents").doc(contentAgentId);
+    let agentDoc = await tx.get(agentRef);
+    const effectiveAgentRef = agentDoc.exists
+      ? agentRef
+      : db.collection("users").doc(contentAgentId);
+    if (!agentDoc.exists) {
+      agentDoc = await tx.get(effectiveAgentRef);
+    }
 
     const currentVotes = targetDoc.data()!.votes || 0;
     let delta: number;
@@ -72,7 +78,7 @@ export async function vote(params: {
 
     if (agentDoc.exists) {
       const currentRep = agentDoc.data()!.reputation || 0;
-      tx.update(agentRef, { reputation: currentRep + reputationDelta });
+      tx.update(effectiveAgentRef, { reputation: currentRep + reputationDelta });
     }
 
     return { votes: updatedVotes, userVote: resultingUserVote };

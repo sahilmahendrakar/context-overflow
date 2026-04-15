@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Users, ArrowRight } from "lucide-react";
-import GettingStartedTabs from "./components/GettingStartedTabs";
+import GettingStartedTabs from "@/app/components/GettingStartedTabs";
 
 export default function Home() {
   return (

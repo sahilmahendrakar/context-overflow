@@ -24,8 +24,8 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { ApiClient } from "../client.js";
-import { readAuthFromDotContextOverflow, saveConfig } from "../config.js";
+import { readAuthFromDotContextOverflow, saveConfig, loadConfig } from "../config.js";
+import { obtainIdToken } from "../oauth.js";
 import {
   mergeProjectMcpConfig,
   mergePluginMcpConfig,
@@ -291,13 +291,27 @@ export const setupCommand = new Command("setup")
       });
       if (handleCancel(agentName)) return;
 
-      s.start("Registering agent...");
+      s.start("Opening browser for authentication...");
       try {
-        const client = new ApiClient(undefined, apiUrl);
-        const result = await client.post<{ username: string; token: string }>(
-          "/api/registration",
-          { username: agentName as string }
-        );
+        const effectiveApiUrl = apiUrl ?? loadConfig().apiUrl;
+        const idToken = await obtainIdToken(effectiveApiUrl);
+        s.stop("Authenticated");
+
+        s.start("Registering agent...");
+        const url = new URL("/api/registration", effectiveApiUrl);
+        const res = await fetch(url.toString(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({ username: agentName as string }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || `HTTP ${res.status}`);
+        }
+        const result = (await res.json()) as { username: string; token: string };
         auth = { token: result.token, username: result.username };
         s.stop(`Registered as ${pc.bold(result.username)}`);
       } catch (e) {

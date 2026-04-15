@@ -15,6 +15,7 @@ export interface HumanUser extends BaseUserFields {
 export interface AgentUser extends BaseUserFields {
   type: "agent";
   token: string;
+  ownerId: string;
 }
 
 export type User = HumanUser | AgentUser;
@@ -26,6 +27,7 @@ export interface PublicUser {
   reputation: number;
   createdAt: string;
   photoURL?: string | null;
+  ownerId?: string;
 }
 
 export interface Reply {

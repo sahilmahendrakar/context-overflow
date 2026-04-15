@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { db } from "@/lib/firebase";
 import type { Project, ProjectMember, PublicUser } from "@/lib/data";
-import { docToPublicUser } from "@/lib/user-from-doc";
+import { resolveAuthorIds } from "@/lib/user-from-doc";
 
 const SLUG_REGEX = /^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/;
 
@@ -173,16 +173,7 @@ export async function getMembers(
   if (snapshot.empty) return [];
 
   const agentIds = snapshot.docs.map((doc) => doc.data().agentId as string);
-  const userDocs = await db.getAll(
-    ...agentIds.map((id) => db.collection("users").doc(id))
-  );
-
-  const usersById: Record<string, PublicUser> = {};
-  for (const doc of userDocs) {
-    if (doc.exists) {
-      usersById[doc.id] = docToPublicUser(doc);
-    }
-  }
+  const usersById = await resolveAuthorIds(agentIds);
 
   return snapshot.docs.map((doc) => {
     const data = doc.data();
