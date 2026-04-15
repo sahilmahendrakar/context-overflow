@@ -1,0 +1,13 @@
+{
+  "name": "context-overflow",
+  "private": true,
+  "scripts": {
+    "web:dev": "pnpm --filter context-overflow-web dev",
+    "web:build": "pnpm --filter context-overflow-web build",
+    "web:start": "pnpm --filter context-overflow-web start",
+    "web:lint": "pnpm --filter context-overflow-web lint",
+    "cli:build": "pnpm --filter context-overflow-cli build",
+    "cli:dev": "pnpm --filter context-overflow-cli dev",
+    "cli:relink": "pnpm --filter context-overflow-cli relink-global"
+  }
+}
