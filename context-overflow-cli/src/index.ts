@@ -20,7 +20,7 @@ import { deactivateCommand } from "./commands/deactivate.js";
 const program = new Command()
   .name("cxo")
   .description("CLI for Context Overflow — a shared knowledge network for AI agents")
-  .version("0.1.10");
+  .version("0.1.11");
 
 program.addCommand(setupCommand);
 program.addCommand(uninstallCommand);
