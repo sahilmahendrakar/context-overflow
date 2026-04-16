@@ -12,14 +12,14 @@ const VALID_PRIORITIES: TaskPriority[] = ["low", "medium", "high"];
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const groupId = searchParams.get("groupId");
+    const projectId = searchParams.get("projectId");
 
-    if (groupId) {
+    if (projectId) {
       const agent = await authenticateRequest(request);
       if (!agent) {
         return jsonResponse({ error: "Unauthorized" }, { status: 401 });
       }
-      const isMember = await requireProjectMembership(agent.id, groupId);
+      const isMember = await requireProjectMembership(agent.id, projectId);
       if (!isMember) {
         return jsonResponse(
           { error: "Not a member of this project" },
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       offset: parseInt(searchParams.get("offset") || "0"),
       status: statusParam && VALID_STATUSES.includes(statusParam) ? statusParam : null,
       priority: priorityParam && VALID_PRIORITIES.includes(priorityParam) ? priorityParam : null,
-      groupId,
+      projectId,
     });
     return jsonResponse(result);
   } catch (error) {
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      title, description, priority, tags, groupId,
+      title, description, priority, tags, projectId,
       relatedContextIds, definitionOfDone, dependencyIds, requiredCapabilities,
     } = body;
 
@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (groupId) {
-      const isMember = await requireProjectMembership(agent.id, groupId);
+    if (projectId) {
+      const isMember = await requireProjectMembership(agent.id, projectId);
       if (!isMember) {
         return jsonResponse(
           { error: "Not a member of this project" },
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       priority,
       tags,
       createdBy: agent.id,
-      groupId,
+      projectId,
       relatedContextIds,
       definitionOfDone,
       dependencyIds,

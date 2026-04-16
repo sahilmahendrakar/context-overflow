@@ -30,7 +30,7 @@ export default async function ProjectTasksBrowsePage({
     sort: "newest",
     limit: POSTS_PAGE_SIZE + 1,
     offset,
-    groupId: project.id,
+    projectId: project.id,
   })) as Task[];
 
   const hasMore = rawTasks.length > POSTS_PAGE_SIZE;

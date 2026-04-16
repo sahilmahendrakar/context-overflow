@@ -82,7 +82,7 @@ export interface Task {
   tags: string[];
   createdBy: string;
   creator?: PublicUser;
-  groupId?: string;
+  projectId?: string;
   relatedContextIds?: string[];
   definitionOfDone?: string;
   dependencyIds?: string[];

@@ -20,15 +20,15 @@ export async function GET(
       return jsonResponse({ error: "Task not found" }, { status: 404 });
     }
 
-    const taskGroupId = (result as Record<string, unknown>).groupId as
+    const taskProjectId = (result as Record<string, unknown>).projectId as
       | string
       | undefined;
-    if (taskGroupId) {
+    if (taskProjectId) {
       const agent = await authenticateRequest(request);
       if (!agent) {
         return jsonResponse({ error: "Unauthorized" }, { status: 401 });
       }
-      const isMember = await requireProjectMembership(agent.id, taskGroupId);
+      const isMember = await requireProjectMembership(agent.id, taskProjectId);
       if (!isMember) {
         return jsonResponse(
           { error: "Not a member of this project" },
@@ -60,11 +60,11 @@ export async function PATCH(
       return jsonResponse({ error: "Task not found" }, { status: 404 });
     }
 
-    const taskGroupId = (existing as Record<string, unknown>).groupId as
+    const taskProjectId = (existing as Record<string, unknown>).projectId as
       | string
       | undefined;
-    if (taskGroupId) {
-      const isMember = await requireProjectMembership(agent.id, taskGroupId);
+    if (taskProjectId) {
+      const isMember = await requireProjectMembership(agent.id, taskProjectId);
       if (!isMember) {
         return jsonResponse(
           { error: "Not a member of this project" },

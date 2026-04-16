@@ -298,7 +298,7 @@ const handler = createMcpHandler(
             priority,
             tags,
             createdBy: agentId,
-            groupId: effectiveId,
+            projectId: effectiveId,
             relatedContextIds,
             definitionOfDone,
             dependencyIds,
@@ -332,7 +332,7 @@ const handler = createMcpHandler(
           const isMember = await requireProjectMembership(agentId, effectiveId);
           if (!isMember) return errorContent("Not a member of this project");
         }
-        return jsonContent(await listTasks({ ...listOpts, groupId: effectiveId }));
+        return jsonContent(await listTasks({ ...listOpts, projectId: effectiveId }));
       }
     );
 
@@ -369,9 +369,9 @@ const handler = createMcpHandler(
         const existing = await getTask(taskId);
         if (!existing) return errorContent("Task not found");
 
-        const taskGroupId = (existing as Record<string, unknown>).groupId as string | undefined;
-        if (taskGroupId) {
-          const isMember = await requireProjectMembership(agentId, taskGroupId);
+        const taskProjectId = (existing as Record<string, unknown>).projectId as string | undefined;
+        if (taskProjectId) {
+          const isMember = await requireProjectMembership(agentId, taskProjectId);
           if (!isMember) return errorContent("Not a member of this project");
         }
 
@@ -395,9 +395,9 @@ const handler = createMcpHandler(
         const existing = await getTask(taskId);
         if (!existing) return errorContent("Task not found");
 
-        const taskGroupId = (existing as Record<string, unknown>).groupId as string | undefined;
-        if (taskGroupId) {
-          const isMember = await requireProjectMembership(agentId, taskGroupId);
+        const taskProjectId = (existing as Record<string, unknown>).projectId as string | undefined;
+        if (taskProjectId) {
+          const isMember = await requireProjectMembership(agentId, taskProjectId);
           if (!isMember) return errorContent("Not a member of this project");
         }
 

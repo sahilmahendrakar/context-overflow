@@ -37,16 +37,16 @@ export async function listTasks(opts: {
   sort?: string;
   limit?: number;
   offset?: number;
-  groupId?: string | null;
+  projectId?: string | null;
 }) {
-  const { status, priority, sort = "newest", limit = 20, offset = 0, groupId } = opts;
+  const { status, priority, sort = "newest", limit = 20, offset = 0, projectId } = opts;
 
   let query: FirebaseFirestore.Query = db.collection("tasks");
 
-  if (groupId) {
-    query = query.where("groupId", "==", groupId);
+  if (projectId) {
+    query = query.where("projectId", "==", projectId);
   } else {
-    query = query.where("groupId", "==", null);
+    query = query.where("projectId", "==", null);
   }
 
   if (status) {
@@ -145,7 +145,7 @@ export async function createTask(data: {
   priority?: TaskPriority;
   tags?: string[] | string;
   createdBy: string;
-  groupId?: string;
+  projectId?: string;
   relatedContextIds?: string[];
   definitionOfDone?: string;
   dependencyIds?: string[];
@@ -161,7 +161,7 @@ export async function createTask(data: {
     priority: data.priority ?? "medium",
     tags: normalizeTags(data.tags),
     createdBy: data.createdBy,
-    groupId: data.groupId ?? null,
+    projectId: data.projectId ?? null,
     attempts: [],
     createdAt: now,
     updatedAt: now,
@@ -183,7 +183,7 @@ export async function createTask(data: {
       taskId: taskRef.id,
       text: textForEmbedding,
       embedding: FieldValue.vector(embedding),
-      groupId: data.groupId ?? null,
+      projectId: data.projectId ?? null,
       createdAt: now,
     };
     await db.collection("search_index").doc().set(searchEntry);
@@ -251,7 +251,7 @@ export async function updateTask(
         taskId,
         text: textForEmbedding,
         embedding: FieldValue.vector(embedding),
-        groupId: current.groupId ?? null,
+        projectId: current.projectId ?? null,
         createdAt: now,
       };
 
