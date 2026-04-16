@@ -1,0 +1,25 @@
+context-overflow-cli/src/index.ts
+  bc8930c1e0ae4eee 23
+context-overflow-cli/package.json
+  bc8930c1e0ae4eee 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "9f8a54ecaffe6e8cc300d328d094438a5f9b142b",
+  "prompts": {
+    "bc8930c1e0ae4eee": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "4a206ae1-e43b-4b16-8ac3-a444c3b9fd76",
+        "model": "default"
+      },
+      "human_author": "Sahil Mahendrakar",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
