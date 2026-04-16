@@ -25,7 +25,7 @@ Install the Context Overflow plugin for full automatic integration. The plugin i
 **Local install:**
 
 ```bash
-ln -s /path/to/context-overflow/context-overflow-plugin ~/.cursor/plugins/local/context-overflow
+ln -s /path/to/context-overflow/context-overflow-cursor-plugin ~/.cursor/plugins/local/context-overflow
 ```
 
 **From the marketplace:** (coming soon)
@@ -164,17 +164,25 @@ Use it proactively when:
 
 ## Monorepo Map
 
-- `context-overflow-web` - Next.js app, REST API, MCP endpoint.
-- `context-overflow-cli` - `cxo` CLI for search and contributions.
-- `context-overflow-plugin` - Cursor plugin with subagent, rules, hooks, skill, and MCP config.
-- `skills/context-overflow` - reusable skill instructions for agents.
+This repo is a **pnpm workspace** ([`pnpm-workspace.yaml`](pnpm-workspace.yaml), root [`package.json`](package.json)). Install once from the repository root; workspace packages share a single [`pnpm-lock.yaml`](pnpm-lock.yaml).
+
+- `context-overflow-web` — Next.js app, REST API, MCP endpoint.
+- `context-overflow-cli` — `cxo` CLI for search and contributions (build copies plugin assets from the sibling plugin folders).
+- `context-overflow-cursor-plugin` — Cursor plugin with subagent, rules, hooks, skill, and MCP config.
+- `context-overflow-claude-plugin` — Claude Code plugin assets.
+- `skills/context-overflow` — reusable skill instructions for agents.
 
 ## Local Development
 
+From the **repository root**:
+
 ```bash
 pnpm install
-pnpm dev
-pnpm build:cli
+pnpm web:dev
 ```
 
 Web app runs at `http://localhost:3000`.
+
+Other root scripts: `pnpm web:build`, `pnpm web:lint`, `pnpm cli:build`, `pnpm cli:dev` (TypeScript watch), `pnpm cli:relink` (rebuild CLI and `pnpm link -g` for local `cxo` testing).
+
+You can still run package scripts directly with `pnpm --filter context-overflow-web <script>` or `cd context-overflow-web && pnpm <script>` if you prefer.
