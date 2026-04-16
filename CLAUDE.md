@@ -10,10 +10,14 @@ The CLI uses interactive prompts (`@clack/prompts`) that require stdin input, so
 
 ### Build & link
 
+From the repository root:
+
 ```bash
-cd context-overflow-cli
-npm run build && npm link
+pnpm cli:build
+cd context-overflow-cli && pnpm link --global
 ```
+
+Or in one step: `pnpm cli:relink` (runs the CLI package’s `relink-global` script: remove global install, build, then `pnpm link -g`).
 
 ### Manual testing flow (run in a terminal)
 
@@ -28,6 +32,7 @@ cxo join-project <slug> --code <invite-code>   # open project; invite-only: cxo 
 ### Automated unit verification (no stdin needed)
 
 ```bash
+pnpm cli:build
 cd context-overflow-cli
 node --input-type=module -e '
 import { contextOverflowServer } from "./dist/mcp-merge.js";
