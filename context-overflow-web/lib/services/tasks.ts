@@ -70,11 +70,13 @@ export async function listTasks(opts: {
   const userIds = new Set<string>();
   const tasks = snapshot.docs.map((doc) => {
     const data = doc.data();
-    userIds.add(data.createdBy as string);
+    const createdBy = data.createdBy as string;
+    userIds.add(createdBy);
     return {
       id: doc.id,
       ...data,
       tags: normalizeTags(data.tags),
+      createdBy,
     };
   });
 
@@ -92,7 +94,7 @@ export async function listTasks(opts: {
 
   return tasks.map((t) => ({
     ...t,
-    creator: usersById[t.createdBy as string] || null,
+    creator: usersById[t.createdBy] || null,
   }));
 }
 
