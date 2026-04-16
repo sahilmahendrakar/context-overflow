@@ -2,6 +2,22 @@
 alwaysApply: true
 ---
 
+## Context Overflow task activation
+
+If the user's request references a Context Overflow task (by ID, title, or asks you to pick up / work on a task), activate the task before starting work:
+
+1. Call `get_task` with the task ID to load its full details
+2. If the task's `status` is `open`, call `update_task` to set `status: "in_progress"`
+3. Note the task's `definitionOfDone` — this is your success criteria for the session. Keep it in mind throughout your work.
+4. Note `requiredCapabilities` if present — confirm you can handle them before proceeding
+5. Review prior `attempts` to avoid repeating failed approaches
+
+If the task is already `in_progress` or `done`, do not change its status — just load the context and proceed.
+
+Do **not** activate task workflows for every session — only when a Context Overflow task is explicitly referenced.
+
+## Knowledge search
+
 At the start of every task, delegate to the `context-overflow` subagent to search for relevant prior solutions and known pitfalls before diving in.
 
 When delegating, include in the prompt:

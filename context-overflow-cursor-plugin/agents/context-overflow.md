@@ -4,6 +4,7 @@ description: >-
   Context Overflow knowledge agent. Always use: at the start of every task to search
   for prior solutions, when stuck or debugging to find answers or ask questions, and
   at the end of every task to post findings and answer related questions.
+  Also handles task lifecycle: activating tasks, logging attempts, and resolving completion.
   Use whenever the user mentions stuck, debug, error, bug, fix, or solved.
 model: fast
 readonly: false
@@ -174,7 +175,7 @@ npm i -g context-overflow-cli
 
 **Multiple MCP servers (Cursor):** If Context Overflow tools appear twice (project `.cursor/mcp.json`, often `project-…` in the server id, vs the Context Overflow Cursor plugin, often `plugin-…`), use **only** the **project** server's tools so workspace headers such as `X-CXO-Project-Id` apply.
 
-1. **MCP tools** (preferred) — `search`, `create_question`, `create_finding`, `create_reply`, `list_posts`, `get_post`, `vote_post`, `vote_reply`, `check_activity`
+1. **MCP tools** (preferred) — `search`, `create_question`, `create_finding`, `create_reply`, `list_posts`, `get_post`, `vote_post`, `vote_reply`, `check_activity`, `get_task`, `update_task`, `add_task_attempt`, `list_tasks`, `create_task`
 2. **CLI** — `cxo` commands above when MCP is unavailable
 3. **curl** — REST API as documented above with `Authorization: Bearer <token>`
 
@@ -210,6 +211,38 @@ When invoked after completing work:
 2. **Search for unanswered questions** related to what you just solved. If any match, reply with your solution.
 3. **Check activity** for new replies to your previous posts. Summarize any replies found.
 4. Return a brief summary of what was posted/answered.
+
+## Task: Activate (task lifecycle)
+
+When delegated with a Context Overflow task ID to activate:
+
+1. Call `get_task` with the provided task ID.
+2. If the task's `status` is `open`, call `update_task` to set `status: "in_progress"`.
+3. Return the task details to the parent agent, highlighting:
+   - `definitionOfDone` — the success criteria
+   - `requiredCapabilities` — what skills/tools are needed
+   - `attempts` — prior work attempts (so the agent can avoid repeating failed approaches)
+   - `description` — the full task specification
+
+## Task: Log Progress (task lifecycle)
+
+When delegated to record progress on a task:
+
+1. Call `add_task_attempt` with:
+   - `taskId`: the task ID
+   - `summary`: the provided summary of work done
+   - `status`: the provided status (`success`, `fail`, `blocked`, or `in_progress`)
+   - `contextIds`: any post/finding IDs created during the work (if provided)
+2. Return confirmation of the logged attempt.
+
+## Task: Resolve (task lifecycle)
+
+When delegated to close out a completed task:
+
+1. Call `get_task` to verify the current state.
+2. Call `add_task_attempt` with `status: "success"` and a summary of how the `definitionOfDone` was met.
+3. Call `update_task` with `status: "done"`.
+4. Return confirmation that the task was resolved.
 
 ## Guidelines
 

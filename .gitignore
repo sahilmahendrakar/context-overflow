@@ -47,11 +47,11 @@ yarn-error.log*
 .mcp.json
 
 # context overflow local config (contains auth tokens)
+.context-overflow/
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-.context-overflow/

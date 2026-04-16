@@ -8,7 +8,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import { useProject } from "../ProjectContext";
 import { cn } from "@/lib/utils";
 
-type PostMode = "question" | "finding";
+type PostMode = "question" | "finding" | "task";
 
 export default function ProjectPostPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -17,6 +17,7 @@ export default function ProjectPostPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [tags, setTags] = useState("");
+  const [priority, setPriority] = useState<"low" | "medium" | "high">("medium");
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
   const { user, loading, getIdToken } = useAuth();
@@ -30,24 +31,46 @@ export default function ProjectPostPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          body: body.trim(),
-          type: mode,
-          projectId: project.id,
-          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-        }),
-      });
+      const parsedTags = tags.split(",").map((t) => t.trim()).filter(Boolean);
 
-      if (res.ok) {
-        const data = await res.json();
-        router.push(`/p/${slug}/posts/${data.postId}`);
+      if (mode === "task") {
+        const res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            title: title.trim(),
+            description: body.trim(),
+            priority,
+            tags: parsedTags,
+            projectId: project.id,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          router.push(`/p/${slug}/tasks/${data.taskId}`);
+        }
+      } else {
+        const res = await fetch("/api/posts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            title: title.trim(),
+            body: body.trim(),
+            type: mode,
+            projectId: project.id,
+            tags: parsedTags,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          router.push(`/p/${slug}/posts/${data.postId}`);
+        }
       }
     } finally {
       setSubmitting(false);
@@ -67,6 +90,23 @@ export default function ProjectPostPage() {
   }
 
   const isQuestion = mode === "question";
+  const isTask = mode === "task";
+
+  const modeToggle = (m: PostMode) => (
+    <button
+      key={m}
+      type="button"
+      onClick={() => setMode(m)}
+      className={cn(
+        "rounded-lg px-4 py-2 text-sm font-medium transition",
+        mode === m
+          ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
+          : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+      )}
+    >
+      {m === "question" ? "Ask a question" : m === "finding" ? "Share a finding" : "Create a task"}
+    </button>
+  );
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -74,37 +114,16 @@ export default function ProjectPostPage() {
         className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-1"
         role="group"
       >
-        <button
-          type="button"
-          onClick={() => setMode("question")}
-          className={cn(
-            "rounded-lg px-4 py-2 text-sm font-medium transition",
-            isQuestion
-              ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-          )}
-        >
-          Ask a question
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("finding")}
-          className={cn(
-            "rounded-lg px-4 py-2 text-sm font-medium transition",
-            !isQuestion
-              ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-          )}
-        >
-          Share a finding
-        </button>
+        {modeToggle("question")}
+        {modeToggle("finding")}
+        {modeToggle("task")}
       </div>
 
       <h1 className="mt-6 text-2xl font-semibold text-[var(--text-primary)]">
-        {isQuestion ? "Ask a Question" : "Share a Finding"}
+        {isQuestion ? "Ask a Question" : isTask ? "Create a Task" : "Share a Finding"}
       </h1>
       <p className="mt-1 text-sm text-[var(--text-secondary)]">
-        This post will be shared within your project only.
+        This {isTask ? "task" : "post"} will be shared within your project only.
       </p>
 
       <form onSubmit={handleSubmit} className="co-card mt-8 space-y-6 p-6 sm:p-7">
@@ -115,24 +134,40 @@ export default function ProjectPostPage() {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder={isQuestion ? "What's your question?" : "What did you discover?"}
+            placeholder={isQuestion ? "What's your question?" : isTask ? "What needs to be done?" : "What did you discover?"}
             className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-2.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)]"
           />
         </div>
 
         <div>
           <label htmlFor="body" className="block text-sm font-medium text-[var(--text-primary)]">
-            {isQuestion ? "Body" : "Details"}
+            {isQuestion ? "Body" : isTask ? "Description" : "Details"}
           </label>
           <textarea
             id="body"
             rows={10}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Describe in detail. Markdown is supported."
+            placeholder={isTask ? "Describe what needs to be done, acceptance criteria, and context." : "Describe in detail. Markdown is supported."}
             className="mt-2 w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)]"
           />
         </div>
+
+        {isTask && (
+          <div>
+            <label htmlFor="priority" className="block text-sm font-medium text-[var(--text-primary)]">Priority</label>
+            <select
+              id="priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as "low" | "medium" | "high")}
+              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-2.5 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)]"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        )}
 
         <div>
           <label htmlFor="tags" className="block text-sm font-medium text-[var(--text-primary)]">Tags</label>
@@ -154,7 +189,7 @@ export default function ProjectPostPage() {
             &larr; Back to project
           </Link>
           <Button type="submit" disabled={submitting || !title.trim() || !body.trim()}>
-            {submitting ? "Posting..." : isQuestion ? "Post Your Question" : "Post Your Finding"}
+            {submitting ? "Posting..." : isQuestion ? "Post Your Question" : isTask ? "Create Task" : "Post Your Finding"}
           </Button>
         </div>
       </form>
