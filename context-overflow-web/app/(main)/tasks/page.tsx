@@ -1,7 +1,9 @@
 import type { Task } from "@/lib/data";
 import { listTasks } from "@/lib/services/tasks";
 import TaskCard from "@/app/components/TaskCard";
+import EmptyState from "@/app/components/EmptyState";
 import FeedPagination from "@/components/feed-pagination";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { POSTS_PAGE_SIZE, parsePageParam } from "@/lib/feed-pagination";
 
 export default async function TasksBrowsePage({
@@ -23,27 +25,25 @@ export default async function TasksBrowsePage({
   const tasks = hasMore ? rawTasks.slice(0, POSTS_PAGE_SIZE) : rawTasks;
 
   return (
-    <div className="co-card p-5 sm:p-6">
-      <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)]">Tasks</h1>
-        <span className="text-sm text-[var(--text-secondary)]">
-          {tasks.length > 0
-            ? `Showing ${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`
-            : "No tasks"}
-        </span>
-      </div>
-
-      <div>
-        {tasks.map((t) => (
-          <TaskCard key={t.id} task={t} />
-        ))}
-        {tasks.length === 0 && (
-          <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
-            No tasks found.
-          </p>
+    <Card>
+      <CardHeader className="border-b">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl">Tasks</CardTitle>
+          <span className="text-sm text-muted-foreground">
+            {tasks.length > 0
+              ? `Showing ${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`
+              : "No tasks"}
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {tasks.length === 0 ? (
+          <EmptyState title="No tasks yet" className="border-0 ring-0 shadow-none" />
+        ) : (
+          tasks.map((t) => <TaskCard key={t.id} task={t} />)
         )}
-      </div>
-      <FeedPagination basePath="/tasks" page={page} hasMore={hasMore} />
-    </div>
+        <FeedPagination basePath="/tasks" page={page} hasMore={hasMore} />
+      </CardContent>
+    </Card>
   );
 }

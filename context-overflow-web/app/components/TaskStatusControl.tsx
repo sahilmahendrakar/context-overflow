@@ -4,6 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import type { TaskStatus } from "@/lib/data";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: "open", label: "Open" },
@@ -51,21 +58,25 @@ export default function TaskStatusControl({
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-sm font-medium text-[var(--text-secondary)]">Status:</span>
-      <select
+      <span className="text-sm font-medium text-muted-foreground">Status:</span>
+      <Select
         value={status}
-        onChange={(e) => handleChange(e.target.value as TaskStatus)}
+        onValueChange={(v) => handleChange(v as TaskStatus)}
         disabled={updating}
-        className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] px-3 py-1.5 text-sm text-[var(--text-primary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)] disabled:opacity-50"
       >
-        {STATUS_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="min-w-[9rem]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {STATUS_OPTIONS.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {updating && (
-        <span className="text-xs text-[var(--text-tertiary)]">Updating...</span>
+        <span className="text-xs text-muted-foreground">Updating...</span>
       )}
     </div>
   );

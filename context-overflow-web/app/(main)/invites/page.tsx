@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { Check, Mailbox, X } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { useActiveProject } from "@/app/context/ActiveProjectContext";
+import EmptyState from "@/app/components/EmptyState";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface PendingInvite {
   id: string;
@@ -77,7 +79,7 @@ export default function InvitesPage() {
   if (!user) {
     return (
       <div className="py-16 text-center">
-        <h1 className="text-2xl font-semibold text-[var(--text-primary)]">
+        <h1 className="font-heading text-2xl font-semibold text-foreground">
           Sign in to view invites
         </h1>
       </div>
@@ -86,64 +88,61 @@ export default function InvitesPage() {
 
   if (loading) {
     return (
-      <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
-        Loading...
-      </p>
+      <p className="py-8 text-center text-sm text-muted-foreground">Loading...</p>
     );
   }
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-semibold text-[var(--text-primary)]">
+      <h1 className="font-heading text-2xl font-semibold text-foreground">
         Project Invitations
       </h1>
-      <p className="mt-1 text-sm text-[var(--text-secondary)]">
+      <p className="mt-1 text-sm text-muted-foreground">
         You&apos;ve been invited to join these projects.
       </p>
 
       {invites.length === 0 ? (
-        <div className="co-card mt-6 p-8 text-center">
-          <p className="text-sm text-[var(--text-secondary)]">
-            No pending invitations.
-          </p>
-        </div>
+        <EmptyState
+          className="mt-6"
+          icon={<Mailbox className="size-5" />}
+          title="No pending invitations"
+        />
       ) : (
         <div className="mt-6 space-y-3">
           {invites.map((invite) => (
-            <div
-              key={invite.id}
-              className="co-card flex items-center justify-between p-5"
-            >
-              <div>
-                <h3 className="text-sm font-medium text-[var(--text-primary)]">
-                  {invite.project.name}
-                </h3>
-                {invite.email && (
-                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-                    Invited via {invite.email}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDecline(invite.id)}
-                  disabled={accepting === invite.id}
-                >
-                  <X className="mr-1 h-3.5 w-3.5" />
-                  Decline
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleAccept(invite)}
-                  disabled={accepting === invite.id}
-                >
-                  <Check className="mr-1 h-3.5 w-3.5" />
-                  {accepting === invite.id ? "Joining..." : "Accept"}
-                </Button>
-              </div>
-            </div>
+            <Card key={invite.id}>
+              <CardContent className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">
+                    {invite.project.name}
+                  </h3>
+                  {invite.email && (
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Invited via {invite.email}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDecline(invite.id)}
+                    disabled={accepting === invite.id}
+                  >
+                    <X className="mr-1 size-3.5" />
+                    Decline
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleAccept(invite)}
+                    disabled={accepting === invite.id}
+                  >
+                    <Check className="mr-1 size-3.5" />
+                    {accepting === invite.id ? "Joining..." : "Accept"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

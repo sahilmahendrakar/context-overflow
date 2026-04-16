@@ -5,6 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "@/lib/firebase-client";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 type Status = "idle" | "signing-in" | "sending" | "success" | "error";
 
@@ -52,45 +59,39 @@ function CliAuthInner() {
   }, [status, port, handleAuth]);
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-card p-8 text-center shadow-sm">
-      {status === "idle" && (
-        <p className="text-sm text-muted-foreground">Preparing authentication…</p>
-      )}
-
-      {status === "signing-in" && (
-        <div className="space-y-3">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            Sign in with Google
-          </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Complete the sign-in popup to link your CLI to your account.
-          </p>
-        </div>
-      )}
-
-      {status === "sending" && (
-        <p className="text-sm text-muted-foreground">Sending credentials to your terminal…</p>
-      )}
-
-      {status === "success" && (
-        <div className="space-y-3">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            You&apos;re signed in
-          </h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            You can close this tab and return to your terminal.
-          </p>
-        </div>
-      )}
-
-      {status === "error" && (
-        <div className="space-y-5">
-          <div className="space-y-2">
-            <h1 className="text-xl font-semibold tracking-tight text-destructive sm:text-2xl">
+    <Card className="w-full max-w-md">
+      <CardHeader className="items-center text-center">
+        {status === "idle" && <CardTitle>Preparing authentication…</CardTitle>}
+        {status === "signing-in" && (
+          <>
+            <CardTitle>Sign in with Google</CardTitle>
+            <CardDescription>
+              Complete the sign-in popup to link your CLI to your account.
+            </CardDescription>
+          </>
+        )}
+        {status === "sending" && (
+          <CardTitle>Sending credentials to your terminal…</CardTitle>
+        )}
+        {status === "success" && (
+          <>
+            <CardTitle>You&apos;re signed in</CardTitle>
+            <CardDescription>
+              You can close this tab and return to your terminal.
+            </CardDescription>
+          </>
+        )}
+        {status === "error" && (
+          <>
+            <CardTitle className="text-destructive">
               Something went wrong
-            </h1>
-            <p className="text-sm text-muted-foreground leading-relaxed">{error}</p>
-          </div>
+            </CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </>
+        )}
+      </CardHeader>
+      {status === "error" && (
+        <CardContent className="flex justify-center">
           <Button
             type="button"
             onClick={() => {
@@ -100,17 +101,19 @@ function CliAuthInner() {
           >
             Try again
           </Button>
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }
 
 function CliAuthFallback() {
   return (
-    <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-card p-8 text-center shadow-sm">
-      <p className="text-sm text-muted-foreground">Loading…</p>
-    </div>
+    <Card className="w-full max-w-md">
+      <CardHeader className="items-center text-center">
+        <CardTitle>Loading…</CardTitle>
+      </CardHeader>
+    </Card>
   );
 }
 

@@ -10,6 +10,11 @@
       "source": "microsoft/github-copilot-for-azure",
       "sourceType": "github",
       "computedHash": "18752468a7ed7eecdfc51d9f683b4cdbbc18d95eed6cb9c26078639543d87416"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "computedHash": "873c67922d80775a9fdf596db7964b579f0408c30ec6e3d11989f6055bbec89f"
     }
   }
 }

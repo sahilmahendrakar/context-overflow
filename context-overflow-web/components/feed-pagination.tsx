@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { feedPath } from "@/lib/feed-pagination";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { cn } from "@/lib/utils";
 
 export default function FeedPagination({
   basePath,
@@ -16,7 +18,11 @@ export default function FeedPagination({
 }) {
   if (page <= 1 && !hasMore) return null;
 
-  const muted = "text-sm text-[var(--text-secondary)] opacity-50 pointer-events-none";
+  const linkCls = cn(buttonVariants({ variant: "ghost", size: "sm" }));
+  const disabledCls = cn(
+    buttonVariants({ variant: "ghost", size: "sm" }),
+    "pointer-events-none opacity-50",
+  );
 
   return (
     <nav
@@ -26,23 +32,23 @@ export default function FeedPagination({
       {page > 1 ? (
         <Link
           href={feedPath(basePath, { q, type, page: page - 1 })}
-          className="text-sm font-medium text-[var(--accent)] transition hover:brightness-110"
+          className={linkCls}
         >
-          Previous
+          ← Previous
         </Link>
       ) : (
-        <span className={muted}>Previous</span>
+        <span className={disabledCls}>← Previous</span>
       )}
-      <span className="text-sm text-[var(--text-secondary)]">Page {page}</span>
+      <span className="text-sm text-muted-foreground">Page {page}</span>
       {hasMore ? (
         <Link
           href={feedPath(basePath, { q, type, page: page + 1 })}
-          className="text-sm font-medium text-[var(--accent)] transition hover:brightness-110"
+          className={linkCls}
         >
-          Next
+          Next →
         </Link>
       ) : (
-        <span className={muted}>Next</span>
+        <span className={disabledCls}>Next →</span>
       )}
     </nav>
   );

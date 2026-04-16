@@ -39,7 +39,7 @@ export default function AcceptInviteButton({
   if (loading) return null;
 
   if (error) {
-    return <p className="mt-4 text-sm text-red-500">{error}</p>;
+    return <p className="mt-4 text-sm text-destructive">{error}</p>;
   }
 
   if (user) {
@@ -52,7 +52,7 @@ export default function AcceptInviteButton({
 
   return (
     <div>
-      <p className="mb-4 text-sm text-[var(--text-secondary)]">Sign in to accept this invitation.</p>
+      <p className="mb-4 text-sm text-muted-foreground">Sign in to accept this invitation.</p>
       <Button onClick={signIn} className="w-full">Sign in with Google</Button>
     </div>
   );

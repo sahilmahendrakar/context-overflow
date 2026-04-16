@@ -59,8 +59,8 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" variant="sidebar" className="border-[var(--border)]">
-      <SidebarHeader className="gap-2 border-b border-[var(--border)] border-transparent p-2">
+    <Sidebar collapsible="icon" variant="sidebar" className="border-border">
+      <SidebarHeader className="gap-2 border-b border-border border-transparent p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
@@ -74,8 +74,8 @@ export function AppSidebar() {
                 className="size-8 shrink-0 rounded-lg object-contain"
               />
               {showWideChrome && (
-                <span className="truncate text-sm font-semibold leading-tight text-[var(--text-primary)]">
-                  Context<span className="text-[var(--accent)]">Overflow</span>
+                <span className="truncate text-sm font-semibold leading-tight text-foreground">
+                  Context<span className="text-primary">Overflow</span>
                 </span>
               )}
             </SidebarMenuButton>
@@ -204,7 +204,7 @@ export function AppSidebar() {
         )}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-[var(--border)] border-transparent p-2">
+      <SidebarFooter className="border-t border-border border-transparent p-2">
         <div className="flex flex-col gap-2">
           <SidebarMenu>
             <SidebarMenuItem>

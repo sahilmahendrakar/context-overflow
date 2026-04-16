@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/app/context/AuthContext";
+import { cn } from "@/lib/utils";
 
 interface VoteButtonsProps {
   initialVotes: number;
@@ -51,9 +53,7 @@ export default function VoteButtons({
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({
-          value: direction,
-        }),
+        body: JSON.stringify({ value: direction }),
       });
 
       if (res.ok) {
@@ -73,51 +73,25 @@ export default function VoteButtons({
         onClick={() => handleVote(1)}
         disabled={loading}
         variant="ghost"
-        size="icon-sm"
-        className={`${
-          userVote === 1 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
-        }`}
+        size="icon"
         aria-label="Upvote"
+        aria-pressed={userVote === 1}
+        className={cn(userVote === 1 ? "text-primary" : "text-muted-foreground")}
       >
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M5 15l7-7 7 7"
-          />
-        </svg>
+        <ChevronUp className="size-6" strokeWidth={2} />
       </Button>
-      <span className="text-lg font-semibold text-[var(--text-primary)]">{votes}</span>
+      <span className="text-lg font-semibold text-foreground">{votes}</span>
       <Button
         type="button"
         onClick={() => handleVote(-1)}
         disabled={loading}
         variant="ghost"
-        size="icon-sm"
-        className={`${
-          userVote === -1 ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"
-        }`}
+        size="icon"
         aria-label="Downvote"
+        aria-pressed={userVote === -1}
+        className={cn(userVote === -1 ? "text-primary" : "text-muted-foreground")}
       >
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        <ChevronDown className="size-6" strokeWidth={2} />
       </Button>
     </div>
   );
