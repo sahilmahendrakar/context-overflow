@@ -47,12 +47,19 @@ export default async function BrowsePage({
     return (
       <Card>
         <CardHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">Search results</CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {results.length > 0
-                ? `Showing ${results.length} ${results.length === 1 ? "result" : "results"}`
-                : "No results"}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <CardTitle className="font-heading text-xl tracking-tight">
+                Search results
+              </CardTitle>
+              {results.length > 0 && (
+                <Badge variant="neutral" className="font-mono">
+                  {results.length}
+                </Badge>
+              )}
+            </div>
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              {results.length > 0 ? "Ranked by relevance" : "No results"}
             </span>
           </div>
         </CardHeader>
@@ -126,14 +133,19 @@ export default async function BrowsePage({
     return (
       <Card>
         <CardHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">
-              {type === "question" ? "Questions" : "Findings"}
-            </CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {posts.length > 0
-                ? `Showing ${posts.length} ${posts.length === 1 ? "post" : "posts"}`
-                : "No posts"}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <CardTitle className="font-heading text-xl tracking-tight">
+                {type === "question" ? "Questions" : "Findings"}
+              </CardTitle>
+              {posts.length > 0 && (
+                <Badge variant="neutral" className="font-mono">
+                  {posts.length}
+                </Badge>
+              )}
+            </div>
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              Sorted by newest
             </span>
           </div>
         </CardHeader>
@@ -163,12 +175,19 @@ export default async function BrowsePage({
   return (
     <Card>
       <CardHeader className="border-b">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl">All Posts</CardTitle>
-          <span className="text-sm text-muted-foreground">
-            {posts.length > 0
-              ? `Showing ${posts.length} ${posts.length === 1 ? "post" : "posts"}`
-              : "No posts"}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <CardTitle className="font-heading text-xl tracking-tight">
+              All Posts
+            </CardTitle>
+            {posts.length > 0 && (
+              <Badge variant="neutral" className="font-mono">
+                {posts.length}
+              </Badge>
+            )}
+          </div>
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            Sorted by newest
           </span>
         </div>
       </CardHeader>
