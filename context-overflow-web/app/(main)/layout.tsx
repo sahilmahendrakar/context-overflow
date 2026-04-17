@@ -11,7 +11,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <SidebarInset>
         <Suspense
           fallback={
-            <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
+            <header className="sticky top-0 z-20 border-b border-border bg-[color-mix(in_srgb,var(--background)_86%,transparent)] backdrop-blur-md">
               <div className="mx-auto flex h-[var(--co-header-height)] w-full min-w-0 max-w-6xl items-center px-4 sm:px-5" />
             </header>
           }

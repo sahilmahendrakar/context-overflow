@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/app/context/AuthContext";
 
 export default function ReplyForm({
@@ -41,14 +49,15 @@ export default function ReplyForm({
           "Content-Type": "application/json",
           Authorization: `Bearer ${idToken}`,
         },
-        body: JSON.stringify({
-          body: body.trim(),
-        }),
+        body: JSON.stringify({ body: body.trim() }),
       });
 
       if (res.ok) {
         setBody("");
+        toast.success(`${replyLabel} posted`);
         router.refresh();
+      } else {
+        toast.error(`Failed to post ${replyLabel.toLowerCase()}`);
       }
     } finally {
       setSubmitting(false);
@@ -56,45 +65,51 @@ export default function ReplyForm({
   }
 
   return (
-    <div className="mt-8">
-      <h2 className="text-lg font-semibold text-[var(--text-primary)]">Your {replyLabel}</h2>
+    <div className="mt-8 space-y-3">
+      <h2 className="font-heading text-lg font-semibold text-foreground">
+        Your {replyLabel}
+      </h2>
       {user ? (
-        <form onSubmit={handleSubmit} className="mt-3 co-card p-4 sm:p-5">
-          <textarea
-            rows={6}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder={`Write your ${replyLabel.toLowerCase()} here...`}
-            className="w-full resize-y rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] px-4 py-3 text-sm text-[var(--text-primary)] placeholder-[var(--text-tertiary)] outline-none transition focus:border-[var(--accent)]/50 focus:ring-2 focus:ring-[var(--ring)]"
-          />
-          <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
-            Markdown is supported &mdash; use **bold**, `code`, lists, and fenced code blocks.
-          </p>
-          <div className="mt-3 flex items-center justify-between">
-            <Link
-              href="/browse"
-              className="text-sm text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]"
-            >
-              &larr; Back to posts
-            </Link>
-            <Button
-              type="submit"
-              disabled={submitting || !body.trim()}
-              variant="default"
-            >
-              {submitting ? "Posting..." : `Post ${replyLabel}`}
-            </Button>
-          </div>
-        </form>
+        <Card className="mt-0 has-data-[slot=card-footer]:pb-4">
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-3 pb-5">
+              <Label htmlFor="reply-body" className="sr-only">
+                {replyLabel}
+              </Label>
+              <Textarea
+                id="reply-body"
+                rows={6}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder={`Write your ${replyLabel.toLowerCase()} here...`}
+                className="resize-y px-3 py-3"
+              />
+              <p className="pb-0.5 text-xs leading-relaxed text-muted-foreground">
+                Markdown is supported — use **bold**, `code`, lists, and fenced code blocks.
+              </p>
+            </CardContent>
+            <CardFooter className="flex items-center justify-between gap-4 border-t border-border/60 bg-card px-4 py-4 sm:px-5">
+              <Link
+                href="/browse"
+                className="text-sm text-muted-foreground transition hover:text-foreground"
+              >
+                &larr; Back to posts
+              </Link>
+              <Button type="submit" disabled={submitting || !body.trim()}>
+                {submitting ? "Posting..." : `Post ${replyLabel}`}
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
       ) : (
-        <div className="mt-3 co-card p-5 text-center">
-          <p className="text-sm text-[var(--text-secondary)]">
-            Sign in to post {isQuestion ? "an answer" : "a reply"}.
-          </p>
-          <Button onClick={signIn} className="mt-3">
-            Sign in with Google
-          </Button>
-        </div>
+        <Card className="mt-0">
+          <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              Sign in to post {isQuestion ? "an answer" : "a reply"}.
+            </p>
+            <Button onClick={signIn}>Sign in with Google</Button>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

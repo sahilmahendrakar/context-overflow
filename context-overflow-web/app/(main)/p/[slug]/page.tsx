@@ -3,14 +3,29 @@ import { listPosts } from "@/lib/services/posts";
 import { semanticSearch } from "@/lib/services/search";
 import { getProjectBySlug } from "@/lib/services/projects";
 import PostCard from "@/app/components/PostCard";
+import EmptyState from "@/app/components/EmptyState";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import FeedPagination from "@/components/feed-pagination";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button-variants";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import {
   POSTS_PAGE_SIZE,
   SEARCH_PAGE_SIZE,
   parsePageParam,
 } from "@/lib/feed-pagination";
+
+function searchBadgeVariant(
+  postType: "question" | "finding" | "task" | undefined,
+  sourceType: string,
+): "success" | "warning" | "info" | "neutral" {
+  if (postType === "task") return "info";
+  if (postType === "finding") return "warning";
+  if (sourceType === "post") return "success";
+  return "neutral";
+}
 
 export default async function ProjectFeedPage({
   params,
@@ -40,27 +55,35 @@ export default async function ProjectFeedPage({
       SEARCH_PAGE_SIZE,
       type,
       project.id,
-      searchOffset
+      searchOffset,
     );
 
     return (
-      <div className="co-card p-5 sm:p-6">
-        <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-          <h1 className="text-xl font-semibold text-[var(--text-primary)]">Search results</h1>
-          <span className="text-sm text-[var(--text-secondary)]">
-            {results.length > 0
-              ? `Showing ${results.length} ${results.length === 1 ? "result" : "results"}`
-              : "No results"}
-          </span>
-        </div>
-
-        <div className="mt-4">
+      <Card>
+        <CardHeader className="border-b">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <CardTitle className="font-heading text-xl tracking-tight">
+                Search results
+              </CardTitle>
+              {results.length > 0 && (
+                <Badge variant="neutral" className="font-mono">
+                  {results.length}
+                </Badge>
+              )}
+            </div>
+            <span className="text-xs uppercase tracking-wide text-muted-foreground">
+              {results.length > 0 ? "Ranked by relevance" : "No results"}
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent>
           {results.length === 0 ? (
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="py-8 text-center text-sm text-muted-foreground">
               No results found for &ldquo;{query}&rdquo;.
             </p>
           ) : (
-            <div className="divide-y divide-[var(--border)]">
+            <div className="divide-y divide-border">
               {results.map((result, i) => {
                 const isTask = result.postType === "task";
                 const badgeLabel = isTask
@@ -70,31 +93,23 @@ export default async function ProjectFeedPage({
                       ? "finding"
                       : "question"
                     : "reply";
-
-                const badgeColor = isTask
-                  ? "border-violet-500/35 bg-violet-500/10 text-violet-600 dark:text-violet-400"
-                  : result.postType === "finding"
-                    ? "border-amber-500/35 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                    : result.postType === "question"
-                      ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/10 dark:text-emerald-400"
-                      : "border-[var(--border)] bg-[var(--surface-muted)] text-[var(--text-secondary)]";
-
                 const href = isTask
                   ? `/p/${slug}/tasks/${result.taskId || result.sourceId}`
                   : `/p/${slug}/posts/${result.postId}`;
-
                 return (
                   <div key={`${result.sourceType}-${result.sourceId}-${i}`} className="py-4">
-                    <Link
-                      href={href}
-                      className="text-base font-medium text-[var(--accent)] transition hover:brightness-110"
-                    >
-                      {result.title || (isTask ? "Untitled task" : "Untitled post")}
-                    </Link>
-                    <span className={`ml-2 rounded-full border px-2 py-0.5 text-xs ${badgeColor}`}>
-                      {badgeLabel}
-                    </span>
-                    <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={href}
+                        className="text-base font-medium text-primary transition hover:brightness-110"
+                      >
+                        {result.title || (isTask ? "Untitled task" : "Untitled post")}
+                      </Link>
+                      <Badge variant={searchBadgeVariant(result.postType, result.sourceType)}>
+                        {badgeLabel}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
                       {result.snippet}...
                     </p>
                   </div>
@@ -102,15 +117,15 @@ export default async function ProjectFeedPage({
               })}
             </div>
           )}
-        </div>
-        <FeedPagination
-          basePath={basePath}
-          page={page}
-          hasMore={hasMore}
-          q={query}
-          type={type}
-        />
-      </div>
+          <FeedPagination
+            basePath={basePath}
+            page={page}
+            hasMore={hasMore}
+            q={query}
+            type={type}
+          />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -128,31 +143,42 @@ export default async function ProjectFeedPage({
     const posts = hasMore ? rawPosts.slice(0, POSTS_PAGE_SIZE) : rawPosts;
 
     return (
-      <div className="co-card p-5 sm:p-6">
-        <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-          <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-            {type === "question" ? "Questions" : "Findings"}
-          </h1>
-          <Link
-            href={`/p/${slug}/post`}
-            className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition hover:brightness-110"
-          >
-            New Post
-          </Link>
-        </div>
-        <div>
-          {posts.map((p) => (
-            <PostCard key={p.id} post={p} linkPrefix={`/p/${slug}`} />
-          ))}
-          {posts.length === 0 && (
-            <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
-              No {type === "question" ? "questions" : "findings"} yet.
-              Be the first to share something with your project.
-            </p>
+      <Card>
+        <CardHeader className="border-b">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <CardTitle className="font-heading text-xl tracking-tight">
+                {type === "question" ? "Questions" : "Findings"}
+              </CardTitle>
+              {posts.length > 0 && (
+                <Badge variant="neutral" className="font-mono">
+                  {posts.length}
+                </Badge>
+              )}
+            </div>
+            <Link href={`/p/${slug}/post`} className={cn(buttonVariants({ size: "sm" }))}>
+              New Post
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {posts.length === 0 ? (
+            <EmptyState
+              title={`No ${type === "question" ? "questions" : "findings"} yet`}
+              description="Be the first to share something with your project."
+              action={
+                <Link href={`/p/${slug}/post`} className={cn(buttonVariants())}>
+                  New Post
+                </Link>
+              }
+              className="border-0 ring-0 shadow-none"
+            />
+          ) : (
+            posts.map((p) => <PostCard key={p.id} post={p} linkPrefix={`/p/${slug}`} />)
           )}
-        </div>
-        <FeedPagination basePath={basePath} page={page} hasMore={hasMore} type={type} />
-      </div>
+          <FeedPagination basePath={basePath} page={page} hasMore={hasMore} type={type} />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -166,30 +192,41 @@ export default async function ProjectFeedPage({
   const posts = hasMore ? rawPosts.slice(0, POSTS_PAGE_SIZE) : rawPosts;
 
   return (
-    <div className="co-card p-5 sm:p-6">
-      <div className="flex items-center justify-between border-b border-[var(--border)] pb-4">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-          {project.name} Posts
-        </h1>
-        <Link
-          href={`/p/${slug}/post`}
-          className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition hover:brightness-110"
-        >
-          New Post
-        </Link>
-      </div>
-
-      <div>
-        {posts.map((p) => (
-          <PostCard key={p.id} post={p} linkPrefix={`/p/${slug}`} />
-        ))}
-        {posts.length === 0 && (
-          <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
-            No posts yet. Be the first to share something with your project.
-          </p>
+    <Card>
+      <CardHeader className="border-b">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <CardTitle className="font-heading text-xl tracking-tight">
+              {project.name} Posts
+            </CardTitle>
+            {posts.length > 0 && (
+              <Badge variant="neutral" className="font-mono">
+                {posts.length}
+              </Badge>
+            )}
+          </div>
+          <Link href={`/p/${slug}/post`} className={cn(buttonVariants({ size: "sm" }))}>
+            New Post
+          </Link>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {posts.length === 0 ? (
+          <EmptyState
+            title="No posts yet"
+            description="Be the first to share something with your project."
+            action={
+              <Link href={`/p/${slug}/post`} className={cn(buttonVariants())}>
+                New Post
+              </Link>
+            }
+            className="border-0 ring-0 shadow-none"
+          />
+        ) : (
+          posts.map((p) => <PostCard key={p.id} post={p} linkPrefix={`/p/${slug}`} />)
         )}
-      </div>
-      <FeedPagination basePath={basePath} page={page} hasMore={hasMore} type={type} />
-    </div>
+        <FeedPagination basePath={basePath} page={page} hasMore={hasMore} type={type} />
+      </CardContent>
+    </Card>
   );
 }

@@ -44,7 +44,7 @@ export function NavUser() {
         <SidebarMenuItem>
           <SidebarMenuButton
             tooltip="Sign in"
-            className="border border-[var(--border)] bg-[var(--surface-muted)] hover:bg-[var(--surface-strong)]"
+            className="border border-border bg-muted hover:bg-accent"
             onClick={() => {
               void signIn();
               closeMobile();
@@ -78,7 +78,7 @@ export function NavUser() {
             <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-60 group-data-[collapsible=icon]:hidden" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="min-w-56 rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg"
+            className="min-w-56 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}

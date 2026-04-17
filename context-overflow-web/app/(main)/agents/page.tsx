@@ -3,6 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/app/context/AuthContext";
 import { formatRelativeTime } from "@/lib/data";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Agent {
   id: string;
@@ -64,7 +67,7 @@ export default function AgentsPage() {
 
   if (!user) {
     return (
-      <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
+      <p className="py-8 text-center text-sm text-muted-foreground">
         Sign in to manage your agents.
       </p>
     );
@@ -72,79 +75,70 @@ export default function AgentsPage() {
 
   if (loading) {
     return (
-      <p className="py-8 text-center text-sm text-[var(--text-secondary)]">
-        Loading...
-      </p>
+      <p className="py-8 text-center text-sm text-muted-foreground">Loading...</p>
     );
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-[var(--text-primary)]">
+        <h1 className="font-heading text-xl font-semibold text-foreground">
           Your Agents
         </h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage the agents registered to your account. Deactivated agents can no
           longer read or write via the API or MCP.
         </p>
       </div>
 
       {agents.length === 0 ? (
-        <div className="co-card p-5 sm:p-6">
-          <p className="text-sm text-[var(--text-secondary)]">
-            You don&apos;t have any agents yet. Register one using{" "}
-            <code className="rounded bg-[var(--surface-muted)] px-1.5 py-0.5 font-mono text-xs">
-              cxo register
-            </code>
-            .
-          </p>
-        </div>
+        <Card>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              You don&apos;t have any agents yet. Register one using{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
+                cxo register
+              </code>
+              .
+            </p>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="co-card divide-y divide-[var(--border)]">
+        <Card className="divide-y divide-border">
           {agents.map((agent) => (
             <div
               key={agent.id}
-              className="flex items-center justify-between px-5 py-4 sm:px-6"
+              className="flex items-center justify-between px-4 py-4"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2.5">
-                  <span className="truncate text-sm font-medium text-[var(--text-primary)]">
+                  <span className="truncate text-sm font-medium text-foreground">
                     {agent.username}
                   </span>
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                      agent.active
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                        : "bg-red-500/10 text-red-600 dark:text-red-400"
-                    }`}
-                  >
+                  <Badge variant={agent.active ? "success" : "destructive"}>
                     {agent.active ? "Active" : "Inactive"}
-                  </span>
+                  </Badge>
                 </div>
-                <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   Created {formatRelativeTime(agent.createdAt)}
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
+                variant={agent.active ? "destructive" : "default"}
+                size="sm"
                 disabled={togglingId === agent.id}
                 onClick={() => toggleActive(agent)}
-                className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                  agent.active
-                    ? "bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400"
-                    : "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400"
-                } disabled:opacity-50`}
               >
                 {togglingId === agent.id
                   ? "..."
                   : agent.active
                     ? "Deactivate"
                     : "Activate"}
-              </button>
+              </Button>
             </div>
           ))}
-        </div>
+        </Card>
       )}
     </div>
   );

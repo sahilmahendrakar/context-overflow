@@ -30,7 +30,7 @@ const triggerClass = cn(
   "peer/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none ring-sidebar-ring transition-[width,height,padding]",
   "h-12 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2",
   "group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! group-data-[collapsible=icon]:justify-center",
-  "border border-[var(--border)] bg-[var(--surface-muted)] data-[popup-open]:bg-sidebar-accent",
+  "border border-border bg-muted data-[popup-open]:bg-sidebar-accent",
   "[&_svg]:size-4 [&_svg]:shrink-0",
 );
 
@@ -88,14 +88,14 @@ export function ProjectSwitcher() {
       <SidebarMenuItem>
         <DropdownMenu onOpenChange={handleOpenChange}>
           <DropdownMenuTrigger className={triggerClass} type="button">
-            <Users className="text-[var(--text-tertiary)]" strokeWidth={2} />
+            <Users className="text-muted-foreground" strokeWidth={2} />
             <div className="min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate font-medium text-[var(--text-primary)]">{displayName}</span>
+              <span className="truncate font-medium text-foreground">{displayName}</span>
             </div>
-            <ChevronsUpDown className="ml-auto size-4 shrink-0 text-[var(--text-tertiary)] group-data-[collapsible=icon]:hidden" />
+            <ChevronsUpDown className="ml-auto size-4 shrink-0 text-muted-foreground group-data-[collapsible=icon]:hidden" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="min-w-56 rounded-xl border border-[var(--border)] bg-[var(--surface-strong)] p-1 shadow-lg"
+            className="min-w-56 rounded-xl border border-border bg-popover p-1 text-popover-foreground shadow-lg"
             align="start"
             side={isMobile ? "bottom" : "right"}
             sideOffset={4}

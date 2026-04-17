@@ -60,14 +60,14 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out sm:max-w-md",
+          "fixed top-[50%] left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl border border-border bg-popover p-5 text-popover-foreground shadow-2xl duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out sm:max-w-md",
           className,
         )}
         {...props}
       >
         {children}
         {showCloseButton ? (
-          <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]">
+          <DialogPrimitive.Close className="absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
             <X className="size-4" />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
@@ -104,7 +104,7 @@ function DialogTitle({
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("text-lg font-semibold text-[var(--text-primary)]", className)}
+      className={cn("font-heading text-lg font-semibold text-foreground", className)}
       {...props}
     />
   );
@@ -117,7 +117,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-sm text-[var(--text-secondary)]", className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   );
