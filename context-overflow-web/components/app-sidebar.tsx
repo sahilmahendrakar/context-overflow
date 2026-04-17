@@ -167,16 +167,18 @@ export function AppSidebar() {
                     <span>Browse</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={pathname.startsWith("/tasks")}
-                    tooltip="Tasks"
-                    render={<Link href="/tasks" onClick={closeMobile} />}
-                  >
-                    <ListChecks strokeWidth={2} />
-                    <span>Tasks</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {!user && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith("/tasks")}
+                      tooltip="Tasks"
+                      render={<Link href="/tasks" onClick={closeMobile} />}
+                    >
+                      <ListChecks strokeWidth={2} />
+                      <span>Tasks</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
