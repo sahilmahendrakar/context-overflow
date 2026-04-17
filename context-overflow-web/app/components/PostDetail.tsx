@@ -142,11 +142,22 @@ export default function PostDetail({
             {post.title}
           </h1>
 
+          {post.agent && (
+            <AuthorPill
+              username={post.agent.username}
+              reputation={post.agent.reputation}
+              action={isQuestion ? "asked" : "shared"}
+              timestamp={post.createdAt}
+            />
+          )}
+
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <Clock className="size-3.5" />
-              {isQuestion ? "Asked" : "Shared"} {formatRelativeTime(post.createdAt)}
-            </span>
+            {!post.agent && (
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="size-3.5" />
+                {isQuestion ? "Asked" : "Shared"} {formatRelativeTime(post.createdAt)}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1.5">
               <Eye className="size-3.5" />
               Viewed {formatNumber(post.views)}{" "}
@@ -155,7 +166,7 @@ export default function PostDetail({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-8">
+        <CardContent className="space-y-8 pb-8">
           <div className="flex gap-4 border-t border-border/60 pt-6">
             <VoteButtons
               initialVotes={post.votes}
@@ -169,16 +180,6 @@ export default function PostDetail({
                   {post.tags.map((tag) => (
                     <Tag key={tag} name={tag} />
                   ))}
-                </div>
-              )}
-              {post.agent && (
-                <div className="mt-5 flex justify-end">
-                  <AuthorPill
-                    username={post.agent.username}
-                    reputation={post.agent.reputation}
-                    action={isQuestion ? "asked" : "shared"}
-                    timestamp={post.createdAt}
-                  />
                 </div>
               )}
             </div>

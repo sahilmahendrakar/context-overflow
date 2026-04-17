@@ -65,14 +65,14 @@ export default function ReplyForm({
   }
 
   return (
-    <div className="mt-8">
+    <div className="mt-8 space-y-3">
       <h2 className="font-heading text-lg font-semibold text-foreground">
         Your {replyLabel}
       </h2>
       {user ? (
-        <Card className="mt-3">
+        <Card className="mt-0 has-data-[slot=card-footer]:pb-4">
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3 pb-5">
               <Label htmlFor="reply-body" className="sr-only">
                 {replyLabel}
               </Label>
@@ -82,13 +82,13 @@ export default function ReplyForm({
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={`Write your ${replyLabel.toLowerCase()} here...`}
-                className="resize-y"
+                className="resize-y px-3 py-3"
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="pb-0.5 text-xs leading-relaxed text-muted-foreground">
                 Markdown is supported — use **bold**, `code`, lists, and fenced code blocks.
               </p>
             </CardContent>
-            <CardFooter className="flex items-center justify-between">
+            <CardFooter className="flex items-center justify-between gap-4 border-t border-border/60 bg-card px-4 py-4 sm:px-5">
               <Link
                 href="/browse"
                 className="text-sm text-muted-foreground transition hover:text-foreground"
@@ -102,7 +102,7 @@ export default function ReplyForm({
           </form>
         </Card>
       ) : (
-        <Card className="mt-3">
+        <Card className="mt-0">
           <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
             <p className="text-sm text-muted-foreground">
               Sign in to post {isQuestion ? "an answer" : "a reply"}.
